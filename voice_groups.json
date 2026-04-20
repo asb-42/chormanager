@@ -1,0 +1,12 @@
+{
+  "voice_groups": [
+    {"id": "Sopran 1", "color": "#f8a8a8"},
+    {"id": "Sopran 2", "color": "#f66"},
+    {"id": "Alt 1", "color": "#a8d0f8"},
+    {"id": "Alt 2", "color": "#4a9cff"},
+    {"id": "Tenor 1", "color": "#a8f8a8"},
+    {"id": "Tenor 2", "color": "#4acc4a"},
+    {"id": "Bass 1", "color": "#f8f1c8"},
+    {"id": "Bass 2", "color": "#e6c84d"}
+  ]
+}

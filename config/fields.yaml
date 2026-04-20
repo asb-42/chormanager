@@ -1,0 +1,131 @@
+# Felddefinitionen für Sänger-Datensätze
+# Erweiterbar - neue Felder einfach hier hinzufügen
+
+fields:
+  - name: "full_name"
+    label: "Vollständiger Name"
+    type: "string"
+    required: true
+    order: 1
+
+  - name: "short_name"
+    label: "Kurzname / Spitzname"
+    type: "string"
+    required: false
+    order: 2
+
+  - name: "birth_date"
+    label: "Geburtsdatum"
+    type: "date"
+    required: false
+    order: 3
+
+  - name: "is_adult"
+    label: "Volljährig"
+    type: "computed"
+    computed_from: "birth_date"
+    order: 4
+
+  - name: "voice_group"
+    label: "Stimmgruppe"
+    type: "voice_group"
+    required: false
+    order: 5
+
+  - name: "email"
+    label: "E-Mail-Adresse"
+    type: "email"
+    required: false
+    order: 6
+
+  - name: "phone"
+    label: "Telefon/Handy"
+    type: "string"
+    required: false
+    order: 7
+
+  - name: "street"
+    label: "Straße, Hausnummer"
+    type: "string"
+    required: false
+    order: 8
+
+  - name: "postal_code"
+    label: "PLZ"
+    type: "string"
+    required: false
+    order: 9
+
+  - name: "city"
+    label: "Ort"
+    type: "string"
+    required: false
+    order: 10
+
+  - name: "gender"
+    label: "Geschlecht"
+    type: "choice"
+    required: false
+    choices: ["weiblich", "männlich", "divers", "keine Angabe"]
+    order: 11
+
+  - name: "guardian1"
+    label: "Erziehungsberechtigte/r #1"
+    type: "string"
+    required: false
+    order: 12
+
+  - name: "guardian1_phone"
+    label: "Handy EB #1"
+    type: "string"
+    required: false
+    order: 13
+
+  - name: "guardian2"
+    label: "Erziehungsberechtigte/r #2"
+    type: "string"
+    required: false
+    order: 14
+
+  - name: "guardian2_phone"
+    label: "Handy EB #2"
+    type: "string"
+    required: false
+    order: 15
+
+  - name: "social_contacts"
+    label: "Social Kontakte"
+    type: "json"
+    required: false
+    order: 16
+
+  - name: "joined"
+    label: "Beitritt"
+    type: "yearmonth"
+    required: false
+    order: 17
+
+  - name: "left"
+    label: "Austritt"
+    type: "yearmonth"
+    required: false
+    order: 18
+
+  - name: "affinity_uuid"
+    label: "Affinity/Singpartner (UUID)"
+    type: "uuid"
+    required: false
+    order: 19
+
+# Feld-Typen:
+# - string: Freitext
+# - integer: Ganzzahl
+# - text: Mehrzeiliger Text
+# - date: Datum (YYYY-MM-DD)
+# - yearmonth: Jahr und Monat (JJJJ-MM oder JJJJ)
+# - email: E-Mail-Adresse mit Validierung
+# - choice: Auswahl aus vordefinierten Werten
+# - voice_group: Referenz auf voice_groups.yaml
+# - uuid: UUID für externe Verknüpfung
+# - json: JSON-Daten
+# - computed: Berechnetes Feld (wird nicht gespeichert)

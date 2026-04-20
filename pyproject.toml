@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chormanager"
+version = "0.1.0"
+description = "Chorverwaltungsanwendung für Chorleiter"
+authors = [{name = "Chorleiter"}]
+requires-python = ">=3.11"
+dependencies = [
+    "PyQt6>=6.5.0",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-qt>=4.0",
+    "pytest-cov>=4.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
+[tool.coverage.run]
+source = ["chormanager"]
+omit = ["tests/*", "*/test_*.py"]

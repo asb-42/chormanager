@@ -1,0 +1,30 @@
+# ChorManager Hauptkonfiguration
+
+app:
+  name: "ChorManager"
+  version: "0.1.0"
+  # Use relative path - all data stays with the program
+  data_dir: "./data"
+
+database:
+  filename: "chor.db"
+
+backup:
+  enabled: true
+  on_start: true
+  before_save: true
+  max_backups: 10
+  backup_dir: "./data/backups"
+
+logging:
+  enabled: true
+  level: "INFO"
+  max_bytes: 10485760  # 10 MB
+  backup_count: 5
+  log_dir: "./data/logs"
+
+history:
+  max_entries: 100
+  enabled: true
+
+date_format: "%d.%m.%Y"

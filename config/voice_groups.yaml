@@ -1,0 +1,28 @@
+# Stimmgruppen-Konfiguration
+# Werden als Dropdown in der UI verwendet
+
+voice_groups:
+  - name: "Sopran 1"
+    short: "S1"
+    order: 1
+  - name: "Sopran 2"
+    short: "S2"
+    order: 2
+  - name: "Alt 1"
+    short: "A1"
+    order: 3
+  - name: "Alt 2"
+    short: "A2"
+    order: 4
+  - name: "Tenor 1"
+    short: "T1"
+    order: 5
+  - name: "Tenor 2"
+    short: "T2"
+    order: 6
+  - name: "Bass 1"
+    short: "B1"
+    order: 7
+  - name: "Bass 2"
+    short: "B2"
+    order: 8
