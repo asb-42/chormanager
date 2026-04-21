@@ -997,12 +997,24 @@ class MainWindow(QMainWindow):
     def _show_about(self):
         """Show about dialog."""
         from PyQt6.QtWidgets import QMessageBox
+        import subprocess
+        
+        # Get git commit hash for version
+        try:
+            git_hash = subprocess.check_output(
+                ["git", "describe", "--tags", "--abbrev=7", "--always", "--dirty"],
+                cwd="/media/data/coding/chormanager",
+                text=True
+            ).strip()
+        except Exception:
+            git_hash = "dev"
+        
         QMessageBox.about(
             self,
             "Über ChorManager",
-            "<h3>ChorManager</h3>"
-            "<p>Desktop-Anwendung zur Verwaltung eines Chors</p>"
-            "<p>Version: 1.0</p>"
+            f"<h3>ChorManager</h3>"
+            f"<p>Desktop-Anwendung zur Verwaltung eines Chors</p>"
+            f"<p>Version: {git_hash}</p>"
         )
     
     def _show_selbstdarstellung(self):
