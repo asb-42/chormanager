@@ -2,6 +2,8 @@
 
 import sys
 from pathlib import Path
+from PyQt6.QtCore import QSize
+from PyQt6.QtGui import QAction
 
 from PyQt6.QtWidgets import (
     QMainWindow,
@@ -13,19 +15,16 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QMenuBar,
     QMenu,
-    QMessageBox,
-    QDialog,
+    QToolBar,
     QLabel,
     QLineEdit,
     QComboBox,
-    QFormLayout,
-    QDateEdit,
-    QTextEdit,
-    QGroupBox,
-    QToolBar,
-    QStatusBar,
-    QTabWidget,
+    QMessageBox,
+    QSplitter,
+    QStackedWidget,
+    QDialog,
 )
+from PyQt6.QtGui import QAction
 from PyQt6.QtCore import Qt, QDate, QTimer
 from PyQt6.QtGui import QAction, QKeySequence
 
@@ -429,30 +428,58 @@ class MainWindow(QMainWindow):
         toolbar.addWidget(refresh_button)
 
     def _create_central_widget(self):
-        """Create central widget with tabs."""
+        """Create central widget with sidebar navigation."""
         central = QWidget()
         self.setCentralWidget(central)
 
-        layout = QVBoxLayout(central)
+        # Horizontal splitter: Sidebar links, Content rechts
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+        layout = QHBoxLayout(central)
+        layout.addWidget(splitter)
+        layout.setContentsMargins(0, 0, 0, 0)
 
+        # Sidebar (linke Navigationsspalte)
+        sidebar = QWidget()
+        sidebar.setMaximumWidth(150)
+        sidebar_layout = QVBoxLayout(sidebar)
+        sidebar_layout.setContentsMargins(5, 10, 5, 10)
+        sidebar_layout.setSpacing(5)
+
+        # Info-Bereich oben
         self.project_info_label = QLabel()
         self.project_info_label.setObjectName("projectInfoLabel")
         self.project_info_label.setVisible(False)
-        layout.addWidget(self.project_info_label)
+        self.project_info_label.setWordWrap(True)
+        sidebar_layout.addWidget(self.project_info_label)
 
         self.event_info_label = QLabel()
         self.event_info_label.setObjectName("eventInfoLabel")
         self.event_info_label.setVisible(False)
-        layout.addWidget(self.event_info_label)
+        self.event_info_label.setWordWrap(True)
+        sidebar_layout.addWidget(self.event_info_label)
 
-        # Context-sensitive action toolbar (ABOVE tabs)
+        sidebar_layout.addSpacing(10)
+
+        # Context toolbar (Actions)
         self.context_toolbar = QToolBar("Aktionen")
         self.context_toolbar.setToolButtonStyle(
             Qt.ToolButtonStyle.ToolButtonTextBesideIcon
         )
         self.context_toolbar.setMovable(False)
-        layout.addWidget(self.context_toolbar)
+        self.context_toolbar.setIconSize(QSize(16, 16))
+        sidebar_layout.addWidget(self.context_toolbar)
 
+        sidebar_layout.addStretch()
+
+        # Refresh button
+        refresh_btn = QPushButton("↻ Aktualisieren")
+        refresh_btn.clicked.connect(self._refresh_tabs)
+        refresh_btn.setMaximumWidth(120)
+        sidebar_layout.addWidget(refresh_btn)
+
+        splitter.addWidget(sidebar)
+
+        # Content-Bereich (rechts)
         self.current_event = None
 
         from .views.projects_tab import ProjectsTab
@@ -460,31 +487,62 @@ class MainWindow(QMainWindow):
         self.projects_tab = ProjectsTab(self.db)
         self.projects_tab.current_project_changed.connect(self._on_project_changed)
 
-        self.tabs = QTabWidget()
-        self.tabs.currentChanged.connect(self._on_tab_changed)
-        layout.addWidget(self.tabs)
-
-        self.tabs.addTab(self.projects_tab, "Projekte")
-
         from .views.singers_tab import SingersTab
 
         self.singers_tab = SingersTab(self.db)
-        self.tabs.addTab(self.singers_tab, "Sänger")
 
         from .views.events_tab import EventsTab
 
         self.events_tab = EventsTab(self.db)
         self.events_tab.event_selected.connect(self._on_event_selected)
-        self.tabs.addTab(self.events_tab, "Termine")
 
         from .views.choraufstellung_tab import ChorAufstellungTab
 
         self.choraufstellung_tab = ChorAufstellungTab(self.db)
-        self.tabs.addTab(self.choraufstellung_tab, "Aufstellung")
 
-        self.tabs.setCurrentIndex(0)
+        # Stacked widget für Content
+        self.content_stack = QStackedWidget()
+        self.content_stack.addWidget(self.projects_tab)
+        self.content_stack.addWidget(self.singers_tab)
+        self.content_stack.addWidget(self.events_tab)
+        self.content_stack.addWidget(self.choraufstellung_tab)
 
-        # Connect selection signals for context toolbar
+        splitter.addWidget(self.content_stack)
+        splitter.setStretchFactor(1, 1)
+
+        # Sidebar navigation buttons
+        nav_widget = QWidget()
+        nav_layout = QVBoxLayout(nav_widget)
+        nav_layout.setSpacing(2)
+
+        self.nav_projects = QPushButton("📁 Projekte")
+        self.nav_projects.setCheckable(True)
+        self.nav_projects.setChecked(True)
+        self.nav_projects.clicked.connect(lambda: self._switch_view(0))
+        nav_layout.addWidget(self.nav_projects)
+
+        self.nav_singers = QPushButton("👤 Sänger")
+        self.nav_singers.setCheckable(True)
+        self.nav_singers.clicked.connect(lambda: self._switch_view(1))
+        nav_layout.addWidget(self.nav_singers)
+
+        self.nav_events = QPushButton("📅 Termine")
+        self.nav_events.setCheckable(True)
+        self.nav_events.clicked.connect(lambda: self._switch_view(2))
+        nav_layout.addWidget(self.nav_events)
+
+        self.nav_formations = QPushButton("🎵 Aufstellung")
+        self.nav_formations.setCheckable(True)
+        self.nav_formations.clicked.connect(lambda: self._switch_view(3))
+        nav_layout.addWidget(self.nav_formations)
+
+        nav_layout.addStretch()
+
+        # Insert nav before info labels in sidebar
+        sidebar_layout.insertWidget(0, nav_widget)
+        nav_widget.setMaximumWidth(140)
+
+        # Connect selection signals
         self.projects_tab.table.selectionModel().selectionChanged.connect(
             lambda: self._emit_selection(0)
         )
@@ -497,6 +555,15 @@ class MainWindow(QMainWindow):
         self.choraufstellung_tab.table.selectionModel().selectionChanged.connect(
             lambda: self._emit_selection(3)
         )
+
+    def _switch_view(self, index):
+        """Switch content view."""
+        self.content_stack.setCurrentIndex(index)
+        self.nav_projects.setChecked(index == 0)
+        self.nav_singers.setChecked(index == 1)
+        self.nav_events.setChecked(index == 2)
+        self.nav_formations.setChecked(index == 3)
+        self._emit_selection(index)
 
     def _emit_selection(self, tab_index):
         """Emit selection signal with current selected item for given tab.
