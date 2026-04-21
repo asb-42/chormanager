@@ -576,6 +576,20 @@ class MainWindow(QMainWindow):
                 delete_action.triggered.connect(self._delete_project)
                 self.context_toolbar.addAction(delete_action)
 
+        elif tab_index == 1:  # Singers
+            add_action = QAction("Hinzufügen", self)
+            add_action.triggered.connect(self._add_singer)
+            self.context_toolbar.addAction(add_action)
+
+            if selection:
+                edit_action = QAction("Bearbeiten", self)
+                edit_action.triggered.connect(self._edit_singer)
+                self.context_toolbar.addAction(edit_action)
+
+                delete_action = QAction("Löschen", self)
+                delete_action.triggered.connect(self._delete_singer)
+                self.context_toolbar.addAction(delete_action)
+
         elif tab_index == 2:  # Events
             add_action = QAction("Neuer Termin", self)
             add_action.triggered.connect(self._new_event)
