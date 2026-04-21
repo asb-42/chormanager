@@ -24,6 +24,7 @@ from PyQt6.QtWidgets import (
     QSplitter,
     QStackedWidget,
     QDialog,
+    QDateEdit,
 )
 from PyQt6.QtGui import QAction
 from PyQt6.QtCore import Qt, QDate, QTimer
