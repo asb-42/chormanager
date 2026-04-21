@@ -498,108 +498,6 @@ class MainWindow(QMainWindow):
         self.context_toolbar.setMovable(False)
         layout.addWidget(self.context_toolbar)
 
-    def _update_context_toolbar(self, tab_index, selection):
-        """Update toolbar actions based on active tab and selection.
-
-        Args:
-            tab_index: Index of active tab (0=Projects, 1=Singers, 2=Events, 3=Aufstellung)
-            selection: Selected item object (Project/Event/Singer) or None
-        """
-        self.context_toolbar.clear()
-
-        if tab_index == 0:  # Projects
-            add_action = QAction("Hinzufügen", self)
-            add_action.triggered.connect(self._new_projekt)
-            self.context_toolbar.addAction(add_action)
-
-            if selection:
-                edit_action = QAction("Bearbeiten", self)
-                edit_action.triggered.connect(self._edit_project)
-                self.context_toolbar.addAction(edit_action)
-
-                dup_action = QAction("Duplizieren", self)
-                dup_action.triggered.connect(self._duplicate_project)
-                self.context_toolbar.addAction(dup_action)
-
-                delete_action = QAction("Löschen", self)
-                delete_action.triggered.connect(self._delete_project)
-                self.context_toolbar.addAction(delete_action)
-
-        elif tab_index == 1:  # Singers
-            add_action = QAction("Hinzufügen", self)
-            add_action.triggered.connect(self._add_singer)
-            self.context_toolbar.addAction(add_action)
-
-            if selection:
-                edit_action = QAction("Bearbeiten", self)
-                edit_action.triggered.connect(self._edit_singer)
-                self.context_toolbar.addAction(edit_action)
-
-                delete_action = QAction("Löschen", self)
-                delete_action.triggered.connect(self._delete_singer)
-                self.context_toolbar.addAction(delete_action)
-
-        elif tab_index == 2:  # Events
-            add_action = QAction("Neuer Termin", self)
-            add_action.triggered.connect(self._new_event)
-            self.context_toolbar.addAction(add_action)
-
-            if selection:
-                # Primary: availability and formation
-                avail_action = QAction("Verfügbarkeit erfassen", self)
-                avail_action.triggered.connect(self._manage_availability)
-                self.context_toolbar.addAction(avail_action)
-
-                # Check if formation file exists for this event
-                formation_exists = False
-                if hasattr(self, "choraufstellung_tab"):
-                    formation_exists = self.choraufstellung_tab.has_formation_for_event(
-                        selection
-                    )
-
-                if formation_exists:
-                    open_formation_action = QAction("Aufstellung bearbeiten", self)
-                else:
-                    open_formation_action = QAction("Aufstellung öffnen", self)
-                open_formation_action.triggered.connect(
-                    lambda checked=False, ev=selection: (
-                        self._open_choraufstellung_for_event(ev)
-                    )
-                )
-                self.context_toolbar.addAction(open_formation_action)
-
-                self.context_toolbar.addSeparator()
-
-                edit_action = QAction("Bearbeiten", self)
-                edit_action.triggered.connect(self._edit_event)
-                self.context_toolbar.addAction(edit_action)
-
-                dup_action = QAction("Duplizieren", self)
-                dup_action.triggered.connect(self._duplicate_event)
-                self.context_toolbar.addAction(dup_action)
-
-                delete_action = QAction("Löschen", self)
-                delete_action.triggered.connect(self._delete_event)
-                self.context_toolbar.addAction(delete_action)
-
-        elif tab_index == 3:  # Aufstellung
-            new_action = QAction("Neue Aufstellung", self)
-            new_action.triggered.connect(self._new_formation)
-            self.context_toolbar.addAction(new_action)
-
-            if selection:
-                edit_action = QAction("Bearbeiten", self)
-                edit_action.triggered.connect(self._edit_formation)
-                self.context_toolbar.addAction(edit_action)
-
-                dup_action = QAction("Duplizieren", self)
-                dup_action.triggered.connect(self._duplicate_formation)
-                self.context_toolbar.addAction(dup_action)
-
-                delete_action = QAction("Löschen", self)
-                delete_action.triggered.connect(self._delete_formation)
-                self.context_toolbar.addAction(delete_action)
-
     def _emit_selection(self, tab_index):
         """Emit selection signal with current selected item for given tab.
 
@@ -662,6 +560,10 @@ class MainWindow(QMainWindow):
             self.context_toolbar.addAction(add_action)
 
             if selection:
+                set_active_action = QAction("Als aktives Projekt setzen", self)
+                set_active_action.triggered.connect(self.projects_tab._set_active)
+                self.context_toolbar.addAction(set_active_action)
+
                 edit_action = QAction("Bearbeiten", self)
                 edit_action.triggered.connect(self._edit_project)
                 self.context_toolbar.addAction(edit_action)
@@ -672,20 +574,6 @@ class MainWindow(QMainWindow):
 
                 delete_action = QAction("Löschen", self)
                 delete_action.triggered.connect(self._delete_project)
-                self.context_toolbar.addAction(delete_action)
-
-        elif tab_index == 1:  # Singers
-            add_action = QAction("Hinzufügen", self)
-            add_action.triggered.connect(self._add_singer)
-            self.context_toolbar.addAction(add_action)
-
-            if selection:
-                edit_action = QAction("Bearbeiten", self)
-                edit_action.triggered.connect(self._edit_singer)
-                self.context_toolbar.addAction(edit_action)
-
-                delete_action = QAction("Löschen", self)
-                delete_action.triggered.connect(self._delete_singer)
                 self.context_toolbar.addAction(delete_action)
 
         elif tab_index == 2:  # Events
@@ -716,6 +604,10 @@ class MainWindow(QMainWindow):
                     )
                 )
                 self.context_toolbar.addAction(open_action)
+
+                set_active_action = QAction("Als aktiven Termin setzen", self)
+                set_active_action.triggered.connect(self.events_tab._set_selected_event)
+                self.context_toolbar.addAction(set_active_action)
 
                 self.context_toolbar.addSeparator()
 
