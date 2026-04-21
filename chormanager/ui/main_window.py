@@ -576,6 +576,14 @@ class MainWindow(QMainWindow):
                 delete_action.triggered.connect(self._delete_project)
                 self.context_toolbar.addAction(delete_action)
 
+            # Search box
+            search_layout = QHBoxLayout()
+            search_box = QLineEdit()
+            search_box.setPlaceholderText("Suchen...")
+            search_box.setMaximumWidth(200)
+            search_box.textChanged.connect(self.projects_tab._load_projects)
+            self.context_toolbar.addWidget(search_box)
+
         elif tab_index == 1:  # Singers
             add_action = QAction("Hinzufügen", self)
             add_action.triggered.connect(self._add_singer)
@@ -589,6 +597,22 @@ class MainWindow(QMainWindow):
                 delete_action = QAction("Löschen", self)
                 delete_action.triggered.connect(self._delete_singer)
                 self.context_toolbar.addAction(delete_action)
+
+            # Search + filter
+            search_box = QLineEdit()
+            search_box.setPlaceholderText("Suchen...")
+            search_box.setMaximumWidth(200)
+            search_box.textChanged.connect(self.singers_tab._load_singers)
+            self.context_toolbar.addWidget(search_box)
+
+            voice_filter = QComboBox()
+            voice_filter.addItem("Alle Stimmgruppen", None)
+            from ...config import load_voice_groups
+
+            for vg in load_voice_groups():
+                voice_filter.addItem(vg["name"], vg["name"])
+            voice_filter.currentIndexChanged.connect(self.singers_tab._load_singers)
+            self.context_toolbar.addWidget(voice_filter)
 
         elif tab_index == 2:  # Events
             add_action = QAction("Neuer Termin", self)
@@ -636,6 +660,29 @@ class MainWindow(QMainWindow):
                 delete_action = QAction("Löschen", self)
                 delete_action.triggered.connect(self._delete_event)
                 self.context_toolbar.addAction(delete_action)
+
+            # Search + filter
+            search_box = QLineEdit()
+            search_box.setPlaceholderText("Suchen...")
+            search_box.setMaximumWidth(200)
+            search_box.textChanged.connect(self.events_tab._load_events)
+            self.context_toolbar.addWidget(search_box)
+
+            type_filter = QComboBox()
+            type_filter.addItem("Alle Typen", None)
+            event_types = [
+                ("gp", "Generalprobe (GP)"),
+                ("op", "Orchesterprobe (OP)"),
+                ("sofa", "Auftritt (SOFA)"),
+                ("probe", "Probe"),
+                ("konzert", "Konzert"),
+                ("auftritt", "Auftritt"),
+                ("sonstiges", "Sonstiges"),
+            ]
+            for type_code, type_name in event_types:
+                type_filter.addItem(type_name, type_code)
+            type_filter.currentIndexChanged.connect(self.events_tab._load_events)
+            self.context_toolbar.addWidget(type_filter)
 
         elif tab_index == 3:  # Aufstellung
             new_action = QAction("Neue Aufstellung", self)
