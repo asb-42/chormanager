@@ -442,6 +442,7 @@ class MainWindow(QMainWindow):
 
         # Sidebar (linke Navigationsspalte)
         sidebar = QWidget()
+        sidebar.setMinimumWidth(140)
         sidebar.setMaximumWidth(140)
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.setContentsMargins(5, 10, 5, 10)
