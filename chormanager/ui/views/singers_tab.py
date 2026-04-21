@@ -226,30 +226,18 @@ class SingersTab(QWidget):
             self.singer_repo.update(singer_id, **data)
             self._load_singers()
 
-    def _delete_singer(self):
-        """Delete selected singer."""
-        from PyQt6.QtWidgets import QMessageBox
-
-        current_row = self.table.currentRow()
-    
     def _show_context_menu(self, pos):
         """Show context menu."""
         from PyQt6.QtWidgets import QMenu
         
         menu = QMenu(self)
         edit_action = menu.addAction("Bearbeiten")
+        dup_action = menu.addAction("Duplizieren")
         
         action = menu.exec(self.table.viewport().mapToGlobal(pos))
         
         if action == edit_action:
             self._edit_singer()
+        elif action == dup_action:
+            self._duplicate_singer()
     
-    def _delete_singer(self):
-        """Delete selected singer."""
-        from PyQt6.QtWidgets import QMessageBox
-
-        current_row = self.table.currentRow()
-
-        if reply == QMessageBox.StandardButton.Yes:
-            self.singer_repo.delete(singer_id)
-            self._load_singers()
