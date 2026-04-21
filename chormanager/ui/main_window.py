@@ -442,12 +442,36 @@ class MainWindow(QMainWindow):
 
         # Sidebar (linke Navigationsspalte)
         sidebar = QWidget()
-        sidebar.setMaximumWidth(150)
+        sidebar.setMaximumWidth(140)
         sidebar_layout = QVBoxLayout(sidebar)
         sidebar_layout.setContentsMargins(5, 10, 5, 10)
         sidebar_layout.setSpacing(5)
 
-        # Info-Bereich oben
+        # Navigation buttons (OBEN zuerst)
+        self.nav_projects = QPushButton("📁 Projekte")
+        self.nav_projects.setCheckable(True)
+        self.nav_projects.setChecked(True)
+        self.nav_projects.clicked.connect(lambda: self._switch_view(0))
+        sidebar_layout.addWidget(self.nav_projects)
+
+        self.nav_singers = QPushButton("👤 Sänger")
+        self.nav_singers.setCheckable(True)
+        self.nav_singers.clicked.connect(lambda: self._switch_view(1))
+        sidebar_layout.addWidget(self.nav_singers)
+
+        self.nav_events = QPushButton("📅 Termine")
+        self.nav_events.setCheckable(True)
+        self.nav_events.clicked.connect(lambda: self._switch_view(2))
+        sidebar_layout.addWidget(self.nav_events)
+
+        self.nav_formations = QPushButton("🎵 Aufstellung")
+        self.nav_formations.setCheckable(True)
+        self.nav_formations.clicked.connect(lambda: self._switch_view(3))
+        sidebar_layout.addWidget(self.nav_formations)
+
+        sidebar_layout.addStretch()
+
+        # Info-Bereich (unten)
         self.project_info_label = QLabel()
         self.project_info_label.setObjectName("projectInfoLabel")
         self.project_info_label.setVisible(False)
@@ -457,10 +481,8 @@ class MainWindow(QMainWindow):
         self.event_info_label = QLabel()
         self.event_info_label.setObjectName("eventInfoLabel")
         self.event_info_label.setVisible(False)
-        self.event_info_label.setWordWrap(True)
+self.event_info_label.setWordWrap(True)
         sidebar_layout.addWidget(self.event_info_label)
-
-        sidebar_layout.addSpacing(10)
 
         # Context toolbar (Actions)
         self.context_toolbar = QToolBar("Aktionen")
@@ -511,38 +533,6 @@ class MainWindow(QMainWindow):
 
         splitter.addWidget(self.content_stack)
         splitter.setStretchFactor(1, 1)
-
-        # Sidebar navigation buttons
-        nav_widget = QWidget()
-        nav_layout = QVBoxLayout(nav_widget)
-        nav_layout.setSpacing(2)
-
-        self.nav_projects = QPushButton("📁 Projekte")
-        self.nav_projects.setCheckable(True)
-        self.nav_projects.setChecked(True)
-        self.nav_projects.clicked.connect(lambda: self._switch_view(0))
-        nav_layout.addWidget(self.nav_projects)
-
-        self.nav_singers = QPushButton("👤 Sänger")
-        self.nav_singers.setCheckable(True)
-        self.nav_singers.clicked.connect(lambda: self._switch_view(1))
-        nav_layout.addWidget(self.nav_singers)
-
-        self.nav_events = QPushButton("📅 Termine")
-        self.nav_events.setCheckable(True)
-        self.nav_events.clicked.connect(lambda: self._switch_view(2))
-        nav_layout.addWidget(self.nav_events)
-
-        self.nav_formations = QPushButton("🎵 Aufstellung")
-        self.nav_formations.setCheckable(True)
-        self.nav_formations.clicked.connect(lambda: self._switch_view(3))
-        nav_layout.addWidget(self.nav_formations)
-
-        nav_layout.addStretch()
-
-        # Insert nav before info labels in sidebar
-        sidebar_layout.insertWidget(0, nav_widget)
-        nav_widget.setMaximumWidth(140)
 
         # Connect selection signals
         self.projects_tab.table.selectionModel().selectionChanged.connect(
