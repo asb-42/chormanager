@@ -226,6 +226,53 @@ class SingersTab(QWidget):
             self.singer_repo.update(singer_id, **data)
             self._load_singers()
 
+    def _delete_singer(self):
+        """Delete selected singer."""
+        from PyQt6.QtWidgets import QMessageBox
+
+        current_row = self.table.currentRow()
+        if current_row < 0:
+            QMessageBox.information(
+                self, "Information", "Bitte wählen Sie einen Sänger aus"
+            )
+            return
+
+        item = self.table.item(current_row, 0)
+        singer_id = item.data(Qt.ItemDataRole.UserRole)
+
+        reply = QMessageBox.question(
+            self, "Löschen",
+            "Möchten Sie diesen Sänger wirklich löschen?\n\n"
+            "Alle Verknüpfungen (Verfügbarkeiten) werden ebenfalls gelöscht.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            self.singer_repo.delete(singer_id)
+            self._load_singers()
+
+    def _duplicate_singer(self):
+        """Duplicate selected singer."""
+        current_row = self.table.currentRow()
+        if current_row < 0:
+            return
+        
+        item = self.table.item(current_row, 0)
+        singer_id = item.data(Qt.ItemDataRole.UserRole)
+        
+        singer = self.singer_repo.get_by_id(singer_id)
+        if not singer:
+            return
+        
+        # Create duplicate with "(Kopie)" suffix
+        singer_dict = singer.to_dict()
+        singer_dict.pop('id', None)
+        singer_dict.pop('created_at', None)
+        singer_dict.pop('updated_at', None)
+        singer_dict['full_name'] = f"{singer.full_name} (Kopie)"
+        
+        self.singer_repo.create(**singer_dict)
+        self._load_singers()
+
     def _show_context_menu(self, pos):
         """Show context menu."""
         from PyQt6.QtWidgets import QMenu
