@@ -854,6 +854,9 @@ class MainWindow(QMainWindow):
     def _delete_formation(self):
         self.choraufstellung_tab._delete_formation()
 
+    def _new_formation(self):
+        self.choraufstellung_tab._load_from_chormanager()
+
     def _undo(self):
         """Undo last action."""
         if self.history.can_undo():
