@@ -795,11 +795,11 @@ class MainWindow(QMainWindow):
             self.event_info_label.setVisible(False)
 
     def _on_tab_changed(self, index):
-        """Handle tab change."""
         if index == 2:
             self.events_tab._load_events()
         elif index == 3:
             QTimer.singleShot(0, self.choraufstellung_tab._load_formations)
+        self._emit_selection(index)
 
     def _create_status_bar(self):
         """Create status bar."""
@@ -827,8 +827,32 @@ class MainWindow(QMainWindow):
         self.singers_tab._edit_singer()
 
     def _delete_singer(self):
-        """Delete selected singer."""
         self.singers_tab._delete_singer()
+
+    def _edit_event(self):
+        self.events_tab._edit_event()
+
+    def _delete_event(self):
+        self.events_tab._delete_event()
+
+    def _duplicate_event(self):
+        self.events_tab._duplicate_event()
+
+    def _manage_availability(self):
+        self.events_tab._manage_availability()
+
+    def _open_choraufstellung_for_event(self, event):
+        self.tabs.setCurrentIndex(3)
+        QTimer.singleShot(100, lambda: self.choraufstellung_tab.load_for_event(event))
+
+    def _edit_formation(self):
+        self.choraufstellung_tab._edit_formation()
+
+    def _duplicate_formation(self):
+        self.choraufstellung_tab._duplicate_formation()
+
+    def _delete_formation(self):
+        self.choraufstellung_tab._delete_formation()
 
     def _undo(self):
         """Undo last action."""
@@ -1322,10 +1346,19 @@ class MainWindow(QMainWindow):
 
     def _new_projekt(self):
         """Create new project."""
-        self.tabs.setCurrentIndex(0)
-        QMessageBox.information(
-            self, "Neues Projekt", "Bitte im Tab 'Projekte' auf 'Hinzufügen' klicken."
-        )
+        self.projects_tab._add_project()
+
+    def _edit_project(self):
+        """Edit selected project."""
+        self.projects_tab._edit_project()
+
+    def _delete_project(self):
+        """Delete selected project."""
+        self.projects_tab._delete_project()
+
+    def _duplicate_project(self):
+        """Duplicate selected project."""
+        self.projects_tab._duplicate_project()
 
     def _save_projekt(self):
         """Save current project."""
