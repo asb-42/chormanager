@@ -799,6 +799,7 @@ class MainWindow(QMainWindow):
             self.events_tab._load_events()
         elif index == 3:
             QTimer.singleShot(0, self.choraufstellung_tab._load_formations)
+        self._emit_selection(index)
 
     def _create_status_bar(self):
         """Create status bar."""
