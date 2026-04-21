@@ -481,7 +481,7 @@ class MainWindow(QMainWindow):
         self.event_info_label = QLabel()
         self.event_info_label.setObjectName("eventInfoLabel")
         self.event_info_label.setVisible(False)
-self.event_info_label.setWordWrap(True)
+        self.event_info_label.setWordWrap(True)
         sidebar_layout.addWidget(self.event_info_label)
 
         # Context toolbar (Actions)
