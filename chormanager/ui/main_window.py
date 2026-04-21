@@ -445,6 +445,14 @@ class MainWindow(QMainWindow):
         self.event_info_label.setVisible(False)
         layout.addWidget(self.event_info_label)
 
+        # Context-sensitive action toolbar (ABOVE tabs)
+        self.context_toolbar = QToolBar("Aktionen")
+        self.context_toolbar.setToolButtonStyle(
+            Qt.ToolButtonStyle.ToolButtonTextBesideIcon
+        )
+        self.context_toolbar.setMovable(False)
+        layout.addWidget(self.context_toolbar)
+
         self.current_event = None
 
         from .views.projects_tab import ProjectsTab
@@ -489,14 +497,6 @@ class MainWindow(QMainWindow):
         self.choraufstellung_tab.table.selectionModel().selectionChanged.connect(
             lambda: self._emit_selection(3)
         )
-
-        # Context-sensitive action toolbar
-        self.context_toolbar = QToolBar("Aktionen")
-        self.context_toolbar.setToolButtonStyle(
-            Qt.ToolButtonStyle.ToolButtonTextBesideIcon
-        )
-        self.context_toolbar.setMovable(False)
-        layout.addWidget(self.context_toolbar)
 
     def _emit_selection(self, tab_index):
         """Emit selection signal with current selected item for given tab.
