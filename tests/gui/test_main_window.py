@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 def mock_app(qtbot):
     """Create mock application for testing."""
     from PyQt6.QtWidgets import QApplication
+
     app = QApplication.instance()
     if app is None:
         app = QApplication([])
@@ -21,15 +22,15 @@ def mock_app(qtbot):
 def main_window(qtbot, tmp_path):
     """Create main window for testing."""
     from chormanager.ui.main_window import MainWindow
-    
+
     # Create a temporary database
     db_path = tmp_path / "test.db"
-    
+
     window = MainWindow(db_path=str(db_path))
     qtbot.addWidget(window)
-    
+
     yield window
-    
+
     window.close()
 
 
@@ -43,14 +44,18 @@ class TestMainWindow:
     def test_singers_table_exists(self, main_window):
         """Test singers table is created."""
         from PyQt6.QtWidgets import QTableWidget
+
         table = main_window.findChild(QTableWidget)
         assert table is not None
 
     def test_add_button_exists(self, main_window):
-        """Test add button exists."""
-        from PyQt6.QtWidgets import QPushButton
-        buttons = main_window.findChildren(QPushButton)
-        assert any(b.text() == "Hinzufügen" for b in buttons)
+        """Test add action exists in context toolbar."""
+        from PyQt6.QtWidgets import QToolBar
+
+        toolbars = main_window.findChildren(QToolBar)
+        # Find toolbar named "Aktionen"
+        toolbar = next((t for t in toolbars if t.windowTitle() == "Aktionen"), None)
+        assert toolbar is not None, "Context toolbar not found"
 
     def test_menu_exists(self, main_window):
         """Test menu bar exists."""

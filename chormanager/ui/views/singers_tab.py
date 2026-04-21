@@ -39,19 +39,6 @@ class SingersTab(QWidget):
         layout = QVBoxLayout(self)
 
         toolbar = QHBoxLayout()
-
-        add_button = QPushButton("Hinzufügen")
-        add_button.clicked.connect(self._add_singer)
-        toolbar.addWidget(add_button)
-
-        edit_button = QPushButton("Bearbeiten")
-        edit_button.clicked.connect(self._edit_singer)
-        toolbar.addWidget(edit_button)
-
-        delete_button = QPushButton("Löschen")
-        delete_button.clicked.connect(self._delete_singer)
-        toolbar.addWidget(delete_button)
-
         toolbar.addStretch()
 
         self.search_box = QLineEdit()
@@ -77,7 +64,7 @@ class SingersTab(QWidget):
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.doubleClicked.connect(self._edit_singer)
-        
+
         self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self._show_context_menu)
 
@@ -94,9 +81,9 @@ class SingersTab(QWidget):
             "city",
         ]
         fields = load_fields()
-        self.visible_fields = [
-            f for f in fields if f["name"] in visible_fields
-        ] + [{"name": "id", "label": "UUID"}]
+        self.visible_fields = [f for f in fields if f["name"] in visible_fields] + [
+            {"name": "id", "label": "UUID"}
+        ]
 
         self.project_filter = None
 
@@ -161,11 +148,14 @@ class SingersTab(QWidget):
             for col, field in enumerate(self.visible_fields):
                 name = field["name"]
                 field_type = field.get("type", "string")
-                
+
                 if name == "is_adult":
                     age = singer.age()
                     value = str(age) if age is not None else ""
-                elif field_type == "computed" and field.get("computed_from") == "birth_date":
+                elif (
+                    field_type == "computed"
+                    and field.get("computed_from") == "birth_date"
+                ):
                     age = singer.age()
                     value = str(age) if age is not None else ""
                 else:
@@ -241,10 +231,11 @@ class SingersTab(QWidget):
         singer_id = item.data(Qt.ItemDataRole.UserRole)
 
         reply = QMessageBox.question(
-            self, "Löschen",
+            self,
+            "Löschen",
             "Möchten Sie diesen Sänger wirklich löschen?\n\n"
             "Alle Verknüpfungen (Verfügbarkeiten) werden ebenfalls gelöscht.",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
         if reply == QMessageBox.StandardButton.Yes:
             self.singer_repo.delete(singer_id)
@@ -255,36 +246,35 @@ class SingersTab(QWidget):
         current_row = self.table.currentRow()
         if current_row < 0:
             return
-        
+
         item = self.table.item(current_row, 0)
         singer_id = item.data(Qt.ItemDataRole.UserRole)
-        
+
         singer = self.singer_repo.get_by_id(singer_id)
         if not singer:
             return
-        
+
         # Create duplicate with "(Kopie)" suffix
         singer_dict = singer.to_dict()
-        singer_dict.pop('id', None)
-        singer_dict.pop('created_at', None)
-        singer_dict.pop('updated_at', None)
-        singer_dict['full_name'] = f"{singer.full_name} (Kopie)"
-        
+        singer_dict.pop("id", None)
+        singer_dict.pop("created_at", None)
+        singer_dict.pop("updated_at", None)
+        singer_dict["full_name"] = f"{singer.full_name} (Kopie)"
+
         self.singer_repo.create(**singer_dict)
         self._load_singers()
 
     def _show_context_menu(self, pos):
         """Show context menu."""
         from PyQt6.QtWidgets import QMenu
-        
+
         menu = QMenu(self)
         edit_action = menu.addAction("Bearbeiten")
         dup_action = menu.addAction("Duplizieren")
-        
+
         action = menu.exec(self.table.viewport().mapToGlobal(pos))
-        
+
         if action == edit_action:
             self._edit_singer()
         elif action == dup_action:
             self._duplicate_singer()
-    
