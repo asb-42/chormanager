@@ -48,7 +48,7 @@ class Singer:
             return age >= 18
         except (ValueError, OSError):
             return False
-    
+
     def age(self) -> Optional[int]:
         """Return age in years, or None if no birth_date."""
         if not self.birth_date:
@@ -135,6 +135,7 @@ class Event:
     name: str = ""
     date: str = ""
     event_type: str = ""
+    location: Optional[str] = None
     description: Optional[str] = None
     project_id: Optional[str] = None
     created_at: str = ""
