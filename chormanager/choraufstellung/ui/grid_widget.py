@@ -573,6 +573,23 @@ class FormationGrid(QWidget):
                 s.col = -1
         self.refresh_grid()
     
+    def optimize(self, primary_rule=None, refinement_rules=None):
+        """Run optimizer with given rules."""
+        rule_ids = []
+        if primary_rule:
+            rule_ids.append(primary_rule)
+        if refinement_rules:
+            rule_ids.extend(refinement_rules)
+        
+        if not rule_ids:
+            return
+        
+        try:
+            from core.optimizer import FormationOptimizer
+            FormationOptimizer.run(self, rule_ids)
+        except Exception as e:
+            print(f"Optimization error: {e}")
+    
     # --- Drag & Drop handlers ---
     
     def dragEnterEvent(self, e):

@@ -116,6 +116,9 @@ class ProjectsTab(QWidget):
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.doubleClicked.connect(self._edit_project)
         
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._show_context_menu)
+        
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(["Name", "Beschreibung", "Aktiv", "Anz. Termine"])
         self.table.horizontalHeader().setStretchLastSection(True)
@@ -213,9 +216,46 @@ class ProjectsTab(QWidget):
             data = {k: v for k, v in data.items() if v is not None}
             self.project_repo.update(project.id, **data)
             self._load_projects()
-            
-            if self.current_project and self.current_project.id == project.id:
-                self.current_project = self.project_repo.get_by_id(project.id)
+    
+    def _show_context_menu(self, pos):
+        """Show context menu."""
+        from PyQt6.QtWidgets import QMenu
+        
+        menu = QMenu(self)
+        edit_action = menu.addAction("Bearbeiten")
+        dup_action = menu.addAction("Duplizieren")
+        
+        action = menu.exec(self.table.viewport().mapToGlobal(pos))
+        
+        if action == edit_action:
+            self._edit_project()
+        elif action == dup_action:
+            self._duplicate_project()
+    
+    def _duplicate_project(self):
+        """Duplicate selected project."""
+        current_row = self.table.currentRow()
+        if current_row < 0:
+            return
+        
+        item = self.table.item(current_row, 0)
+        project_name = item.text()
+        
+        projects = self.project_repo.get_all()
+        project = next((p for p in projects if p.name == project_name), None)
+        
+        if not project:
+            return
+        
+        new_project = self.project_repo.create(
+            name=f"{project.name} (Kopie)",
+            description=project.description,
+            is_active=False
+        )
+        
+        dialog = ProjectDialog(project=new_project, parent=self)
+        dialog.exec()
+        self._load_projects()
     
     def _delete_project(self):
         """Delete selected project."""

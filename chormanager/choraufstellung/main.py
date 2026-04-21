@@ -68,6 +68,11 @@ except ImportError:
     def get_data_dir(): return "."
 
 try:
+    from PyQt6.QtWidgets import QDialog
+except ImportError:
+    from PyQt5.QtWidgets import QDialog
+
+try:
     from singer_model import Singer, VoiceGroup, voice_group_color
     from storage import FormationStorage
     from pdf_export import PDFExporter
@@ -75,7 +80,9 @@ try:
     from core.grid_engine import GridEngine, GridConfig
     from ui.optimizer_dialog import OptimizerDialog
 except ImportError:
-    class VoiceGroup: pass
+    from enum import Enum
+    class VoiceGroup(Enum):
+        SOPRAN_1 = "Sopran 1"
     def voice_group_color(vg): return "#cccccc"
     class Singer:
         def __init__(self, name, voice_group, height=0, singer_id="1"):
@@ -88,6 +95,10 @@ except ImportError:
     class FormationOptimizer:
         @staticmethod
         def run(*a): return None
+    class OptimizerDialog(QDialog):
+        def __init__(self, parent=None):
+            super().__init__(parent)
+            self.setWindowTitle("Optimierung nicht verfügbar")
     class GridEngine:
         def __init__(self, *a): pass
 
@@ -729,6 +740,22 @@ class FormationGrid(QWidget):
                 s.col = -1
         self.refresh_grid()
     
+    def optimize(self, primary_rule=None, refinement_rules=None):
+        rule_ids = []
+        if primary_rule:
+            rule_ids.append(primary_rule)
+        if refinement_rules:
+            rule_ids.extend(refinement_rules)
+        
+        if not rule_ids:
+            return
+        
+        try:
+            from core.optimizer import FormationOptimizer
+            FormationOptimizer.run(self, rule_ids)
+        except Exception as e:
+            print(f"Optimization error: {e}")
+    
     def dragMoveEvent(self, e):
         e.acceptProposedAction()
     
@@ -1198,9 +1225,9 @@ class MainWindow(QMainWindow):
         f.addAction(QAction("Speichern", self, shortcut="Ctrl+S", triggered=self.save_f))
         f.addAction(QAction("Speichern unter...", self, shortcut="Ctrl+Shift+S", triggered=self.save_as_f))
         f.addSeparator()
-        f.addAction(QAction("PDF Export...", self, shortcut="Ctrl+E", triggered=self.show_print_preview))
+        f.addAction(QAction("PDF Export...", self, shortcut="Ctrl+E", triggered=self.export_pdf))
         f.addAction(QAction("Druckvorschau...", self, shortcut="Ctrl+Shift+P", triggered=self.show_print_preview))
-        f.addAction(QAction("Drucken...", self, shortcut="Ctrl+P", triggered=self.export_pdf))
+        f.addAction(QAction("Drucken...", self, shortcut="Ctrl+P", triggered=self.do_print))
         f.addSeparator()
         f.addAction(QAction("Import CSV/TXT...", self, shortcut="Ctrl+I", triggered=self.pool.do_import))
         f.addAction(QAction("Beenden", self, shortcut="Ctrl+Q", triggered=self.close))
@@ -1342,26 +1369,43 @@ class MainWindow(QMainWindow):
     def save_as_f(self):
         from config import get_data_dir
         data_dir = get_data_dir()
-        fp, _ = QFileDialog.getSaveFileName(self, "Speichern", data_dir, "JSON (*.json)")
+        auto_name = self.generate_filename(
+            os.environ.get("CHOR_EVENT_DATE", ""),
+            os.environ.get("CHOR_EVENT_NAME", "")
+        )
+        fp, _ = QFileDialog.getSaveFileName(self, "Speichern", os.path.join(data_dir, auto_name), "JSON (*.json)")
         if not fp:
             return False
         if not fp.endswith(".json"):
             fp += ".json"
-        return self._save_file(fp)
+        
+        metadata = {
+            "project": os.environ.get("CHOR_PROJECT", ""),
+            "event": os.environ.get("CHOR_EVENT_NAME", ""),
+            "event_date": os.environ.get("CHOR_EVENT_DATE", "")[:10] if os.environ.get("CHOR_EVENT_DATE") else ""
+        }
+        return self._save_file(fp, metadata=metadata)
 
-    def _save_file(self, fp):
+    def _save_file(self, fp, metadata: dict = None):
         placed = self.grid.get_placed_singers()
         singers = self.singers
         rows = self.grid.rows
         cols = self.grid.cols
         staggered = self.grid.staggered
         
-        if self.storage.save_formation(singers, rows, cols, fp, placed, staggered):
+        if self.storage.save_formation(singers, rows, cols, fp, placed, staggered, metadata=metadata):
             self.file = fp
             self.is_modified = False
             return True
         return False
-        return False
+    
+    def generate_filename(self, event_date: str, event_name: str = None) -> str:
+        """Generate auto filename: choraufstellung-DATE-version-DATE.json"""
+        from datetime import datetime
+        today = datetime.now().strftime("%Y-%m-%d")
+        name_part = event_name.replace(" ", "-") if event_name else "event"
+        date_part = event_date[:10] if event_date else today
+        return f"choraufstellung-{date_part}-version-{today}.json"
 
     def _autosave_check(self):
         if not self.is_modified:
@@ -1403,14 +1447,52 @@ class MainWindow(QMainWindow):
         self.update_grid_count()
 
     def show_print_preview(self):
-        self.pdf.show_print_preview(self)
+        from PyQt6.QtPrintSupport import QPrinter, QPrintPreviewDialog
+        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+        dlg = QPrintPreviewDialog(printer, self)
+        dlg.setWindowTitle("Druckvorschau")
+        dlg.paintRequested.connect(lambda p: self.pdf.print_formation(
+            self.singers, self.grid.rows, self.grid.cols, p
+        ))
+        dlg.exec()
 
     def export_pdf(self):
-        self.pdf.export_pdf(self)
+        from PyQt6.QtWidgets import QFileDialog
+        fp, _ = QFileDialog.getSaveFileName(
+            self, "PDF exportieren", "", "PDF (*.pdf)"
+        )
+        if fp:
+            if not fp.endswith(".pdf"):
+                fp += ".pdf"
+            self.pdf.export_formation(
+                self.singers,
+                self.grid.rows,
+                self.grid.cols,
+                fp,
+                staggered=self.grid.staggered
+            )
+
+    def do_print(self):
+        from PyQt6.QtPrintSupport import QPrinter, QPrintDialog
+        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
+        dlg = QPrintDialog(printer, self)
+        dlg.setWindowTitle("Drucken")
+        if dlg.exec() == QPrintDialog.DialogCode.Accepted:
+            self.pdf.print_formation(
+                self.singers,
+                self.grid.rows,
+                self.grid.cols,
+                printer
+            )
 
     def run_optimizer(self):
         d = OptimizerDialog(self)
-        d.exec()
+        if d.exec() == QDialog.DialogCode.Accepted:
+            rules = d.get_selected_rules()
+            if rules:
+                primary = d.get_primary_rule()
+                refinement = d.get_refinement_rules()
+                self.grid.optimize(primary, refinement)
 
     def show_cfg(self):
         d = VoicingConfigDialog(self)
@@ -1563,7 +1645,7 @@ class MainWindow(QMainWindow):
                 for vg_name, vg in vg_to_enum.items():
                     if vg_name.startswith(vg_str):
                         return vg
-                return VoiceGroup.SOPRAN
+                return VoiceGroup.SOPRAN_1
             
             for row in rows:
                 singer_id = row["id"]
@@ -1585,6 +1667,23 @@ class MainWindow(QMainWindow):
             
         except Exception as e:
             print(f"Error loading from chormanager: {e}")
+    
+    def _load_formation_data(self, data: dict):
+        """Load formation data from dict (used when opening saved file)."""
+        self.singers = data.get("singers", [])
+        for s in self.singers:
+            if not hasattr(s, 'affinity'):
+                s.affinity = ""
+        self.grid.singers = [s for s in self.singers if s.row >= 0]
+        self.grid.rows = data.get("rows", 3)
+        self.grid.cols = data.get("cols", 4)
+        self.grid.staggered = data.get("staggered", False)
+        self.grid.refresh_grid()
+        self.pool.singers = self.singers
+        self.pool.placed_singer_ids = self.grid.get_placed_singer_ids()
+        self.pool.update_singers(self.singers, self.pool.placed_singer_ids)
+        self.is_modified = False
+        self.update_grid_count()
 
 
 def main():
@@ -1592,9 +1691,18 @@ def main():
     event_date = os.environ.get("CHOR_EVENT_DATE", "")
     event_id = os.environ.get("CHOR_EVENT_ID", "")
     db_path = os.environ.get("CHOR_DB_PATH", "")
-    chormanager_mode = bool(event_date or event_id or db_path)
+    chor_file = os.environ.get("CHOR_FILE", "")
+    chormanager_mode = bool(event_date or event_id or db_path or chor_file)
     
     app = QApplication(sys.argv); app.setStyle("Fusion")
     w = MainWindow(chormanager_mode=chormanager_mode, event_id=event_id)
+    
+    if chor_file and os.path.exists(chor_file):
+        w.file = chor_file
+        w.storage.filepath = chor_file
+        data = w.storage.load_formation(chor_file)
+        if data:
+            w._load_formation_data(data)
+    
     w.show()
     sys.exit(app.exec())

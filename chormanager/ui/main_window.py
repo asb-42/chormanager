@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (
     QMessageBox, QDialog, QLabel, QLineEdit, QComboBox, QFormLayout,
     QDateEdit, QTextEdit, QGroupBox, QToolBar, QStatusBar, QTabWidget
 )
-from PyQt6.QtCore import Qt, QDate
+from PyQt6.QtCore import Qt, QDate, QTimer
 from PyQt6.QtGui import QAction, QKeySequence
 
 from ..data.database import Database
@@ -125,6 +125,12 @@ class SingerDialog(QDialog):
         button_box.addWidget(cancel_button)
         
         layout.addRow(button_box)
+        
+        if self.singer:
+            age = self.singer.age()
+            if age is not None:
+                age_label = QLabel(f"Alter: {age} Jahre")
+                layout.addRow(age_label)
     
     def _populate_from_singer(self):
         """Populate fields from singer data."""
@@ -184,6 +190,12 @@ class SingerDialog(QDialog):
             elif isinstance(widget, QComboBox):
                 value = widget.currentData()
                 data[name] = value
+        
+        # Map yearmonth fields to DB column names
+        yearmonth_map = {"joined": "joined_year", "left": "left_year"}
+        for old_name, new_name in yearmonth_map.items():
+            if old_name in data:
+                data[new_name] = data.pop(old_name)
         
         return data
 
@@ -473,6 +485,8 @@ class MainWindow(QMainWindow):
         """Handle tab change."""
         if index == 2:
             self.events_tab._load_events()
+        elif index == 3:
+            QTimer.singleShot(0, self.choraufstellung_tab._load_formations)
     
     def _create_status_bar(self):
         """Create status bar."""
@@ -1000,6 +1014,10 @@ class MainWindow(QMainWindow):
     
     def _open_choraufstellung(self):
         """Open Choraufstellung app with current project/event data."""
+        self._open_choraufstellung_file(None)
+    
+    def _open_choraufstellung_file(self, filepath: str = None):
+        """Open ChorAufstellung app, optionally with a specific file."""
         import subprocess
         import os
         import sqlite3
@@ -1017,6 +1035,7 @@ class MainWindow(QMainWindow):
         project = self.projects_tab.current_project if hasattr(self, 'projects_tab') else None
         
         event = None
+        event_id = None
         current_row = self.events_tab.table.currentRow() if hasattr(self, 'events_tab') else -1
         
         if current_row >= 0:
@@ -1032,6 +1051,8 @@ class MainWindow(QMainWindow):
             vars_to_pass.append(f"CHOR_EVENT_DATE={event.date[:10]}")
             vars_to_pass.append(f"CHOR_EVENT_NAME={event.name}")
             vars_to_pass.append(f"CHOR_EVENT_ID={event.id}")
+        if filepath:
+            vars_to_pass.append(f"CHOR_FILE={filepath}")
         
         env = os.environ.copy()
         for var in vars_to_pass:
@@ -1042,8 +1063,9 @@ class MainWindow(QMainWindow):
         env["CHOR_DB_PATH"] = db_path
         
         debug_info = f"Übergabe: {', '.join(vars_to_pass)}\n"
-        debug_info += f"Event: {event.name} am {event.date[:10] if event else 'NIX'}\n"
-        debug_info += f"current_row={current_row}, event_id={event_id if current_row >= 0 else 'NIX'}\n\n"
+        debug_info += f"Project: {project.name if project else 'NIX'}\n"
+        debug_info += f"Event: {event.name if event and event.date else 'NIX'}\n"
+        debug_info += f"current_row={current_row}, event_id={event_id if event_id else 'NIX'}\n\n"
         
         if event and os.path.exists(db_path):
             try:
@@ -1084,11 +1106,12 @@ class MainWindow(QMainWindow):
         try:
             main_py = os.path.join(choraufstellung_path, "__main__.py")
             if os.path.exists(main_py):
-                subprocess.Popen(
+                subprocess.run(
                     [sys.executable, main_py],
                     cwd=choraufstellung_path,
                     env=env
                 )
+                self.choraufstellung_tab._load_formations()
             lay.addWidget(close_btn)
             d.exec()
         except Exception as e:

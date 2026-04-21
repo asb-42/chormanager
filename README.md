@@ -204,3 +204,25 @@ chormanager/
 ### Version 0.x
 
 - Ursprüngliche Version mit Sänger-Verwaltung
+
+---
+
+### Änderungen heute (2026-04-21)
+
+**ChorManager → Choraufstellung Integration:**
+- Neuer Tab "Aufstellung" zeigt alle JSON-Aufstellungsdateien
+- Spalten: Dateiname, Dateigröße, Projekt, Termin (Datum), Typ (Event-Name), Gespeichert
+- Automatischer Dateiname beim Speichern
+- Metadaten in JSON: Projekt, Termin, Termin-Datum
+- Tab-Refresh bei Rückkehr aus Choraufstellung
+- Kontextmenü: "Bearbeiten", "Duplizieren"
+
+**Choraufstellung App:**
+- Optimiert aufstellen funktioniert wieder
+- PDF-Export: Automatische Querformat-Erkennung
+- PDF-Export: Versetztes Raster unterstützt
+- Druck-Menü getrennt
+
+**DB-Schema:**
+- `address` ersetzt durch `street`, `postal_code`, `city`
+- Tests aktualisiert

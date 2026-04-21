@@ -84,6 +84,9 @@ class EventsTab(QWidget):
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._show_context_menu)
         self.table.doubleClicked.connect(self._edit_event)
         self.table.selectionModel().selectionChanged.connect(self._on_selection_changed)
         
@@ -282,6 +285,47 @@ class EventsTab(QWidget):
         dialog = EventAvailabilityDialog(self.db, event, self)
         dialog.exec()
         
+        self._load_events()
+    
+    def _show_context_menu(self, pos):
+        """Show context menu."""
+        from PyQt6.QtWidgets import QMenu
+        
+        menu = QMenu(self)
+        edit_action = menu.addAction("Bearbeiten")
+        dup_action = menu.addAction("Duplizieren")
+        
+        action = menu.exec(self.table.viewport().mapToGlobal(pos))
+        
+        if action == edit_action:
+            self._edit_event()
+        elif action == dup_action:
+            self._duplicate_event()
+    
+    def _duplicate_event(self):
+        """Duplicate selected event."""
+        current_row = self.table.currentRow()
+        if current_row < 0:
+            return
+        
+        item = self.table.item(current_row, 0)
+        event_id = item.data(Qt.ItemDataRole.UserRole)
+        
+        event = self.event_repo.get_by_id(event_id)
+        if not event:
+            return
+        
+        new_event = self.event_repo.create(
+            name=f"{event.name} (Kopie)",
+            date=event.date,
+            event_type=event.event_type,
+            project_id=event.project_id,
+            location=event.location,
+            description=event.description
+        )
+        
+        dialog = EventDialog(event=new_event, db=self.db, parent=self)
+        dialog.exec()
         self._load_events()
     
     def _set_selected_event(self):

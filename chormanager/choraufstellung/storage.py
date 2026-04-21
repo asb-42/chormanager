@@ -19,7 +19,8 @@ class FormationStorage:
                        filepath: Optional[str] = None,
                        placed_singers: List[Tuple] = None,
                        staggered: bool = False,
-                       voicing_config: List[str] = None) -> bool:
+                       voicing_config: List[str] = None,
+                       metadata: Dict[str, Any] = None) -> bool:
         """Save formation data to JSON file"""
         target_path = filepath or self.filepath
         if not target_path:
@@ -43,12 +44,15 @@ class FormationStorage:
                     singers_data.append(singer.to_dict())
             
             data = {
+                "version": "1.0",
+                "saved_at": datetime.now().isoformat(),
                 "rows": rows,
                 "cols": cols,
                 "staggered": staggered,
                 "voicing_config": voicing_config or [],
                 "singers": singers_data,
-                "placed": placed_data
+                "placed": placed_data,
+                "metadata": metadata or {}
             }
             
             directory = os.path.dirname(target_path)

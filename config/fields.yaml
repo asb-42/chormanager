@@ -21,9 +21,8 @@ fields:
     order: 3
 
   - name: "is_adult"
-    label: "Volljährig"
-    type: "computed"
-    computed_from: "birth_date"
+    label: "Alter"
+    type: "integer"
     order: 4
 
   - name: "voice_group"

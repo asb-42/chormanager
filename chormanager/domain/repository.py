@@ -12,7 +12,7 @@ class SingerRepository:
     
     _SINGER_COLS = [
         'id', 'full_name', 'short_name', 'birth_date', 'voice_group', 'email', 'phone',
-        'address', 'gender', 'social_contacts', 'joined_year', 'joined_month',
+        'gender', 'social_contacts', 'joined_year', 'joined_month',
         'left_year', 'left_month', 'affinity_uuid', 'created_at', 'updated_at',
         'street', 'postal_code', 'city', 'guardian1', 'guardian1_phone', 'guardian2', 'guardian2_phone'
     ]

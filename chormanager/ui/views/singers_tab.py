@@ -77,6 +77,9 @@ class SingersTab(QWidget):
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.doubleClicked.connect(self._edit_singer)
+        
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._show_context_menu)
 
         visible_fields = [
             "full_name",
@@ -160,9 +163,11 @@ class SingersTab(QWidget):
                 field_type = field.get("type", "string")
                 
                 if name == "is_adult":
-                    value = "ja" if singer.is_adult() else "nein"
+                    age = singer.age()
+                    value = str(age) if age is not None else ""
                 elif field_type == "computed" and field.get("computed_from") == "birth_date":
-                    value = "ja" if singer.is_adult() else "nein"
+                    age = singer.age()
+                    value = str(age) if age is not None else ""
                 else:
                     value = getattr(singer, name, "")
 
@@ -226,22 +231,24 @@ class SingersTab(QWidget):
         from PyQt6.QtWidgets import QMessageBox
 
         current_row = self.table.currentRow()
+    
+    def _show_context_menu(self, pos):
+        """Show context menu."""
+        from PyQt6.QtWidgets import QMenu
+        
+        menu = QMenu(self)
+        edit_action = menu.addAction("Bearbeiten")
+        
+        action = menu.exec(self.table.viewport().mapToGlobal(pos))
+        
+        if action == edit_action:
+            self._edit_singer()
+    
+    def _delete_singer(self):
+        """Delete selected singer."""
+        from PyQt6.QtWidgets import QMessageBox
 
-        if current_row < 0:
-            QMessageBox.information(
-                self, "Information", "Bitte wählen Sie einen Sänger aus"
-            )
-            return
-
-        item = self.table.item(current_row, 0)
-        singer_id = item.data(Qt.ItemDataRole.UserRole)
-
-        reply = QMessageBox.question(
-            self,
-            "Löschen",
-            "Möchten Sie diesen Sänger wirklich löschen?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        )
+        current_row = self.table.currentRow()
 
         if reply == QMessageBox.StandardButton.Yes:
             self.singer_repo.delete(singer_id)

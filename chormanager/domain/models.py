@@ -48,6 +48,16 @@ class Singer:
             return age >= 18
         except (ValueError, OSError):
             return False
+    
+    def age(self) -> Optional[int]:
+        """Return age in years, or None if no birth_date."""
+        if not self.birth_date:
+            return None
+        try:
+            birth = datetime.strptime(self.birth_date[:10], "%Y-%m-%d")
+            return int((datetime.now() - birth).days / 365.25)
+        except (ValueError, OSError):
+            return None
 
     def compute_is_adult(self) -> int:
         """Compute is_adult from birth_date."""
