@@ -66,6 +66,14 @@ class SingersTab(QWidget):
         self.voice_filter.currentIndexChanged.connect(self._load_singers)
         toolbar.addWidget(self.voice_filter)
 
+        self.status_filter = QComboBox()
+        self.status_filter.addItem("Alle Mitglieder", "all")
+        self.status_filter.addItem("Alle aktiven Mitglieder", "active")
+        self.status_filter.addItem("Alle minderjährigen", "minor")
+        self.status_filter.addItem("Alle U16", "u16")
+        self.status_filter.currentIndexChanged.connect(self._load_singers)
+        toolbar.addWidget(self.status_filter)
+
         self.besetzung_filter = None
 
         layout.addLayout(toolbar)
@@ -120,10 +128,12 @@ class SingersTab(QWidget):
 
     def _load_singers(self):
         """Load singers into table with filters."""
+        from datetime import datetime
         from ...domain.repository import EventRepository, AvailabilityRepository
 
         search_text = self.search_box.text().lower() if self.search_box.text() else ""
         voice_filter = self.voice_filter.currentData()
+        status_filter = self.status_filter.currentData()
 
         singers = self.singer_repo.get_all()
 
@@ -141,6 +151,26 @@ class SingersTab(QWidget):
         if self.besetzung_filter:
             singer_ids = self.besetzung_filter.get_singer_ids()
             singers = [s for s in singers if s.id in singer_ids]
+
+        # Apply status filter (all/active/minor/u16)
+        if status_filter and status_filter != "all":
+            filtered = []
+            for singer in singers:
+                if status_filter == "active":
+                    # Active = no exit date
+                    if not singer.left_year and not singer.left_month:
+                        filtered.append(singer)
+                elif status_filter == "minor":
+                    # Minor = under 18 years old
+                    age = singer.age()
+                    if age is not None and age < 18:
+                        filtered.append(singer)
+                elif status_filter == "u16":
+                    # U16 = under 16 years old
+                    age = singer.age()
+                    if age is not None and age < 16:
+                        filtered.append(singer)
+            singers = filtered
 
         if search_text or voice_filter:
             filtered = []
