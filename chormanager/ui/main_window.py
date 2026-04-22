@@ -253,6 +253,9 @@ class MainWindow(QMainWindow):
         # Initialize context toolbar after UI setup
         self._update_context_toolbar(0, None)
 
+        # Initialize info labels
+        self._update_info_labels()
+
         # Apply last active project filter to tabs
         if self.projects_tab.current_project:
             self._on_project_changed()
@@ -265,10 +268,7 @@ class MainWindow(QMainWindow):
             event = self.events_tab.event_repo.get_by_id(last_event_id)
             if event:
                 self.current_event = event
-                self.event_info_label.setText(
-                    f"<b>Ausgewählter Termin:</b> {event.name} am {event.date[:10]}"
-                )
-                self.event_info_label.setVisible(True)
+                self._update_info_labels()
                 if hasattr(self, "choraufstellung_tab"):
                     self.choraufstellung_tab.set_event(event)
 
@@ -516,17 +516,6 @@ class MainWindow(QMainWindow):
 
         sidebar_layout.addStretch()
 
-        # Context toolbar (Actions) - in sidebar
-        self.context_toolbar = QToolBar("Aktionen")
-        self.context_toolbar.setToolButtonStyle(
-            Qt.ToolButtonStyle.ToolButtonTextBesideIcon
-        )
-        self.context_toolbar.setMovable(False)
-        self.context_toolbar.setIconSize(QSize(16, 16))
-        sidebar_layout.addWidget(self.context_toolbar)
-
-        sidebar_layout.addStretch()
-
         # Refresh button
         refresh_btn = QPushButton("↻ Aktualisieren")
         refresh_btn.clicked.connect(self._refresh_tabs)
@@ -535,7 +524,21 @@ class MainWindow(QMainWindow):
 
         splitter.addWidget(sidebar)
 
-        # Content-Bereich (rechts)
+        # Content-Bereich (rechts) - mit horizontaler Context Toolbar oben
+        content_area = QWidget()
+        content_layout = QVBoxLayout(content_area)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(0)
+
+        # Context toolbar (horizontal oberhalb des Content)
+        self.context_toolbar = QToolBar("Aktionen")
+        self.context_toolbar.setToolButtonStyle(
+            Qt.ToolButtonStyle.ToolButtonTextBesideIcon
+        )
+        self.context_toolbar.setMovable(False)
+        self.context_toolbar.setIconSize(QSize(16, 16))
+        content_layout.addWidget(self.context_toolbar)
+
         self.current_event = None
 
         from .views.projects_tab import ProjectsTab
@@ -563,7 +566,9 @@ class MainWindow(QMainWindow):
         self.content_stack.addWidget(self.events_tab)
         self.content_stack.addWidget(self.choraufstellung_tab)
 
-        splitter.addWidget(self.content_stack)
+        content_layout.addWidget(self.content_stack)
+
+        splitter.addWidget(content_area)
         splitter.setStretchFactor(1, 1)
 
         # Initialize context toolbar for current view (projects)
@@ -758,9 +763,32 @@ class MainWindow(QMainWindow):
         """
         self._update_context_toolbar(tab_index, selection)
 
+    def _update_info_labels(self):
+        """Update the info labels in the info bar."""
+        # Update project info label
+        if self.projects_tab.current_project:
+            project = self.projects_tab.current_project
+            self.project_info_label.setText(
+                f"<b>Ausgewähltes Projekt:</b> {project.name}"
+            )
+            self.project_info_label.setVisible(True)
+        else:
+            self.project_info_label.setVisible(False)
+
+        # Update event info label
+        if self.current_event:
+            event = self.current_event
+            self.event_info_label.setText(
+                f"<b>Ausgewählter Termin:</b> {event.name} am {event.date[:10]}"
+            )
+            self.event_info_label.setVisible(True)
+        else:
+            self.event_info_label.setVisible(False)
+
     def _on_project_changed(self):
         """Handle project selection change."""
         project = self.projects_tab.current_project
+        self._update_info_labels()
         self.current_project = project
         if project:
             self.project_info_label.setText(
@@ -781,8 +809,9 @@ class MainWindow(QMainWindow):
         self._refresh_tabs()
 
     def _on_event_selected(self, event):
-        """Handle event selection from Termine tab."""
+        """Handle event selection."""
         self.current_event = event
+        self._update_info_labels()
         if hasattr(self, "choraufstellung_tab"):
             self.choraufstellung_tab.set_event(event)
 

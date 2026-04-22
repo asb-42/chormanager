@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import (
     QTableWidgetItem,
     QFileDialog,
     QInputDialog,
+    QLineEdit,
 )
 from PyQt6.QtCore import pyqtSignal, Qt
 
@@ -53,6 +54,16 @@ class ChorAufstellungTab(QWidget):
         header.addWidget(self.load_btn)
 
         layout.addLayout(header)
+
+        # Search box for formations
+        search_layout = QHBoxLayout()
+        search_layout.addStretch()
+        self.search_box = QLineEdit()
+        self.search_box.setPlaceholderText("Suchen...")
+        self.search_box.setMaximumWidth(200)
+        self.search_box.textChanged.connect(self._load_formations)
+        search_layout.addWidget(self.search_box)
+        layout.addLayout(search_layout)
 
         info_label = QLabel(
             "Klicken Sie auf 'Aus ChorManager laden', um die Choraufstellung-App mit den Sängern für den gewählten Termin zu öffnen."
@@ -110,10 +121,16 @@ class ChorAufstellungTab(QWidget):
             )
 
     def _load_formations(self):
-        """Load formations from data directory."""
+        """Load formations from data directory with search filter."""
         if not os.path.exists(self._data_dir):
             self.table.setRowCount(0)
             return
+
+        search_text = (
+            self.search_box.text().lower()
+            if hasattr(self, "search_box") and self.search_box.text()
+            else ""
+        )
 
         files = []
         for f in os.listdir(self._data_dir):
@@ -139,6 +156,21 @@ class ChorAufstellungTab(QWidget):
                 files.append(data)
 
         files.sort(key=lambda x: x["modified"], reverse=True)
+
+        # Apply search filter
+        if search_text:
+            filtered_files = []
+            for f in files:
+                meta = f.get("metadata", {})
+                search_fields = [
+                    f["filename"],
+                    meta.get("project", ""),
+                    meta.get("event", ""),
+                    meta.get("event_date", ""),
+                ]
+                if any(search_text in str(field).lower() for field in search_fields):
+                    filtered_files.append(f)
+            files = filtered_files
 
         self.table.setRowCount(len(files))
         for row, f in enumerate(files):
