@@ -35,9 +35,7 @@ noch nicht implementiert wurden.
 **Aufwand**: Hoch - requires API-Änderungen
 
 ### 6. Aktualisieren-Button
-**Status**: Button nicht in Context-Toolbar
-**Problem**: Funktion unklar
-**Aufwand**: Niedrig wenn Funktionalität bekannt
+**Status**: ✅ In Context-Toolbar bei Sänger, Termine, Besetzung
 
 ## Bereits behoben
 

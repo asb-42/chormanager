@@ -711,9 +711,13 @@ class MainWindow(QMainWindow):
                 self.context_toolbar.addAction(delete_action)
 
         elif tab_index == 1:  # Singers
-            add_action = QAction("Hinzufügen", self)
+            add_action = QAction("➕ Hinzufügen", self)
             add_action.triggered.connect(self._add_singer)
             self.context_toolbar.addAction(add_action)
+
+            refresh_action = QAction("🔄 Aktualisieren", self)
+            refresh_action.triggered.connect(self._refresh_tabs)
+            self.context_toolbar.addAction(refresh_action)
 
             if selection:
                 edit_action = QAction("Bearbeiten", self)
@@ -724,10 +728,19 @@ class MainWindow(QMainWindow):
                 delete_action.triggered.connect(self._delete_singer)
                 self.context_toolbar.addAction(delete_action)
 
-        elif tab_index == 2:  # Events
-            add_action = QAction("Neuer Termin", self)
+        elif tab_index == 2:  # Besetzung
+            refresh_action = QAction("🔄 Aktualisieren", self)
+            refresh_action.triggered.connect(self._refresh_tabs)
+            self.context_toolbar.addAction(refresh_action)
+
+        elif tab_index == 3:  # Events
+            add_action = QAction("➕ Neuer Termin", self)
             add_action.triggered.connect(self._new_event)
             self.context_toolbar.addAction(add_action)
+
+            refresh_action = QAction("🔄 Aktualisieren", self)
+            refresh_action.triggered.connect(self._refresh_tabs)
+            self.context_toolbar.addAction(refresh_action)
 
             if selection:
                 # Primary actions
@@ -771,7 +784,7 @@ class MainWindow(QMainWindow):
                 delete_action.triggered.connect(self._delete_event)
                 self.context_toolbar.addAction(delete_action)
 
-        elif tab_index == 3:  # Aufstellung
+        elif tab_index == 4:  # Aufstellung
             new_action = QAction("Neue Aufstellung", self)
             new_action.triggered.connect(self._new_formation)
             self.context_toolbar.addAction(new_action)
