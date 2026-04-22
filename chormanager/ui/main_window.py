@@ -544,7 +544,7 @@ class MainWindow(QMainWindow):
 
         self.nav_formations = QPushButton("🎵 Aufstellung")
         self.nav_formations.setCheckable(True)
-        self.nav_formations.clicked.connect(lambda: self._switch_view(3))
+        self.nav_formations.clicked.connect(lambda: self._switch_view(4))
         sidebar_layout.addWidget(self.nav_formations)
 
         sidebar_layout.addStretch()
@@ -613,10 +613,10 @@ class MainWindow(QMainWindow):
             lambda: self._emit_selection(1)
         )
         self.events_tab.table.selectionModel().selectionChanged.connect(
-            lambda: self._emit_selection(2)
+            lambda: self._emit_selection(3)
         )
         self.choraufstellung_tab.table.selectionModel().selectionChanged.connect(
-            lambda: self._emit_selection(3)
+            lambda: self._emit_selection(4)
         )
 
     def _switch_view(self, index):
@@ -625,7 +625,7 @@ class MainWindow(QMainWindow):
         self.nav_projects.setChecked(index == 0)
         self.nav_singers.setChecked(index == 1)
         self.nav_events.setChecked(index == 2)
-        self.nav_formations.setChecked(index == 3)
+        self.nav_formations.setChecked(index == 4)
         self._emit_selection(index)
 
     def _emit_selection(self, tab_index):
@@ -685,9 +685,13 @@ class MainWindow(QMainWindow):
         self.context_toolbar.clear()
 
         if tab_index == 0:  # Projects
-            add_action = QAction("Hinzufügen", self)
+            add_action = QAction("➕ Hinzufügen", self)
             add_action.triggered.connect(self._new_projekt)
             self.context_toolbar.addAction(add_action)
+
+            refresh_action = QAction("🔄 Aktualisieren", self)
+            refresh_action.triggered.connect(self._refresh_tabs)
+            self.context_toolbar.addAction(refresh_action)
 
             if selection:
                 set_active_action = QAction("Als aktives Projekt setzen", self)
@@ -909,7 +913,7 @@ class MainWindow(QMainWindow):
         self.events_tab._manage_availability()
 
     def _open_choraufstellung_for_event(self, event):
-        self.content_stack.setCurrentIndex(3)
+        self.content_stack.setCurrentIndex(4)
         QTimer.singleShot(100, lambda: self.choraufstellung_tab.load_for_event(event))
 
     def _edit_formation(self):
