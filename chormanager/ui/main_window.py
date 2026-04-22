@@ -18,6 +18,7 @@ from PyQt6.QtWidgets import (
     QMenu,
     QToolBar,
     QLabel,
+    QSizePolicy,
     QLineEdit,
     QComboBox,
     QMessageBox,
@@ -325,8 +326,9 @@ class MainWindow(QMainWindow):
 
         self.project_info_label = QLabel("Keines")
         self.project_info_label.setObjectName("projectInfoLabel")
-        self.project_info_label.setVisible(True)  # Immer sichtbar
-        self.project_info_label.setWordWrap(True)
+        self.project_info_label.setVisible(True)
+        self.project_info_label.setWordWrap(False)
+        self.project_info_label.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         info_layout.addWidget(self.project_info_label)
 
         info_layout.addStretch()
@@ -338,8 +340,9 @@ class MainWindow(QMainWindow):
 
         self.event_info_label = QLabel("Keiner")
         self.event_info_label.setObjectName("eventInfoLabel")
-        self.event_info_label.setVisible(True)  # Immer sichtbar
-        self.event_info_label.setWordWrap(True)
+        self.event_info_label.setVisible(True)
+        self.event_info_label.setWordWrap(False)
+        self.event_info_label.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         info_layout.addWidget(self.event_info_label)
 
         info_layout.addStretch()
@@ -1306,6 +1309,9 @@ class MainWindow(QMainWindow):
         QLabel#eventInfoLabel {
             background-color: #e65100;
             color: white;
+        }
+        QLabel#pageTitle {
+            color: #ffffff;
         }
 
         /* Main application colors */
