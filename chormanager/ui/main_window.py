@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 from PyQt6.QtCore import QSize
 from PyQt6.QtGui import QAction
+import qdarktheme
 
 from PyQt6.QtWidgets import (
     QMainWindow,
@@ -1106,45 +1107,12 @@ class MainWindow(QMainWindow):
                 os.unlink(temp_csv)
 
     def _set_light_theme(self):
-        """Set light theme."""
-        light_style = """
-        QMainWindow, QWidget {
-            background-color: #f5f5f5;
-            color: #000000;
-        }
-        QTableWidget {
-            background-color: #ffffff;
-            alternate-background-color: #f9f9f9;
-            gridline-color: #e0e0e0;
-        }
-        QTableWidget::item:selected {
-            background-color: #cce8ff;
-            color: #000000;
-        }
-        QHeaderView::section {
-            background-color: #e0e0e0;
-            padding: 4px;
-            border: 1px solid #c0c0c0;
-        }
-        QPushButton {
-            background-color: #e0e0e0;
-            border: 1px solid #c0c0c0;
-            padding: 5px 15px;
-            border-radius: 3px;
-        }
-        QPushButton:hover {
-            background-color: #d0d0d0;
-        }
-        QMenuBar {
-            background-color: #f5f5f5;
-        }
-        QMenuBar::item:selected {
-            background-color: #d0d0d0;
-        }
-        QToolBar {
-            background-color: #f5f5f5;
-            border: none;
-        }
+        """Set light theme using PyQtDarkTheme."""
+        # Apply light theme stylesheet
+        stylesheet = qdarktheme.load_stylesheet("light")
+
+        # Add custom styles for info labels
+        custom_style = """
         QLabel#projectInfoLabel {
             background-color: #4a90d9;
             color: #ffffff;
@@ -1158,65 +1126,18 @@ class MainWindow(QMainWindow):
             font-weight: bold;
         }
         """
-        self.setStyleSheet(light_style)
+        self.setStyleSheet(stylesheet + custom_style)
+
         set_theme("light")
         self.statusBar().showMessage("Helles Theme aktiviert")
 
     def _set_dark_theme(self):
-        """Set dark theme."""
-        dark_style = """
-        QMainWindow, QWidget {
-            background-color: #2b2b2b;
-            color: #ffffff;
-        }
-        QTableWidget {
-            background-color: #323232;
-            alternate-background-color: #3a3a3a;
-            gridline-color: #4a4a4a;
-        }
-        QTableWidget::item:selected {
-            background-color: #0078d7;
-            color: #ffffff;
-        }
-        QHeaderView::section {
-            background-color: #3a3a3a;
-            padding: 4px;
-            border: 1px solid #4a4a4a;
-            color: #ffffff;
-        }
-        QPushButton {
-            background-color: #3a3a3a;
-            border: 1px solid #4a4a4a;
-            padding: 5px 15px;
-            border-radius: 3px;
-            color: #ffffff;
-        }
-        QPushButton:hover {
-            background-color: #4a4a4a;
-        }
-        QMenuBar {
-            background-color: #2b2b2b;
-            color: #ffffff;
-        }
-        QMenuBar::item:selected {
-            background-color: #4a4a4a;
-        }
-        QMenu {
-            background-color: #2b2b2b;
-            color: #ffffff;
-        }
-        QMenu::item:selected {
-            background-color: #4a4a4a;
-        }
-        QToolBar {
-            background-color: #2b2b2b;
-            border: none;
-            color: #ffffff;
-        }
-        QStatusBar {
-            background-color: #2b2b2b;
-            color: #ffffff;
-        }
+        """Set dark theme using PyQtDarkTheme."""
+        # Apply dark theme stylesheet
+        stylesheet = qdarktheme.load_stylesheet("dark")
+
+        # Add custom styles for info labels
+        custom_style = """
         QLabel#projectInfoLabel {
             background-color: #4a90d9;
             color: #ffffff;
@@ -1230,7 +1151,8 @@ class MainWindow(QMainWindow):
             font-weight: bold;
         }
         """
-        self.setStyleSheet(dark_style)
+        self.setStyleSheet(stylesheet + custom_style)
+
         set_theme("dark")
         self.statusBar().showMessage("Dunkles Theme aktiviert")
 
