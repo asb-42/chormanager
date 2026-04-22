@@ -31,6 +31,7 @@ class BesetzungTab(QWidget):
         self.besetzung_repo = BesetzungRepository(db)
         self.project_repo = ProjectRepository(db)
         self.current_project = None
+        self._active_besetzung = None
         self._setup_ui()
         self._load_besetzungen()
 
@@ -58,6 +59,10 @@ class BesetzungTab(QWidget):
         self.delete_btn = QPushButton("Löschen")
         self.delete_btn.clicked.connect(self._delete_besetzung)
         toolbar.addWidget(self.delete_btn)
+
+        self.set_active_btn = QPushButton("Als aktiv setzen")
+        self.set_active_btn.clicked.connect(self._set_active_besetzung)
+        toolbar.addWidget(self.set_active_btn)
 
         toolbar.addStretch()
 
@@ -224,6 +229,39 @@ class BesetzungTab(QWidget):
             self.besetzung_repo.delete(besetzung.id)
             self._load_besetzungen()
 
+    def _set_active_besetzung(self):
+        """Set selected besetzung as active for the project."""
+        row = self.table.currentRow()
+        if row < 0:
+            QMessageBox.warning(
+                self,
+                "Keine Auswahl",
+                "Bitte wählen Sie eine Besetzung aus."
+            )
+            return
+
+        besetzungen = self.besetzung_repo.get_all()
+        if row >= len(besetzungen):
+            return
+
+        besetzung = besetzungen[row]
+        self._active_besetzung = besetzung.id
+        QMessageBox.information(
+            self,
+            "Aktiv gesetzt",
+            f"Besetzung '{besetzung.name}' ist jetzt die aktive Besetzung für das Projekt."
+        )
+
     def get_besetzung_for_project(self, project_id) -> list:
         """Get all besetzungen for a project."""
         return self.besetzung_repo.get_by_project(project_id)
+    
+    def get_active_besetzung(self):
+        """Get the currently active besetzung."""
+        if self._active_besetzung:
+            return self.besetzung_repo.get_by_id(self._active_besetzung)
+        return None
+    
+    def set_active_besetzung(self, besetzung_id):
+        """Set the active besetzung for the project."""
+        self._active_besetzung = besetzung_id
