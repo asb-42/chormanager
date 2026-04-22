@@ -109,16 +109,25 @@ class SingerDialog(QDialog):
                 layout.addRow(label, widget)
 
             elif field_type == "yearmonth":
-                widget = QComboBox()
-                widget.addItem("", None)
-                months = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
-                for year in range(1990, 2031):
-                    for month_idx, month in enumerate(months, 1):
-                        value = f"{year:04d}-{month_idx:02d}"
-                        display = f"{month} {year}"
-                        widget.addItem(display, value)
-                self.inputs[name] = widget
-                layout.addRow(label, widget)
+                layout.addRow(label, None)
+                year_layout = QHBoxLayout()
+                year_layout.addWidget(QLabel("Monat:"))
+                month_combo = QComboBox()
+                month_combo.addItem("", None)
+                for i in range(1, 13):
+                    month_combo.addItem(f"{i:02d}", i)
+                year_layout.addWidget(month_combo)
+                self.inputs[f"{name}_month"] = month_combo
+
+                year_layout.addWidget(QLabel("Jahr:"))
+                year_combo = QComboBox()
+                year_combo.addItem("", None)
+                for year in range(2015, 2031):
+                    year_combo.addItem(str(year), year)
+                year_layout.addWidget(year_combo)
+                self.inputs[f"{name}_year"] = year_combo
+
+                layout.addRow(year_layout)
 
             elif field_type == "voice_group":
                 widget = QComboBox()
@@ -186,18 +195,12 @@ class SingerDialog(QDialog):
                         widget.setDate(date)
 
             elif isinstance(widget, QComboBox):
-                combobox_value = None
-                if name in ("joined", "left") and singer_dict:
-                    year = singer_dict.get(f"{name}_year")
-                    month = singer_dict.get(f"{name}_month")
-                    if year and month:
-                        combobox_value = f"{year:04d}-{month:02d}"
-                    elif year:
-                        combobox_value = f"{year:04d}-01"
-                if combobox_value:
-                    index = widget.findData(combobox_value)
-                    if index >= 0:
-                        widget.setCurrentIndex(index)
+                if name.endswith("_year") or name.endswith("_month"):
+                    val = singer_dict.get(name)
+                    if val:
+                        index = widget.findData(val)
+                        if index >= 0:
+                            widget.setCurrentIndex(index)
 
     def get_data(self):
         """Get form data as dictionary."""
@@ -231,30 +234,11 @@ class SingerDialog(QDialog):
                 value = widget.currentData()
                 data[name] = value
 
-        # Map yearmonth fields to DB column names (split YYYY-MM into year and month)
-        yearmonth_map = {
-            "joined": ("joined_year", "joined_month"),
-            "left": ("left_year", "left_month"),
-        }
-        for old_name, (year_col, month_col) in yearmonth_map.items():
-            if old_name in data and data[old_name]:
-                value = data[old_name]
-                if value and "-" in value:
-                    parts = value.split("-")
-                    data[year_col] = int(parts[0]) if parts[0].isdigit() else None
-                    data[month_col] = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else None
-                else:
-                    try:
-                        data[year_col] = int(value)
-                        data[month_col] = None
-                    except ValueError:
-                        data[year_col] = None
-                del data[old_name]
-            else:
-                if year_col in data:
-                    del data[year_col]
-                if month_col in data:
-                    del data[month_col]
+        # yearmonth fields are now split into name_year and name_month
+        # so just pass through if present
+        for name in ("joined_year", "joined_month", "left_year", "left_month"):
+            if name in data and data[name] is None:
+                del data[name]
 
         return data
 
