@@ -111,8 +111,12 @@ class SingerDialog(QDialog):
             elif field_type == "yearmonth":
                 widget = QComboBox()
                 widget.addItem("", None)
+                months = ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"]
                 for year in range(1990, 2031):
-                    widget.addItem(str(year), year)
+                    for month_idx, month in enumerate(months, 1):
+                        value = f"{year:04d}-{month_idx:02d}"
+                        display = f"{month} {year}"
+                        widget.addItem(display, value)
                 self.inputs[name] = widget
                 layout.addRow(label, widget)
 
