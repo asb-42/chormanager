@@ -952,12 +952,12 @@ class MainWindow(QMainWindow):
 
         if filename:
             singers = self.singer_repo.get_all()
+            fields = self.singers_tab.visible_fields
 
             import csv
 
             with open(filename, "w", newline="", encoding="utf-8") as f:
-                fields = self.visible_fields
-                writer = csv.DictWriter(f, fieldnames=[f["name"] for f in fields])
+                writer = csv.DictWriter(f, fieldnames=[field["name"] for field in fields])
                 writer.writeheader()
 
                 for singer in singers:
@@ -1048,6 +1048,20 @@ class MainWindow(QMainWindow):
 
         singers = self.singer_repo.get_all()
 
+        reply = QMessageBox.question(
+            self,
+            "LibreOffice Export",
+            "Möchten Sie als Writer-Dokument (doc) oder Calc-Dokument (xls) exportieren?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+
+        if reply == QMessageBox.StandardButton.Yes:
+            output_format = "doc"
+            ext = ".doc"
+        else:
+            output_format = "xls"
+            ext = ".xls"
+
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".csv", delete=False, encoding="utf-8"
         ) as f:
@@ -1067,62 +1081,42 @@ class MainWindow(QMainWindow):
                 )
             temp_csv = f.name
 
-        try:
-            reply = QMessageBox.question(
-                self,
-                "LibreOffice Export",
-                "Möchten Sie als Writer-Dokument (doc) oder Calc-Dokument (xls) exportieren?",
-                "Writer (doc)",
-                "Calc (xls)",
-                QMessageBox.StandardButton.Cancel,
+        filename, _ = QFileDialog.getSaveFileName(
+            self, "Als LibreOffice exportieren", "", f"LibreOffice Dateien (*{ext})"
+        )
+
+        if not filename:
+            return
+
+        out_dir = os.path.dirname(filename)
+        result = subprocess.run(
+            [
+                "libreoffice",
+                "--headless",
+                "--convert-to",
+                output_format,
+                "--outdir",
+                out_dir,
+                temp_csv,
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+
+        if result.returncode == 0:
+            base_name = os.path.splitext(os.path.basename(temp_csv))[0]
+            expected_output = os.path.join(out_dir, base_name + ext)
+            if expected_output != filename and os.path.exists(expected_output):
+                os.rename(expected_output, filename)
+            self.statusBar().showMessage(f"Exportiert nach {filename}")
+        else:
+            QMessageBox.warning(
+                self, "Fehler", f"LibreOffice Fehler:\n{result.stderr}"
             )
 
-            if reply == "Writer (doc)":
-                output_format = "doc"
-                ext = ".doc"
-            elif reply == "Calc (xls)":
-                output_format = "xls"
-                ext = ".xls"
-            else:
-                return
-
-            filename, _ = QFileDialog.getSaveFileName(
-                self, "Als LibreOffice exportieren", "", f"LibreOffice Dateien (*{ext})"
-            )
-
-            if not filename:
-                return
-
-            out_dir = os.path.dirname(filename)
-            result = subprocess.run(
-                [
-                    "libreoffice",
-                    "--headless",
-                    "--convert-to",
-                    output_format,
-                    "--outdir",
-                    out_dir,
-                    temp_csv,
-                ],
-                capture_output=True,
-                text=True,
-                timeout=30,
-            )
-
-            if result.returncode == 0:
-                base_name = os.path.splitext(os.path.basename(temp_csv))[0]
-                expected_output = os.path.join(out_dir, base_name + ext)
-                if expected_output != filename and os.path.exists(expected_output):
-                    os.rename(expected_output, filename)
-                self.statusBar().showMessage(f"Exportiert nach {filename}")
-            else:
-                QMessageBox.warning(
-                    self, "Fehler", f"LibreOffice Fehler:\n{result.stderr}"
-                )
-
-        finally:
-            if os.path.exists(temp_csv):
-                os.unlink(temp_csv)
+        if os.path.exists(temp_csv):
+            os.unlink(temp_csv)
 
     def _set_light_theme(self):
         """Set professional light theme."""
