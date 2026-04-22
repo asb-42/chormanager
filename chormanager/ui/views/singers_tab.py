@@ -196,10 +196,10 @@ class SingersTab(QWidget):
 
         dialog = SingerDialog(parent=self)
 
-if dialog.exec():
+        if dialog.exec():
             data = dialog.get_data()
             data = {k: v for k, v in data.items() if v is not None}
-            self.singer_repo.update(singer_id, **data)
+            self.singer_repo.create(**data)
             self._load_singers()
 
     def _edit_singer(self):
