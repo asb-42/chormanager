@@ -348,6 +348,18 @@ class MainWindow(QMainWindow):
         self.project_info_label.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         info_layout.addWidget(self.project_info_label)
 
+        # Besetzung-Status Label
+        besetzung_status_label = QLabel("Aktive Besetzung:")
+        besetzung_status_label.setStyleSheet("font-weight: normal; color: #666;")
+        info_layout.addWidget(besetzung_status_label)
+
+        self.besetzung_info_label = QLabel("Keine")
+        self.besetzung_info_label.setObjectName("besetzungInfoLabel")
+        self.besetzung_info_label.setVisible(True)
+        self.besetzung_info_label.setWordWrap(False)
+        self.besetzung_info_label.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+        info_layout.addWidget(self.besetzung_info_label)
+
         info_layout.addStretch()
 
         # Termin-Status Label
@@ -605,6 +617,7 @@ class MainWindow(QMainWindow):
 
         from .views.besetzung_tab import BesetzungTab
         self.besetzung_tab = BesetzungTab(self.db)
+        self.besetzung_tab.active_besetzung_changed.connect(self._on_besetzung_changed)
 
         # Stacked widget für Content
         self.content_stack = QStackedWidget()
@@ -862,6 +875,8 @@ class MainWindow(QMainWindow):
             self.singers_tab.set_project_filter(project)
         if hasattr(self, "events_tab"):
             self.events_tab.set_project_filter(project)
+        if hasattr(self, "besetzung_tab"):
+            self.besetzung_tab.set_project(project)
         if hasattr(self, "choraufstellung_tab"):
             self.choraufstellung_tab.set_project(project)
 
@@ -881,6 +896,17 @@ class MainWindow(QMainWindow):
             self.event_info_label.setVisible(True)
         else:
             self.event_info_label.setVisible(False)
+
+    def _on_besetzung_changed(self, besetzung):
+        """Handle active besetzung change."""
+        if besetzung:
+            self.besetzung_info_label.setText(
+                f"<b>{besetzung.name}</b>"
+            )
+            self.besetzung_info_label.setVisible(True)
+        else:
+            self.besetzung_info_label.setText("Keine")
+            self.besetzung_info_label.setVisible(False)
 
     def _on_tab_changed(self, index):
         if index == 2:

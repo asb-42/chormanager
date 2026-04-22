@@ -17,12 +17,14 @@ from PyQt6.QtCore import pyqtSignal, Qt
 
 from ...domain.repository import BesetzungRepository, ProjectRepository
 from ...data.database import Database
+from ...ui.dialogs import SingerSelectionDialog
 
 
 class BesetzungTab(QWidget):
     """Tab for managing Besetzung (singer lineups)."""
 
     set_besetzung_filter = pyqtSignal(object)
+    active_besetzung_changed = pyqtSignal(object)
 
     def __init__(self, db, parent=None):
         """Initialize the Besetzung tab."""
@@ -85,8 +87,11 @@ class BesetzungTab(QWidget):
         layout.addWidget(self.table)
 
     def _load_besetzungen(self):
-        """Load all besetzungen."""
-        besetzungen = self.besetzung_repo.get_all()
+        """Load besetzungen for current project."""
+        if self.current_project:
+            besetzungen = self.besetzung_repo.get_by_project(self.current_project.id)
+        else:
+            besetzungen = self.besetzung_repo.get_all()
 
         self.table.setRowCount(len(besetzungen))
 
@@ -240,12 +245,17 @@ class BesetzungTab(QWidget):
             )
             return
 
-        besetzungen = self.besetzung_repo.get_all()
+        if self.current_project:
+            besetzungen = self.besetzung_repo.get_by_project(self.current_project.id)
+        else:
+            besetzungen = self.besetzung_repo.get_all()
+
         if row >= len(besetzungen):
             return
 
         besetzung = besetzungen[row]
         self._active_besetzung = besetzung.id
+        self.active_besetzung_changed.emit(besetzung)
         QMessageBox.information(
             self,
             "Aktiv gesetzt",
@@ -265,3 +275,8 @@ class BesetzungTab(QWidget):
     def set_active_besetzung(self, besetzung_id):
         """Set the active besetzung for the project."""
         self._active_besetzung = besetzung_id
+
+    def set_project(self, project):
+        """Set the current project for this tab."""
+        self.current_project = project
+        self._load_besetzungen()

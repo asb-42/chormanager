@@ -730,7 +730,8 @@ class SelbstdarstellungDialog(QDialog):
         self.db.commit()
         self.accept()
 
-        # Singer selection dialog (moved to end)
+
+class SingerSelectionDialog(QDialog):
     """Dialog for selecting singers for a Besetzung."""
     
     def __init__(self, db, pre_selected_ids=None, parent=None):
