@@ -12,6 +12,7 @@ from PyQt6.QtWidgets import (
     QTableWidgetItem,
     QInputDialog,
     QComboBox,
+    QDialog,
 )
 from PyQt6.QtCore import pyqtSignal, Qt
 
@@ -166,7 +167,7 @@ class BesetzungTab(QWidget):
         if not ok or not name:
             return
 
-        dialog = SingerSelectionDialog(self.db)
+        dialog = SingerSelectionDialog(self.db, parent=self)
         if dialog.exec() != QDialog.Accepted:
             return
 

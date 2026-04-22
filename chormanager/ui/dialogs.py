@@ -762,8 +762,8 @@ class SingerSelectionDialog(QDialog):
         layout.addWidget(info_label)
         
         self.table = QTableWidget()
-        self.table.setColumnCount(4)
-        self.table.setHorizontalHeaderLabels(["✓", "Name", "Kurzname", "Stimmgruppe"])
+        self.table.setColumnCount(5)
+        self.table.setHorizontalHeaderLabels(["✓", "Name", "Kurzname", "Stimmgruppe", "Alter"])
         self.table.setColumnWidth(0, 40)
         self.table.horizontalHeader().setStretchLastSection(True)
         layout.addWidget(self.table)
@@ -804,10 +804,13 @@ class SingerSelectionDialog(QDialog):
             checkbox.setCheckState(Qt.CheckState.Checked if singer.id in self.selected_ids else Qt.CheckState.Unchecked)
             checkbox.stateChanged.connect(lambda state, sid=singer.id: self._on_checkbox_changed(sid, state))
             self.table.setCellWidget(row, 0, checkbox)
-            
+
             self.table.setItem(row, 1, QTableWidgetItem(singer.full_name or ""))
             self.table.setItem(row, 2, QTableWidgetItem(singer.short_name or ""))
             self.table.setItem(row, 3, QTableWidgetItem(singer.voice_group or ""))
+
+            age = singer.age()
+            self.table.setItem(row, 4, QTableWidgetItem(str(age) if age is not None else "-"))
     
     def _on_checkbox_changed(self, singer_id, state):
         """Handle checkbox state change."""
