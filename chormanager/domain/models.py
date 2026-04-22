@@ -249,3 +249,45 @@ class Availability:
     def from_dict(cls, data: dict) -> "Availability":
         """Create Availability from dictionary."""
         return cls(**{k: v for k, v in data.items() if k in cls.__dataclass_fields__})
+
+
+@dataclass
+class Besetzung:
+    """A singer lineup/casting for a project."""
+
+    id: str = ""
+    name: str = ""
+    project_id: str = ""
+    singer_ids: str = ""
+    created_at: str = ""
+    updated_at: str = ""
+
+    def __post_init__(self):
+        """Set timestamps if not set."""
+        now = datetime.now().isoformat()
+        if not self.created_at:
+            self.created_at = now
+        if not self.updated_at:
+            self.updated_at = now
+
+    def get_singer_ids(self) -> list:
+        """Get list of singer IDs (JSON array)."""
+        if not self.singer_ids:
+            return []
+        try:
+            return json.loads(self.singer_ids)
+        except json.JSONDecodeError:
+            return []
+
+    def set_singer_ids(self, ids: list) -> None:
+        """Set singer IDs from list."""
+        self.singer_ids = json.dumps(ids)
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary."""
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Besetzung":
+        """Create Besetzung from dictionary."""
+        return cls(**{k: v for k, v in data.items() if k in cls.__dataclass_fields__})

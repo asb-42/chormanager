@@ -533,9 +533,14 @@ class MainWindow(QMainWindow):
         self.nav_singers.clicked.connect(lambda: self._switch_view(1))
         sidebar_layout.addWidget(self.nav_singers)
 
+        self.nav_besetzung = QPushButton("👥 Besetzung")
+        self.nav_besetzung.setCheckable(True)
+        self.nav_besetzung.clicked.connect(lambda: self._switch_view(2))
+        sidebar_layout.addWidget(self.nav_besetzung)
+
         self.nav_events = QPushButton("📅 Termine")
         self.nav_events.setCheckable(True)
-        self.nav_events.clicked.connect(lambda: self._switch_view(2))
+        self.nav_events.clicked.connect(lambda: self._switch_view(3))
         sidebar_layout.addWidget(self.nav_events)
 
         self.nav_formations = QPushButton("🎵 Aufstellung")
@@ -582,10 +587,14 @@ class MainWindow(QMainWindow):
 
         self.choraufstellung_tab = ChorAufstellungTab(self.db)
 
+        from .views.besetzung_tab import BesetzungTab
+        self.besetzung_tab = BesetzungTab(self.db)
+
         # Stacked widget für Content
         self.content_stack = QStackedWidget()
         self.content_stack.addWidget(self.projects_tab)
         self.content_stack.addWidget(self.singers_tab)
+        self.content_stack.addWidget(self.besetzung_tab)
         self.content_stack.addWidget(self.events_tab)
         self.content_stack.addWidget(self.choraufstellung_tab)
 

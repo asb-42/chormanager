@@ -46,6 +46,7 @@ class ChorAufstellungTab(QWidget):
 
         # Seitentitel
         page_title = QLabel("🎵 Choraufstellungen")
+        page_title.setObjectName("pageTitle")
         page_title.setStyleSheet(
             "font-size: 18pt; font-weight: bold; color: #2c3e50; margin-bottom: 15px;"
         )

@@ -58,6 +58,7 @@ class EventsTab(QWidget):
 
         # Seitentitel
         title = QLabel("📅 Terminverwaltung")
+        title.setObjectName("pageTitle")
         title.setStyleSheet(
             "font-size: 18pt; font-weight: bold; color: #2c3e50; margin-bottom: 10px;"
         )

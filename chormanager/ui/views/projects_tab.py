@@ -94,6 +94,7 @@ class ProjectsTab(QWidget):
 
         # Seitentitel
         title = QLabel("📁 Projektverwaltung")
+        title.setObjectName("pageTitle")
         title.setStyleSheet(
             "font-size: 18pt; font-weight: bold; color: #2c3e50; margin-bottom: 10px;"
         )

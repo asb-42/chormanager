@@ -41,6 +41,7 @@ class SingersTab(QWidget):
 
         # Seitentitel
         title = QLabel("👤 Sängerverwaltung")
+        title.setObjectName("pageTitle")
         title.setStyleSheet(
             "font-size: 18pt; font-weight: bold; color: #2c3e50; margin-bottom: 10px;"
         )
@@ -64,6 +65,8 @@ class SingersTab(QWidget):
 
         self.voice_filter.currentIndexChanged.connect(self._load_singers)
         toolbar.addWidget(self.voice_filter)
+
+        self.besetzung_filter = None
 
         layout.addLayout(toolbar)
 
@@ -110,6 +113,11 @@ class SingersTab(QWidget):
         self.project_filter = project
         self._load_singers()
 
+    def set_besetzung_filter(self, besetzung):
+        """Set Besetzung filter - only show singers in the besetzung."""
+        self.besetzung_filter = besetzung
+        self._load_singers()
+
     def _load_singers(self):
         """Load singers into table with filters."""
         from ...domain.repository import EventRepository, AvailabilityRepository
@@ -129,6 +137,10 @@ class SingersTab(QWidget):
             ]
             if project_event_ids:
                 singers = self.singer_repo.get_all()
+
+        if self.besetzung_filter:
+            singer_ids = self.besetzung_filter.get_singer_ids()
+            singers = [s for s in singers if s.id in singer_ids]
 
         if search_text or voice_filter:
             filtered = []

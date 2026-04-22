@@ -727,6 +727,116 @@ class SelbstdarstellungDialog(QDialog):
                 "INSERT INTO selbstdarstellung (id, content, updated_at) VALUES (?, ?, ?)",
                 ("main", content, now)
             )
-        
         self.db.commit()
         self.accept()
+
+        # Singer selection dialog (moved to end)
+    """Dialog for selecting singers for a Besetzung."""
+    
+    def __init__(self, db, pre_selected_ids=None, parent=None):
+        """Initialize dialog.
+        
+        Args:
+            db: Database instance.
+            pre_selected_ids: List of pre-selected singer IDs.
+            parent: Parent widget.
+        """
+        super().__init__(parent)
+        self.db = db
+        self.pre_selected_ids = pre_selected_ids or []
+        self.selected_ids = set(self.pre_selected_ids)
+        self._setup_ui()
+        self._load_singers()
+    
+    def _setup_ui(self):
+        """Set up the UI."""
+        self.setWindowTitle("Sänger auswählen")
+        self.setMinimumSize(700, 500)
+        
+        layout = QVBoxLayout(self)
+        
+        info_label = QLabel(
+            "Markieren Sie die Sänger, die zur Besetzung gehören sollen."
+        )
+        layout.addWidget(info_label)
+        
+        self.table = QTableWidget()
+        self.table.setColumnCount(4)
+        self.table.setHorizontalHeaderLabels(["✓", "Name", "Kurzname", "Stimmgruppe"])
+        self.table.setColumnWidth(0, 40)
+        self.table.horizontalHeader().setStretchLastSection(True)
+        layout.addWidget(self.table)
+        
+        button_layout = QHBoxLayout()
+        
+        select_all_btn = QPushButton("Alle auswählen")
+        select_all_btn.clicked.connect(self._select_all)
+        button_layout.addWidget(select_all_btn)
+        
+        deselect_all_btn = QPushButton("Alle abwählen")
+        deselect_all_btn.clicked.connect(self._deselect_all)
+        button_layout.addWidget(deselect_all_btn)
+        
+        button_layout.addStretch()
+        
+        layout.addLayout(button_layout)
+        
+        button_box = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        button_box.accepted.connect(self.accept)
+        button_box.rejected.connect(self.reject)
+        layout.addWidget(button_box)
+    
+    def _load_singers(self):
+        """Load singers into table."""
+        singer_repo = SingerRepository(self.db)
+        singers = singer_repo.get_all()
+        
+        self.table.setRowCount(len(singers))
+        
+        from PyQt6.QtWidgets import QCheckBox, QTableWidgetItem
+        from PyQt6.QtCore import Qt
+        
+        for row, singer in enumerate(singers):
+            checkbox = QCheckBox()
+            checkbox.setCheckState(Qt.CheckState.Checked if singer.id in self.selected_ids else Qt.CheckState.Unchecked)
+            checkbox.stateChanged.connect(lambda state, sid=singer.id: self._on_checkbox_changed(sid, state))
+            self.table.setCellWidget(row, 0, checkbox)
+            
+            self.table.setItem(row, 1, QTableWidgetItem(singer.full_name or ""))
+            self.table.setItem(row, 2, QTableWidgetItem(singer.short_name or ""))
+            self.table.setItem(row, 3, QTableWidgetItem(singer.voice_group or ""))
+    
+    def _on_checkbox_changed(self, singer_id, state):
+        """Handle checkbox state change."""
+        from PyQt6.QtCore import Qt
+        if state == Qt.CheckState.Checked:
+            self.selected_ids.add(singer_id)
+        else:
+            self.selected_ids.discard(singer_id)
+    
+    def _select_all(self):
+        """Select all singers."""
+        singer_repo = SingerRepository(self.db)
+        singers = singer_repo.get_all()
+        
+        for row in range(self.table.rowCount()):
+            checkbox = self.table.cellWidget(row, 0)
+            if checkbox:
+                checkbox.setCheckState(Qt.CheckState.Checked)
+        
+        self.selected_ids = {s.id for s in singers}
+    
+    def _deselect_all(self):
+        """Deselect all singers."""
+        for row in range(self.table.rowCount()):
+            checkbox = self.table.cellWidget(row, 0)
+            if checkbox:
+                checkbox.setCheckState(Qt.CheckState.Unchecked)
+        
+        self.selected_ids.clear()
+    
+    def get_selected_ids(self) -> list:
+        """Get list of selected singer IDs."""
+        return list(self.selected_ids)
