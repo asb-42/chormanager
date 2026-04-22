@@ -289,27 +289,56 @@ class MainWindow(QMainWindow):
 
     def _create_info_bar(self):
         """Create info bar below menu bar."""
-        # Create info bar widget
+        # Create info bar widget - mit besserer Sichtbarkeit
         self.info_bar = QWidget()
-        self.info_bar.setMaximumHeight(40)
-        self.info_bar.setStyleSheet(
-            "background-color: #f0f0f0; border-bottom: 1px solid #c0c0c0;"
-        )
+        self.info_bar.setMaximumHeight(50)
+        self.info_bar.setStyleSheet("""
+            QWidget {
+                background-color: #e8f4f8;
+                border-bottom: 2px solid #4a90d9;
+                padding: 5px;
+            }
+            QLabel {
+                font-weight: bold;
+                color: #2c3e50;
+                padding: 2px 8px;
+                border-radius: 4px;
+            }
+            QLabel#projectInfoLabel {
+                background-color: #4a90d9;
+                color: white;
+            }
+            QLabel#eventInfoLabel {
+                background-color: #e67e22;
+                color: white;
+            }
+        """)
 
         info_layout = QHBoxLayout(self.info_bar)
-        info_layout.setContentsMargins(10, 5, 10, 5)
-        info_layout.setSpacing(20)
+        info_layout.setContentsMargins(15, 8, 15, 8)
+        info_layout.setSpacing(15)
 
-        # Info labels
-        self.project_info_label = QLabel()
+        # Projekt-Status Label
+        project_status_label = QLabel("Aktives Projekt:")
+        project_status_label.setStyleSheet("font-weight: normal; color: #666;")
+        info_layout.addWidget(project_status_label)
+
+        self.project_info_label = QLabel("Keines")
         self.project_info_label.setObjectName("projectInfoLabel")
-        self.project_info_label.setVisible(False)
+        self.project_info_label.setVisible(True)  # Immer sichtbar
         self.project_info_label.setWordWrap(True)
         info_layout.addWidget(self.project_info_label)
 
-        self.event_info_label = QLabel()
+        info_layout.addStretch()
+
+        # Termin-Status Label
+        event_status_label = QLabel("Aktiver Termin:")
+        event_status_label.setStyleSheet("font-weight: normal; color: #666;")
+        info_layout.addWidget(event_status_label)
+
+        self.event_info_label = QLabel("Keiner")
         self.event_info_label.setObjectName("eventInfoLabel")
-        self.event_info_label.setVisible(False)
+        self.event_info_label.setVisible(True)  # Immer sichtbar
         self.event_info_label.setWordWrap(True)
         info_layout.addWidget(self.event_info_label)
 
@@ -492,24 +521,24 @@ class MainWindow(QMainWindow):
         sidebar_layout.setContentsMargins(5, 10, 5, 10)
         sidebar_layout.setSpacing(5)
 
-        # Navigation buttons (OBEN zuerst)
-        self.nav_projects = QPushButton("Projekte")
+        # Navigation buttons (OBEN zuerst) - mit Icons
+        self.nav_projects = QPushButton("📁 Projekte")
         self.nav_projects.setCheckable(True)
         self.nav_projects.setChecked(True)
         self.nav_projects.clicked.connect(lambda: self._switch_view(0))
         sidebar_layout.addWidget(self.nav_projects)
 
-        self.nav_singers = QPushButton("Sänger")
+        self.nav_singers = QPushButton("👤 Sänger")
         self.nav_singers.setCheckable(True)
         self.nav_singers.clicked.connect(lambda: self._switch_view(1))
         sidebar_layout.addWidget(self.nav_singers)
 
-        self.nav_events = QPushButton("Termine")
+        self.nav_events = QPushButton("📅 Termine")
         self.nav_events.setCheckable(True)
         self.nav_events.clicked.connect(lambda: self._switch_view(2))
         sidebar_layout.addWidget(self.nav_events)
 
-        self.nav_formations = QPushButton("Aufstellung")
+        self.nav_formations = QPushButton("🎵 Aufstellung")
         self.nav_formations.setCheckable(True)
         self.nav_formations.clicked.connect(lambda: self._switch_view(3))
         sidebar_layout.addWidget(self.nav_formations)
@@ -768,22 +797,16 @@ class MainWindow(QMainWindow):
         # Update project info label
         if self.projects_tab.current_project:
             project = self.projects_tab.current_project
-            self.project_info_label.setText(
-                f"<b>Ausgewähltes Projekt:</b> {project.name}"
-            )
-            self.project_info_label.setVisible(True)
+            self.project_info_label.setText(f"{project.name}")
         else:
-            self.project_info_label.setVisible(False)
+            self.project_info_label.setText("Keines")
 
         # Update event info label
         if self.current_event:
             event = self.current_event
-            self.event_info_label.setText(
-                f"<b>Ausgewählter Termin:</b> {event.name} am {event.date[:10]}"
-            )
-            self.event_info_label.setVisible(True)
+            self.event_info_label.setText(f"{event.name} ({event.date[:10]})")
         else:
-            self.event_info_label.setVisible(False)
+            self.event_info_label.setText("Keiner")
 
     def _on_project_changed(self):
         """Handle project selection change."""

@@ -56,6 +56,13 @@ class EventsTab(QWidget):
         """Set up the UI."""
         layout = QVBoxLayout(self)
 
+        # Seitentitel
+        title = QLabel("📅 Terminverwaltung")
+        title.setStyleSheet(
+            "font-size: 18pt; font-weight: bold; color: #2c3e50; margin-bottom: 10px;"
+        )
+        layout.addWidget(title)
+
         toolbar = QHBoxLayout()
         toolbar.addStretch()
 

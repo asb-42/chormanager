@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QLineEdit,
     QComboBox,
+    QLabel,
 )
 from PyQt6.QtCore import Qt
 
@@ -37,6 +38,13 @@ class SingersTab(QWidget):
     def _setup_ui(self):
         """Set up the UI."""
         layout = QVBoxLayout(self)
+
+        # Seitentitel
+        title = QLabel("👤 Sängerverwaltung")
+        title.setStyleSheet(
+            "font-size: 18pt; font-weight: bold; color: #2c3e50; margin-bottom: 10px;"
+        )
+        layout.addWidget(title)
 
         toolbar = QHBoxLayout()
         toolbar.addStretch()
