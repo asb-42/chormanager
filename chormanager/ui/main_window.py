@@ -501,10 +501,6 @@ class MainWindow(QMainWindow):
         toolbar = QToolBar()
         self.addToolBar(toolbar)
 
-        refresh_button = QPushButton("Aktualisieren")
-        refresh_button.clicked.connect(self._refresh_tabs)
-        toolbar.addWidget(refresh_button)
-
     def _create_central_widget(self):
         """Create central widget with sidebar navigation."""
         central = QWidget()
