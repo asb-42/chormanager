@@ -20,6 +20,7 @@ from PyQt6.QtWidgets import (
     QLabel,
     QSizePolicy,
     QLineEdit,
+    QTextEdit,
     QComboBox,
     QMessageBox,
     QSplitter,
