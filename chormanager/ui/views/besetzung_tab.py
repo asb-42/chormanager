@@ -13,6 +13,7 @@ from PyQt6.QtWidgets import (
     QInputDialog,
     QComboBox,
     QDialog,
+    QMenu,
 )
 from PyQt6.QtCore import pyqtSignal, Qt
 
@@ -85,6 +86,8 @@ class BesetzungTab(QWidget):
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.doubleClicked.connect(self._edit_besetzung)
+        self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.table.customContextMenuRequested.connect(self._show_context_menu)
         layout.addWidget(self.table)
 
     def _load_besetzungen(self):
@@ -194,14 +197,18 @@ class BesetzungTab(QWidget):
             )
             return
 
-        besetzungen = self.besetzung_repo.get_all()
+        if self.current_project:
+            besetzungen = self.besetzung_repo.get_by_project(self.current_project.id)
+        else:
+            besetzungen = self.besetzung_repo.get_all()
+
         if row >= len(besetzungen):
             return
 
         besetzung = besetzungen[row]
         current_ids = besetzung.get_singer_ids()
 
-        dialog = SingerSelectionDialog(self.db, pre_selected_ids=current_ids)
+        dialog = SingerSelectionDialog(self.db, pre_selected_ids=current_ids, parent=self)
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return
 
@@ -255,13 +262,54 @@ class BesetzungTab(QWidget):
             return
 
         besetzung = besetzungen[row]
-        self._active_besetzung = besetzung.id
         self.active_besetzung_changed.emit(besetzung)
         QMessageBox.information(
             self,
             "Aktiv gesetzt",
             f"Besetzung '{besetzung.name}' ist jetzt die aktive Besetzung für das Projekt."
         )
+
+    def _show_context_menu(self, position):
+        """Show context menu for besetzung table."""
+        row = self.table.currentRow()
+        if row < 0:
+            return
+
+        menu = QMenu()
+        menu.addAction("Bearbeiten", self._edit_besetzung)
+        menu.addAction("Umbenennen", self._rename_besetzung)
+        menu.addAction("Als aktiv setzen", self._set_active_besetzung)
+        menu.addSeparator()
+        menu.addAction("Löschen", self._delete_besetzung)
+        menu.exec(self.table.viewport().mapToGlobal(position))
+
+    def _rename_besetzung(self):
+        """Rename selected besetzung."""
+        row = self.table.currentRow()
+        if row < 0:
+            QMessageBox.warning(
+                self,
+                "Keine Auswahl",
+                "Bitte wählen Sie eine Besetzung aus."
+            )
+            return
+
+        if self.current_project:
+            besetzungen = self.besetzung_repo.get_by_project(self.current_project.id)
+        else:
+            besetzungen = self.besetzung_repo.get_all()
+
+        if row >= len(besetzungen):
+            return
+
+        besetzung = besetzungen[row]
+        new_name, ok = QInputDialog.getText(
+            self, "Besetzung umbenennen",
+            "Neuer Name:", text=besetzung.name
+        )
+        if ok and new_name and new_name != besetzung.name:
+            self.besetzung_repo.update(besetzung.id, name=new_name)
+            self._load_besetzungen()
 
     def get_besetzung_for_project(self, project_id) -> list:
         """Get all besetzungen for a project."""

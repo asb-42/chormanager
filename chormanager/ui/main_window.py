@@ -1420,6 +1420,27 @@ class MainWindow(QMainWindow):
             background-color: #262626;
         }
 
+        /* Checkbox styling for dark theme */
+        QCheckBox {
+            background-color: transparent;
+            color: #e0e0e0;
+            padding: 4px;
+        }
+        QCheckBox::indicator {
+            width: 18px;
+            height: 18px;
+            border: 1px solid #666666;
+            border-radius: 3px;
+            background-color: #2d2d2d;
+        }
+        QCheckBox::indicator:checked {
+            background-color: #1565c0;
+            border-color: #1976d2;
+        }
+        QCheckBox::indicator:indeterminate {
+            background-color: #4a4a4a;
+        }
+
         /* Menu styling */
         QMenuBar {
             background-color: #2d2d2d;
