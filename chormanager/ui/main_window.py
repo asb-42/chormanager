@@ -186,9 +186,18 @@ class SingerDialog(QDialog):
                         widget.setDate(date)
 
             elif isinstance(widget, QComboBox):
-                index = widget.findData(value)
-                if index >= 0:
-                    widget.setCurrentIndex(index)
+                combobox_value = None
+                if name in ("joined", "left") and singer_dict:
+                    year = singer_dict.get(f"{name}_year")
+                    month = singer_dict.get(f"{name}_month")
+                    if year and month:
+                        combobox_value = f"{year:04d}-{month:02d}"
+                    elif year:
+                        combobox_value = f"{year:04d}-01"
+                if combobox_value:
+                    index = widget.findData(combobox_value)
+                    if index >= 0:
+                        widget.setCurrentIndex(index)
 
     def get_data(self):
         """Get form data as dictionary."""
@@ -222,11 +231,30 @@ class SingerDialog(QDialog):
                 value = widget.currentData()
                 data[name] = value
 
-        # Map yearmonth fields to DB column names
-        yearmonth_map = {"joined": "joined_year", "left": "left_year"}
-        for old_name, new_name in yearmonth_map.items():
-            if old_name in data:
-                data[new_name] = data.pop(old_name)
+        # Map yearmonth fields to DB column names (split YYYY-MM into year and month)
+        yearmonth_map = {
+            "joined": ("joined_year", "joined_month"),
+            "left": ("left_year", "left_month"),
+        }
+        for old_name, (year_col, month_col) in yearmonth_map.items():
+            if old_name in data and data[old_name]:
+                value = data[old_name]
+                if value and "-" in value:
+                    parts = value.split("-")
+                    data[year_col] = int(parts[0]) if parts[0].isdigit() else None
+                    data[month_col] = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else None
+                else:
+                    try:
+                        data[year_col] = int(value)
+                        data[month_col] = None
+                    except ValueError:
+                        data[year_col] = None
+                del data[old_name]
+            else:
+                if year_col in data:
+                    del data[year_col]
+                if month_col in data:
+                    del data[month_col]
 
         return data
 
