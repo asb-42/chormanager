@@ -289,9 +289,9 @@ class MainWindow(QMainWindow):
 
     def _create_info_bar(self):
         """Create info bar below menu bar."""
-        # Create info bar widget - mit besserer Sichtbarkeit
         self.info_bar = QWidget()
-        self.info_bar.setMaximumHeight(50)
+        self.info_bar.setObjectName("infoBarWidget")
+        self.info_bar.setMinimumHeight(45)
         self.info_bar.setStyleSheet("""
             QWidget {
                 background-color: #e8f4f8;
@@ -301,7 +301,7 @@ class MainWindow(QMainWindow):
             QLabel {
                 font-weight: bold;
                 color: #2c3e50;
-                padding: 2px 8px;
+                padding: 4px 12px;
                 border-radius: 4px;
             }
             QLabel#projectInfoLabel {
@@ -544,12 +544,6 @@ class MainWindow(QMainWindow):
         sidebar_layout.addWidget(self.nav_formations)
 
         sidebar_layout.addStretch()
-
-        # Refresh button
-        refresh_btn = QPushButton("↻ Aktualisieren")
-        refresh_btn.clicked.connect(self._refresh_tabs)
-        refresh_btn.setMaximumWidth(120)
-        sidebar_layout.addWidget(refresh_btn)
 
         splitter.addWidget(sidebar)
 
@@ -1127,13 +1121,21 @@ class MainWindow(QMainWindow):
         }
 
         QTableWidget::item {
-            padding: 8px;
+            padding: 12px 8px;
             border-bottom: 1px solid #e9ecef;
         }
 
         QTableWidget::item:selected {
             background-color: #e3f2fd;
             color: #1976d2;
+        }
+
+        QHeaderView::section {
+            padding: 10px;
+            background-color: #f1f3f4;
+            border: none;
+            border-bottom: 2px solid #1976d2;
+            font-weight: bold;
         }
 
         QHeaderView::section {
@@ -1275,6 +1277,27 @@ class MainWindow(QMainWindow):
         """Set professional dark theme."""
         dark_style = """
         /* ===== DARK THEME ===== */
+        
+        /* Info bar - augenfreundlich im Dark Mode */
+        QWidget#infoBarWidget {
+            background-color: #1e2832;
+            border-bottom: 2px solid #4a90d9;
+            padding: 8px;
+        }
+        QLabel {
+            color: #e0e0e0;
+            font-weight: bold;
+            padding: 4px 12px;
+            border-radius: 4px;
+        }
+        QLabel#projectInfoLabel {
+            background-color: #1565c0;
+            color: white;
+        }
+        QLabel#eventInfoLabel {
+            background-color: #e65100;
+            color: white;
+        }
 
         /* Main application colors */
         QMainWindow, QWidget {
@@ -1293,7 +1316,7 @@ class MainWindow(QMainWindow):
         }
 
         QTableWidget::item {
-            padding: 8px;
+            padding: 12px 8px;
             border-bottom: 1px solid #333333;
             color: #e0e0e0;
         }
