@@ -493,23 +493,23 @@ class MainWindow(QMainWindow):
         sidebar_layout.setSpacing(5)
 
         # Navigation buttons (OBEN zuerst)
-        self.nav_projects = QPushButton("📁 Projekte")
+        self.nav_projects = QPushButton("Projekte")
         self.nav_projects.setCheckable(True)
         self.nav_projects.setChecked(True)
         self.nav_projects.clicked.connect(lambda: self._switch_view(0))
         sidebar_layout.addWidget(self.nav_projects)
 
-        self.nav_singers = QPushButton("👤 Sänger")
+        self.nav_singers = QPushButton("Sänger")
         self.nav_singers.setCheckable(True)
         self.nav_singers.clicked.connect(lambda: self._switch_view(1))
         sidebar_layout.addWidget(self.nav_singers)
 
-        self.nav_events = QPushButton("📅 Termine")
+        self.nav_events = QPushButton("Termine")
         self.nav_events.setCheckable(True)
         self.nav_events.clicked.connect(lambda: self._switch_view(2))
         sidebar_layout.addWidget(self.nav_events)
 
-        self.nav_formations = QPushButton("🎵 Aufstellung")
+        self.nav_formations = QPushButton("Aufstellung")
         self.nav_formations.setCheckable(True)
         self.nav_formations.clicked.connect(lambda: self._switch_view(3))
         sidebar_layout.addWidget(self.nav_formations)
@@ -871,7 +871,7 @@ class MainWindow(QMainWindow):
         self.events_tab._manage_availability()
 
     def _open_choraufstellung_for_event(self, event):
-        self.tabs.setCurrentIndex(3)
+        self.content_stack.setCurrentIndex(3)
         QTimer.singleShot(100, lambda: self.choraufstellung_tab.load_for_event(event))
 
     def _edit_formation(self):
