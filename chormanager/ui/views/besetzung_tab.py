@@ -168,7 +168,7 @@ class BesetzungTab(QWidget):
             return
 
         dialog = SingerSelectionDialog(self.db, parent=self)
-        if dialog.exec() != QDialog.Accepted:
+        if dialog.exec() != QDialog.DialogCode.Accepted:
             return
 
         singer_ids = dialog.get_selected_ids()
@@ -202,7 +202,7 @@ class BesetzungTab(QWidget):
         current_ids = besetzung.get_singer_ids()
 
         dialog = SingerSelectionDialog(self.db, pre_selected_ids=current_ids)
-        if dialog.exec() != QDialog.Accepted:
+        if dialog.exec() != QDialog.DialogCode.Accepted:
             return
 
         singer_ids = dialog.get_selected_ids()
