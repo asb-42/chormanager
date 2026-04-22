@@ -250,6 +250,9 @@ class MainWindow(QMainWindow):
 
         self._setup_ui()
 
+        # Initialize context toolbar after UI setup
+        self._update_context_toolbar(0, None)
+
         # Apply last active project filter to tabs
         if self.projects_tab.current_project:
             self._on_project_changed()
@@ -279,9 +282,50 @@ class MainWindow(QMainWindow):
         self.setGeometry(100, 100, 800, 600)
 
         self._create_menu_bar()
+        self._create_info_bar()
         self._create_tool_bar()
         self._create_central_widget()
         self._create_status_bar()
+
+    def _create_info_bar(self):
+        """Create info bar below menu bar."""
+        # Create info bar widget
+        self.info_bar = QWidget()
+        self.info_bar.setMaximumHeight(40)
+        self.info_bar.setStyleSheet(
+            "background-color: #f0f0f0; border-bottom: 1px solid #c0c0c0;"
+        )
+
+        info_layout = QHBoxLayout(self.info_bar)
+        info_layout.setContentsMargins(10, 5, 10, 5)
+        info_layout.setSpacing(20)
+
+        # Info labels
+        self.project_info_label = QLabel()
+        self.project_info_label.setObjectName("projectInfoLabel")
+        self.project_info_label.setVisible(False)
+        self.project_info_label.setWordWrap(True)
+        info_layout.addWidget(self.project_info_label)
+
+        self.event_info_label = QLabel()
+        self.event_info_label.setObjectName("eventInfoLabel")
+        self.event_info_label.setVisible(False)
+        self.event_info_label.setWordWrap(True)
+        info_layout.addWidget(self.event_info_label)
+
+        info_layout.addStretch()
+
+        # Add info bar to main layout
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+        main_layout.addWidget(self.menuBar())
+        main_layout.addWidget(self.info_bar)
+
+        # Create container for menu + info bar
+        menu_container = QWidget()
+        menu_container.setLayout(main_layout)
+        self.setMenuWidget(menu_container)
 
     def _create_menu_bar(self):
         """Create menu bar."""
@@ -472,20 +516,7 @@ class MainWindow(QMainWindow):
 
         sidebar_layout.addStretch()
 
-        # Info-Bereich (unten)
-        self.project_info_label = QLabel()
-        self.project_info_label.setObjectName("projectInfoLabel")
-        self.project_info_label.setVisible(False)
-        self.project_info_label.setWordWrap(True)
-        sidebar_layout.addWidget(self.project_info_label)
-
-        self.event_info_label = QLabel()
-        self.event_info_label.setObjectName("eventInfoLabel")
-        self.event_info_label.setVisible(False)
-        self.event_info_label.setWordWrap(True)
-        sidebar_layout.addWidget(self.event_info_label)
-
-        # Context toolbar (Actions)
+        # Context toolbar (Actions) - in sidebar
         self.context_toolbar = QToolBar("Aktionen")
         self.context_toolbar.setToolButtonStyle(
             Qt.ToolButtonStyle.ToolButtonTextBesideIcon
@@ -534,6 +565,9 @@ class MainWindow(QMainWindow):
 
         splitter.addWidget(self.content_stack)
         splitter.setStretchFactor(1, 1)
+
+        # Initialize context toolbar for current view (projects)
+        self._update_context_toolbar(0, None)
 
         # Connect selection signals
         self.projects_tab.table.selectionModel().selectionChanged.connect(
@@ -636,9 +670,6 @@ class MainWindow(QMainWindow):
                 delete_action.triggered.connect(self._delete_project)
                 self.context_toolbar.addAction(delete_action)
 
-            # Search - use existing tab widget
-            self.context_toolbar.addWidget(self.projects_tab.search_box)
-
         elif tab_index == 1:  # Singers
             add_action = QAction("Hinzufügen", self)
             add_action.triggered.connect(self._add_singer)
@@ -652,20 +683,6 @@ class MainWindow(QMainWindow):
                 delete_action = QAction("Löschen", self)
                 delete_action.triggered.connect(self._delete_singer)
                 self.context_toolbar.addAction(delete_action)
-
-            # Search + filter - use existing tab widgets
-            self.context_toolbar.addWidget(self.singers_tab.search_box)
-
-            voice_filter = QComboBox()
-            voice_filter.addItem("Alle Stimmgruppen", None)
-            from ..config import load_voice_groups
-
-            for vg in load_voice_groups():
-                voice_filter.addItem(vg["name"], vg["name"])
-            self.singers_tab.voice_filter.currentIndexChanged.connect(
-                self.singers_tab._load_singers
-            )
-            self.context_toolbar.addWidget(voice_filter)
 
         elif tab_index == 2:  # Events
             add_action = QAction("Neuer Termin", self)
@@ -713,10 +730,6 @@ class MainWindow(QMainWindow):
                 delete_action = QAction("Löschen", self)
                 delete_action.triggered.connect(self._delete_event)
                 self.context_toolbar.addAction(delete_action)
-
-            # Search + filter - use existing tab widgets
-            self.context_toolbar.addWidget(self.events_tab.search_box)
-            self.context_toolbar.addWidget(self.events_tab.type_filter)
 
         elif tab_index == 3:  # Aufstellung
             new_action = QAction("Neue Aufstellung", self)
