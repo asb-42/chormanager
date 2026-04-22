@@ -4,7 +4,6 @@ import sys
 from pathlib import Path
 from PyQt6.QtCore import QSize
 from PyQt6.QtGui import QAction
-import qdarktheme
 
 from PyQt6.QtWidgets import (
     QMainWindow,
@@ -1107,52 +1106,345 @@ class MainWindow(QMainWindow):
                 os.unlink(temp_csv)
 
     def _set_light_theme(self):
-        """Set light theme using PyQtDarkTheme."""
-        # Apply light theme stylesheet
-        stylesheet = qdarktheme.load_stylesheet("light")
+        """Set professional light theme."""
+        light_style = """
+        /* ===== LIGHT THEME ===== */
 
-        # Add custom styles for info labels
-        custom_style = """
+        /* Main application colors */
+        QMainWindow, QWidget {
+            background-color: #f8f9fa;
+            color: #212529;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        /* Table styling */
+        QTableWidget {
+            background-color: #ffffff;
+            alternate-background-color: #f8f9fa;
+            gridline-color: #dee2e6;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+
+        QTableWidget::item {
+            padding: 8px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        QTableWidget::item:selected {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+
+        QHeaderView::section {
+            background-color: #f8f9fa;
+            color: #495057;
+            padding: 12px 8px;
+            border: 1px solid #dee2e6;
+            border-left: none;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        /* Button styling */
+        QPushButton {
+            background-color: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 8px 16px;
+            color: #495057;
+            font-weight: 500;
+        }
+
+        QPushButton:hover {
+            background-color: #e9ecef;
+            border-color: #adb5bd;
+        }
+
+        QPushButton:pressed {
+            background-color: #dee2e6;
+        }
+
+        /* Menu styling */
+        QMenuBar {
+            background-color: #ffffff;
+            border-bottom: 1px solid #dee2e6;
+            color: #495057;
+        }
+
+        QMenuBar::item {
+            padding: 8px 12px;
+            background-color: transparent;
+        }
+
+        QMenuBar::item:selected {
+            background-color: #e9ecef;
+        }
+
+        QMenu {
+            background-color: #ffffff;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            color: #495057;
+        }
+
+        QMenu::item {
+            padding: 8px 20px;
+            border-radius: 2px;
+        }
+
+        QMenu::item:selected {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+
+        /* Status bar */
+        QStatusBar {
+            background-color: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+            color: #6c757d;
+        }
+
+        /* Tool bar */
+        QToolBar {
+            background-color: #f8f9fa;
+            border: none;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        /* Info labels - custom colors maintained */
         QLabel#projectInfoLabel {
             background-color: #4a90d9;
             color: #ffffff;
-            padding: 8px;
+            padding: 10px 15px;
             font-weight: bold;
+            font-size: 13px;
+            border-radius: 4px;
         }
+
         QLabel#eventInfoLabel {
             background-color: #e67e22;
             color: #ffffff;
-            padding: 8px;
+            padding: 10px 15px;
             font-weight: bold;
+            font-size: 13px;
+            border-radius: 4px;
+        }
+
+        /* Form controls */
+        QLineEdit, QComboBox, QTextEdit {
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            padding: 8px 12px;
+            background-color: #ffffff;
+            color: #495057;
+        }
+
+        QLineEdit:focus, QComboBox:focus, QTextEdit:focus {
+            border-color: #4a90d9;
+            outline: none;
+        }
+
+        /* Scroll bars */
+        QScrollBar:vertical {
+            background-color: #f8f9fa;
+            width: 12px;
+            border-radius: 6px;
+        }
+
+        QScrollBar::handle:vertical {
+            background-color: #adb5bd;
+            border-radius: 6px;
+            min-height: 20px;
+        }
+
+        QScrollBar::handle:vertical:hover {
+            background-color: #6c757d;
+        }
+
+        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+            border: none;
+            background: none;
         }
         """
-        self.setStyleSheet(stylesheet + custom_style)
-
+        self.setStyleSheet(light_style)
         set_theme("light")
         self.statusBar().showMessage("Helles Theme aktiviert")
 
     def _set_dark_theme(self):
-        """Set dark theme using PyQtDarkTheme."""
-        # Apply dark theme stylesheet
-        stylesheet = qdarktheme.load_stylesheet("dark")
+        """Set professional dark theme."""
+        dark_style = """
+        /* ===== DARK THEME ===== */
 
-        # Add custom styles for info labels
-        custom_style = """
+        /* Main application colors */
+        QMainWindow, QWidget {
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        /* Table styling */
+        QTableWidget {
+            background-color: #2d2d2d;
+            alternate-background-color: #262626;
+            gridline-color: #404040;
+            border: 1px solid #404040;
+            border-radius: 4px;
+        }
+
+        QTableWidget::item {
+            padding: 8px;
+            border-bottom: 1px solid #333333;
+            color: #e0e0e0;
+        }
+
+        QTableWidget::item:selected {
+            background-color: #1e3a5f;
+            color: #64b5f6;
+        }
+
+        QHeaderView::section {
+            background-color: #333333;
+            color: #ffffff;
+            padding: 12px 8px;
+            border: 1px solid #404040;
+            border-left: none;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        /* Button styling */
+        QPushButton {
+            background-color: #333333;
+            border: 1px solid #555555;
+            border-radius: 6px;
+            padding: 8px 16px;
+            color: #e0e0e0;
+            font-weight: 500;
+        }
+
+        QPushButton:hover {
+            background-color: #404040;
+            border-color: #666666;
+        }
+
+        QPushButton:pressed {
+            background-color: #262626;
+        }
+
+        /* Menu styling */
+        QMenuBar {
+            background-color: #2d2d2d;
+            border-bottom: 1px solid #404040;
+            color: #e0e0e0;
+        }
+
+        QMenuBar::item {
+            padding: 8px 12px;
+            background-color: transparent;
+        }
+
+        QMenuBar::item:selected {
+            background-color: #404040;
+        }
+
+        QMenu {
+            background-color: #333333;
+            border: 1px solid #555555;
+            border-radius: 4px;
+            color: #e0e0e0;
+        }
+
+        QMenu::item {
+            padding: 8px 20px;
+            border-radius: 2px;
+        }
+
+        QMenu::item:selected {
+            background-color: #1e3a5f;
+            color: #64b5f6;
+        }
+
+        /* Status bar */
+        QStatusBar {
+            background-color: #1a1a1a;
+            border-top: 1px solid #404040;
+            color: #b0b0b0;
+        }
+
+        /* Tool bar */
+        QToolBar {
+            background-color: #2d2d2d;
+            border: none;
+            border-bottom: 1px solid #404040;
+            color: #e0e0e0;
+        }
+
+        /* Info labels - custom colors maintained */
         QLabel#projectInfoLabel {
             background-color: #4a90d9;
             color: #ffffff;
-            padding: 8px;
+            padding: 10px 15px;
             font-weight: bold;
+            font-size: 13px;
+            border-radius: 4px;
         }
+
         QLabel#eventInfoLabel {
             background-color: #e67e22;
             color: #ffffff;
-            padding: 8px;
+            padding: 10px 15px;
             font-weight: bold;
+            font-size: 13px;
+            border-radius: 4px;
+        }
+
+        /* Form controls */
+        QLineEdit, QComboBox, QTextEdit {
+            border: 1px solid #555555;
+            border-radius: 4px;
+            padding: 8px 12px;
+            background-color: #333333;
+            color: #e0e0e0;
+        }
+
+        QLineEdit:focus, QComboBox:focus, QTextEdit:focus {
+            border-color: #4a90d9;
+            outline: none;
+        }
+
+        /* Scroll bars */
+        QScrollBar:vertical {
+            background-color: #1a1a1a;
+            width: 12px;
+            border-radius: 6px;
+        }
+
+        QScrollBar::handle:vertical {
+            background-color: #555555;
+            border-radius: 6px;
+            min-height: 20px;
+        }
+
+        QScrollBar::handle:vertical:hover {
+            background-color: #666666;
+        }
+
+        QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+            border: none;
+            background: none;
+        }
+
+        /* Additional dark theme refinements */
+        QSplitter::handle {
+            background-color: #404040;
+        }
+
+        QSplitter::handle:hover {
+            background-color: #555555;
         }
         """
-        self.setStyleSheet(stylesheet + custom_style)
-
+        self.setStyleSheet(dark_style)
         set_theme("dark")
         self.statusBar().showMessage("Dunkles Theme aktiviert")
 
