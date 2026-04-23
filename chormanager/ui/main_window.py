@@ -657,7 +657,8 @@ class MainWindow(QMainWindow):
         self.content_stack.setCurrentIndex(index)
         self.nav_projects.setChecked(index == 0)
         self.nav_singers.setChecked(index == 1)
-        self.nav_events.setChecked(index == 2)
+        self.nav_besetzung.setChecked(index == 2)
+        self.nav_events.setChecked(index == 3)
         self.nav_formations.setChecked(index == 4)
         self._emit_selection(index)
 
