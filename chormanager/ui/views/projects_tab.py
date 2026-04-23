@@ -140,12 +140,6 @@ class ProjectsTab(QWidget):
                 self.current_project = active
                 self.current_project_changed.emit()
 
-                for row in range(self.table.rowCount()):
-                    item = self.table.item(row, 0)
-                    if item and item.text() == active.name:
-                        self.table.selectRow(row)
-                        break
-
     def _load_projects(self):
         """Load projects into table."""
         search_text = self.search_box.text().lower() if self.search_box.text() else ""
@@ -165,6 +159,14 @@ class ProjectsTab(QWidget):
         last_active_id = get_last_active_project_id()
 
         self.table.setRowCount(len(projects))
+
+        # Select the active project row (search in full unsorted list)
+        if self.current_project:
+            for row in range(self.table.rowCount()):
+                item = self.table.item(row, 0)
+                if item and item.text() == self.current_project.name:
+                    self.table.selectRow(row)
+                    break
 
         for row, project in enumerate(projects):
             self.table.setItem(row, 0, QTableWidgetItem(project.name or ""))
