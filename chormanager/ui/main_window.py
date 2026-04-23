@@ -759,9 +759,26 @@ class MainWindow(QMainWindow):
                 self.context_toolbar.addAction(delete_action)
 
         elif tab_index == 2:  # Besetzung
+            add_action = QAction("➕ Neue Besetzung", self)
+            add_action.triggered.connect(self.besetzung_tab._new_besetzung)
+            self.context_toolbar.addAction(add_action)
+
             refresh_action = QAction("🔄 Aktualisieren", self)
             refresh_action.triggered.connect(self._refresh_tabs)
             self.context_toolbar.addAction(refresh_action)
+
+            if selection:
+                edit_action = QAction("✏️ Bearbeiten", self)
+                edit_action.triggered.connect(self.besetzung_tab._edit_besetzung)
+                self.context_toolbar.addAction(edit_action)
+
+                active_action = QAction("⭐ Als aktiv setzen", self)
+                active_action.triggered.connect(self.besetzung_tab._set_active_besetzung)
+                self.context_toolbar.addAction(active_action)
+
+                delete_action = QAction("🗑️ Löschen", self)
+                delete_action.triggered.connect(self.besetzung_tab._delete_besetzung)
+                self.context_toolbar.addAction(delete_action)
 
         elif tab_index == 3:  # Events
             add_action = QAction("➕ Neuer Termin", self)

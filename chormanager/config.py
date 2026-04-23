@@ -75,6 +75,19 @@ def set_last_active_event_id(event_id: str):
     save_state(state)
 
 
+def get_last_active_besetzung_id():
+    """Get the ID of the last active besetzung."""
+    state = load_state()
+    return state.get("last_active_besetzung_id")
+
+
+def set_last_active_besetzung_id(besetzung_id: str):
+    """Set the ID of the last active besetzung."""
+    state = load_state()
+    state["last_active_besetzung_id"] = besetzung_id
+    save_state(state)
+
+
 def get_theme():
     """Get the selected theme (light or dark).
     

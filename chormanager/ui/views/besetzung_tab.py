@@ -20,6 +20,7 @@ from PyQt6.QtCore import pyqtSignal, Qt
 from ...domain.repository import BesetzungRepository, ProjectRepository
 from ...data.database import Database
 from ...ui.dialogs import SingerSelectionDialog
+from ...config import get_last_active_besetzung_id, set_last_active_besetzung_id
 
 
 class BesetzungTab(QWidget):
@@ -38,6 +39,16 @@ class BesetzungTab(QWidget):
         self._active_besetzung = None
         self._setup_ui()
         self._load_besetzungen()
+        self._restore_active_besetzung()
+
+    def _restore_active_besetzung(self):
+        """Restore previously active besetzung from config."""
+        saved_id = get_last_active_besetzung_id()
+        if saved_id:
+            besetzung = self.besetzung_repo.get_by_id(saved_id)
+            if besetzung:
+                self._active_besetzung = saved_id
+                self.active_besetzung_changed.emit(besetzung)
 
     def _setup_ui(self):
         """Set up the user interface."""
@@ -69,13 +80,6 @@ class BesetzungTab(QWidget):
         toolbar.addWidget(self.set_active_btn)
 
         toolbar.addStretch()
-
-        project_layout = QHBoxLayout()
-        project_layout.addWidget(QLabel("Projekt:"))
-        self.project_combo = QComboBox()
-        self.project_combo.currentIndexChanged.connect(self._on_project_changed)
-        project_layout.addWidget(self.project_combo)
-        toolbar.addLayout(project_layout)
 
         layout.addLayout(toolbar)
 
@@ -116,16 +120,6 @@ class BesetzungTab(QWidget):
                 date_str = "-"
             self.table.setItem(row, 3, QTableWidgetItem(date_str))
 
-    def _on_project_changed(self, index):
-        """Handle project filter change."""
-        project_id = self.project_combo.currentData()
-        if project_id:
-            self.current_project = self.project_repo.get_by_id(project_id)
-            self._load_project_besetzungen(project_id)
-        else:
-            self.current_project = None
-            self._load_besetzungen()
-
     def _load_project_besetzungen(self, project_id):
         """Load besetzungen for a specific project."""
         besetzungen = self.besetzung_repo.get_by_project(project_id)
@@ -144,15 +138,6 @@ class BesetzungTab(QWidget):
             except (ValueError, OSError):
                 date_str = "-"
             self.table.setItem(row, 2, QTableWidgetItem(date_str))
-
-    def _load_projects(self):
-        """Load projects into combo box."""
-        self.project_combo.clear()
-        self.project_combo.addItem("Alle Projekte", None)
-
-        projects = self.project_repo.get_all()
-        for project in projects:
-            self.project_combo.addItem(project.name, project.id)
 
     def _new_besetzung(self):
         """Create a new besetzung."""
@@ -262,6 +247,8 @@ class BesetzungTab(QWidget):
             return
 
         besetzung = besetzungen[row]
+        self._active_besetzung = besetzung.id
+        set_last_active_besetzung_id(besetzung.id)
         self.active_besetzung_changed.emit(besetzung)
         QMessageBox.information(
             self,
