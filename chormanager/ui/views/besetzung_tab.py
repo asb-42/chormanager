@@ -61,28 +61,6 @@ class BesetzungTab(QWidget):
         )
         layout.addWidget(page_title)
 
-        toolbar = QHBoxLayout()
-
-        self.new_btn = QPushButton("Neue Besetzung")
-        self.new_btn.clicked.connect(self._new_besetzung)
-        toolbar.addWidget(self.new_btn)
-
-        self.addWidget = QPushButton("Bearbeiten")
-        self.addWidget.clicked.connect(self._edit_besetzung)
-        toolbar.addWidget(self.addWidget)
-
-        self.delete_btn = QPushButton("Löschen")
-        self.delete_btn.clicked.connect(self._delete_besetzung)
-        toolbar.addWidget(self.delete_btn)
-
-        self.set_active_btn = QPushButton("Als aktiv setzen")
-        self.set_active_btn.clicked.connect(self._set_active_besetzung)
-        toolbar.addWidget(self.set_active_btn)
-
-        toolbar.addStretch()
-
-        layout.addLayout(toolbar)
-
         self.table = QTableWidget()
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(["Name", "Projekt", "Anzahl Sänger", "Zuletzt gespeichert"])
