@@ -108,6 +108,15 @@ class SingerDialog(QDialog):
                 self.inputs[name] = widget
                 layout.addRow(label, widget)
 
+                if name == "birth_date":
+                    age_layout = QHBoxLayout()
+                    age_layout.addWidget(QLabel("Alter:"))
+                    self._age_label = QLabel("-")
+                    age_layout.addWidget(self._age_label)
+                    age_layout.addWidget(QLabel("Jahre"))
+                    age_layout.addStretch()
+                    layout.addRow("", age_layout)
+
             elif field_type == "yearmonth":
                 layout.addRow(label, None)
                 year_layout = QHBoxLayout()
@@ -166,12 +175,6 @@ class SingerDialog(QDialog):
 
         layout.addRow(button_box)
 
-        if self.singer:
-            age = self.singer.age()
-            if age is not None:
-                age_label = QLabel(f"Alter: {age} Jahre")
-                layout.addRow(age_label)
-
     def _populate_from_singer(self):
         """Populate fields from singer data."""
         singer_dict = self.singer.to_dict()
@@ -194,13 +197,14 @@ class SingerDialog(QDialog):
                     if date.isValid():
                         widget.setDate(date)
 
+            if name == "birth_date" and hasattr(self, "_age_label"):
+                age = self.singer.age()
+                self._age_label.setText(str(age) if age is not None else "-")
+
             elif isinstance(widget, QComboBox):
-                if name.endswith("_year") or name.endswith("_month"):
-                    val = singer_dict.get(name)
-                    if val:
-                        index = widget.findData(val)
-                        if index >= 0:
-                            widget.setCurrentIndex(index)
+                index = widget.findData(value)
+                if index >= 0:
+                    widget.setCurrentIndex(index)
 
     def get_data(self):
         """Get form data as dictionary."""
