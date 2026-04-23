@@ -642,6 +642,9 @@ class MainWindow(QMainWindow):
         self.singers_tab.table.selectionModel().selectionChanged.connect(
             lambda: self._emit_selection(1)
         )
+        self.besetzung_tab.table.selectionModel().selectionChanged.connect(
+            lambda: self._emit_selection(2)
+        )
         self.events_tab.table.selectionModel().selectionChanged.connect(
             lambda: self._emit_selection(3)
         )
@@ -677,14 +680,11 @@ class MainWindow(QMainWindow):
                     if singer_id
                     else None
                 )
-        elif tab_index == 2:
-            row = self.events_tab.table.currentRow()
+        elif tab_index == 2:  # Besetzung
+            row = self.besetzung_tab.table.currentRow()
             if row >= 0:
-                item = self.events_tab.table.item(row, 0)
-                event_id = item.data(Qt.ItemDataRole.UserRole)
-                selection = (
-                    self.events_tab.event_repo.get_by_id(event_id) if event_id else None
-                )
+                besetzungen = self.besetzung_tab.besetzung_repo.get_all()
+                selection = besetzungen[row] if row < len(besetzungen) else None
         elif tab_index == 3:
             row = self.choraufstellung_tab.table.currentRow()
             if row >= 0:
