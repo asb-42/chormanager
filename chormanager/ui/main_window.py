@@ -606,6 +606,7 @@ class MainWindow(QMainWindow):
         self.projects_tab = ProjectsTab(self.db)
         self.projects_tab.current_project_changed.connect(self._on_project_changed)
         self.projects_tab._load_active_project()
+        self._update_context_toolbar(0, self.projects_tab.current_project)
 
         from .views.singers_tab import SingersTab
 
@@ -640,7 +641,7 @@ class MainWindow(QMainWindow):
         splitter.setStretchFactor(1, 1)
 
         # Initialize context toolbar for current view (projects)
-        self._update_context_toolbar(0, None)
+        self._update_context_toolbar(0, self.projects_tab.current_project)
 
         # Connect selection signals
         self.projects_tab.table.selectionModel().selectionChanged.connect(
