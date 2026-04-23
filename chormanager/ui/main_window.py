@@ -897,14 +897,9 @@ class MainWindow(QMainWindow):
         project = self.projects_tab.current_project
         self._update_info_labels()
         self.current_project = project
+
         if project:
-            self.project_info_label.setText(
-                f"<b>Ausgewähltes Projekt:</b> {project.name}"
-            )
-            # Style is handled by QSS for both themes
-            self.project_info_label.setVisible(True)
-        else:
-            self.project_info_label.setVisible(False)
+            set_last_active_project_id(project.id)
 
         if hasattr(self, "singers_tab"):
             self.singers_tab.set_project_filter(project)
