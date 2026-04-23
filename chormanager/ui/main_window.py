@@ -622,6 +622,7 @@ class MainWindow(QMainWindow):
         from .views.besetzung_tab import BesetzungTab
         self.besetzung_tab = BesetzungTab(self.db)
         self.besetzung_tab.active_besetzung_changed.connect(self._on_besetzung_changed)
+        self.besetzung_tab._restore_active_besetzung()
 
         # Stacked widget für Content
         self.content_stack = QStackedWidget()

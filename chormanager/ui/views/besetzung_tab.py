@@ -39,7 +39,6 @@ class BesetzungTab(QWidget):
         self._active_besetzung = None
         self._setup_ui()
         self._load_besetzungen()
-        self._restore_active_besetzung()
 
     def _restore_active_besetzung(self):
         """Restore previously active besetzung from config."""
