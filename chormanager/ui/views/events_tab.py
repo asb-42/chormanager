@@ -47,6 +47,14 @@ class EventsTab(QWidget):
         self._setup_ui()
         self._load_events()
 
+    def _restore_active_event(self):
+        """Restore previously active event from config."""
+        last_active_id = get_last_active_event_id()
+        if last_active_id:
+            event = self.event_repo.get_by_id(last_active_id)
+            if event:
+                self.event_selected.emit(event)
+
     def set_project_filter(self, project):
         """Set project filter - only show events belonging to project."""
         self.project_filter = project
@@ -347,7 +355,7 @@ class EventsTab(QWidget):
     def _set_selected_event(self):
         """Set selected event as active."""
         from PyQt6.QtWidgets import QMessageBox
-        from ...config import set_last_active_event_id
+        from ...config import set_last_active_event_id, get_last_active_event_id
 
         current_row = self.table.currentRow()
 

@@ -605,6 +605,7 @@ class MainWindow(QMainWindow):
 
         self.projects_tab = ProjectsTab(self.db)
         self.projects_tab.current_project_changed.connect(self._on_project_changed)
+        self.projects_tab._load_active_project()
 
         from .views.singers_tab import SingersTab
 
@@ -614,6 +615,7 @@ class MainWindow(QMainWindow):
 
         self.events_tab = EventsTab(self.db)
         self.events_tab.event_selected.connect(self._on_event_selected)
+        self.events_tab._restore_active_event()
 
         from .views.choraufstellung_tab import ChorAufstellungTab
 

@@ -131,8 +131,6 @@ class ProjectsTab(QWidget):
 
         layout.addWidget(self.table)
 
-        self._load_active_project()
-
     def _load_active_project(self):
         """Load the last active project."""
         last_active_id = get_last_active_project_id()
