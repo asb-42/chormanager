@@ -939,6 +939,9 @@ class MainWindow(QMainWindow):
             self.besetzung_info_label.setText("Keine")
             self.besetzung_info_label.setVisible(False)
 
+        if hasattr(self, "singers_tab"):
+            self.singers_tab.set_besetzung_filter(besetzung)
+
     def _on_tab_changed(self, index):
         if index == 2:
             self.events_tab._load_events()
