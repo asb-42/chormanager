@@ -279,18 +279,20 @@ class EventListDialog(QDialog):
 
 class EventAvailabilityDialog(QDialog):
     """Dialog for managing availability for a specific event."""
-    
-    def __init__(self, db, event, parent=None):
+
+    def __init__(self, db, event, parent=None, besetzung_ids=None):
         """Initialize dialog.
-        
+
         Args:
             db: Database instance.
             event: Event to manage availability for.
             parent: Parent widget.
+            besetzung_ids: Optional list of singer IDs to filter by (active besetzung).
         """
         super().__init__(parent)
         self.db = db
         self.event = event
+        self.besetzung_ids = besetzung_ids or []
         self.singer_repo = SingerRepository(db)
         self.avail_repo = AvailabilityRepository(db)
         self._setup_ui()
@@ -348,7 +350,10 @@ class EventAvailabilityDialog(QDialog):
     def _load_availability(self):
         """Load singers and their availability status."""
         singers = self.singer_repo.get_active()
-        
+
+        if self.besetzung_ids:
+            singers = [s for s in singers if s.id in self.besetzung_ids]
+
         self.table.setRowCount(len(singers))
         
         self.status_widgets = {}

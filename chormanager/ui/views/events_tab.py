@@ -291,7 +291,14 @@ class EventsTab(QWidget):
         if not event:
             return
 
-        dialog = EventAvailabilityDialog(self.db, event, self)
+        besetzung_ids = None
+        main_window = self.window()
+        if hasattr(main_window, "besetzung_tab"):
+            active_besetzung = main_window.besetzung_tab.get_active_besetzung()
+            if active_besetzung:
+                besetzung_ids = active_besetzung.get_singer_ids()
+
+        dialog = EventAvailabilityDialog(self.db, event, self, besetzung_ids=besetzung_ids)
         dialog.exec()
 
         self._load_events()
