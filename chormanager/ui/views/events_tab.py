@@ -297,11 +297,15 @@ class EventsTab(QWidget):
             active_besetzung = main_window.besetzung_tab.get_active_besetzung()
             if active_besetzung:
                 besetzung_ids = active_besetzung.get_singer_ids()
-                print(f"DEBUG: Active besetzung: {active_besetzung.name}, singers: {len(besetzung_ids)}")
+                QMessageBox.information(
+                    self, "DEBUG",
+                    f"Aktive Besetzung: {active_besetzung.name}\n"
+                    f"Anzahl Sänger: {len(besetzung_ids)}"
+                )
             else:
-                print("DEBUG: No active besetzung set")
+                QMessageBox.information(self, "DEBUG", "Keine aktive Besetzung")
         else:
-            print("DEBUG: No besetzung_tab attribute")
+            QMessageBox.information(self, "DEBUG", "Keine besetzung_tab")
 
         dialog = EventAvailabilityDialog(self.db, event, self, besetzung_ids=besetzung_ids)
         dialog.exec()
