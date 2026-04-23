@@ -26,6 +26,7 @@ from ...domain.repository import (
     ProjectRepository,
 )
 from ..dialogs import EventDialog
+from ...config import get_last_active_event_id, set_last_active_event_id
 
 
 class EventsTab(QWidget):
@@ -355,7 +356,6 @@ class EventsTab(QWidget):
     def _set_selected_event(self):
         """Set selected event as active."""
         from PyQt6.QtWidgets import QMessageBox
-        from ...config import set_last_active_event_id, get_last_active_event_id
 
         current_row = self.table.currentRow()
 
