@@ -56,6 +56,12 @@ class EventsTab(QWidget):
             if event:
                 self.event_selected.emit(event)
 
+                for row in range(self.table.rowCount()):
+                    item = self.table.item(row, 0)
+                    if item and item.data(Qt.ItemDataRole.UserRole) == event.id:
+                        self.table.selectRow(row)
+                        break
+
     def set_project_filter(self, project):
         """Set project filter - only show events belonging to project."""
         self.project_filter = project
