@@ -349,14 +349,10 @@ class EventAvailabilityDialog(QDialog):
     
     def _load_availability(self):
         """Load singers and their availability status."""
-        import sys
-        print(f"DEBUG dialog: besetzung_ids = {self.besetzung_ids}", file=sys.stderr)
         singers = self.singer_repo.get_active()
-        print(f"DEBUG dialog: total active singers = {len(singers)}", file=sys.stderr)
 
         if self.besetzung_ids:
             singers = [s for s in singers if s.id in self.besetzung_ids]
-            print(f"DEBUG dialog: filtered singers = {len(singers)}")
 
         self.table.setRowCount(len(singers))
         
