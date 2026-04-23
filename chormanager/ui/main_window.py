@@ -686,10 +686,19 @@ class MainWindow(QMainWindow):
             if row >= 0:
                 besetzungen = self.besetzung_tab.besetzung_repo.get_all()
                 selection = besetzungen[row] if row < len(besetzungen) else None
-        elif tab_index == 3:
+        elif tab_index == 3:  # Events
+            row = self.events_tab.table.currentRow()
+            if row >= 0:
+                item = self.events_tab.table.item(row, 0)
+                event_id = item.data(Qt.ItemDataRole.UserRole)
+                selection = (
+                    self.events_tab.event_repo.get_by_id(event_id)
+                    if event_id
+                    else None
+                )
+        elif tab_index == 4:  # Aufstellung
             row = self.choraufstellung_tab.table.currentRow()
             if row >= 0:
-                # For formations, selection is the filename/path
                 filename = self.choraufstellung_tab.table.item(row, 0).text()
                 selection = filename
 
