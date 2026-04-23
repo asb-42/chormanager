@@ -3,7 +3,19 @@
 Diese Datei dokumentiert UX-Probleme, die entweder nicht behoben werden konnten oder
 noch nicht implementiert wurden.
 
-## Nicht behoben
+### 1. Aktives Projekt kann nicht gesetzt werden
+**Status**: "Als aktives Projekt setzen" fehlt in Context-Toolbar und Rechtsklick-Menü
+**Problem**: 
+- `set_last_active_project_id()` wird nicht in `_on_project_changed()` aufgerufen
+- Context-Toolbar wird nicht mit `current_project` aktualisiert nach Restore
+- Rechtsklick-Menü kann nicht erweitert werden (Code-Logik fehlt)
+**Aufwand**: Mittel - `set_last_active_project_id()` in `_on_project_changed()` hinzufügen
+
+### 2. Tabellenzellen zu eng
+**Status**: 12px Padding in CSS, aber Zellen wirken gedrängt
+**Problem**: CSS `QTableWidget::item { padding }` wirkt nicht korrekt
+**Aufwand**: Hoch - requires deep CSS debugging
+**Workaround**: Reduziert auf 6px in `QTableWidget::item`
 
 ### 1. Tabellenzellen-Padding
 **Status**: Bereits 12px Padding in CSS
@@ -11,16 +23,16 @@ noch nicht implementiert wurden.
 **Grund**: CSS `QTableWidget::item { padding }` wird nicht korrekt angewendet
 **Aufwand**: Hoch - requires deep CSS debugging
 
-### 2. Sidebar Icons (leere Rechtecke)
-**Status**: Emoji-Icons funktionieren nicht
-**Workaround**: Verwende Buchstaben (P, S, B, T, A)
-**Grund**: Material Icons Font lädt nicht inoffscreen mode
-
-### 3. Context Toolbar Icons
+### 2. Context Toolbar Icons
 **Status**: Nur Text, keine Icons
 **Problem**: QAction Icons werden nicht angezeigt
 **Grund**: PyQt6 Toolbar mit ToolButtonTextBesideIcon Style
 **Workaround**: Unicode-Zeichen im Text (➕, ✏️, etc.)
+
+### 3. Sidebar Icons (leere Rechtecke)
+**Status**: Emoji-Icons funktionieren nicht
+**Workaround**: Verwende Buchstaben (P, S, B, T, A)
+**Grund**: Material Icons Font lädt nicht inoffscreen mode
 
 ## Nicht implementiert
 

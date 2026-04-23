@@ -1414,7 +1414,7 @@ class MainWindow(QMainWindow):
         }
 
         QTableWidget::item {
-            padding: 12px 8px;
+            padding: 6px 8px;
             border-bottom: 1px solid #333333;
             color: #e0e0e0;
         }
