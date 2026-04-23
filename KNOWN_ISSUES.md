@@ -34,7 +34,15 @@ noch nicht implementiert wurden.
 **Problem**: Sollte aus aktiver Besetzung kommen
 **Aufwand**: Hoch - requires API-Änderungen
 
-### 6. Aktualisieren-Button
+### 6. Besetzung-Verfügbarkeit Filter
+**Status**: Konnte nicht vollständig implementiert werden
+**Problem**: 
+- Active Besetzung wird sitzungsübergreifend gespeichert (config.py)
+- Beim Öffnen von "Verfügbarkeit erfassen" kann `besetzung_tab` nicht zugegriffen werden
+- Filter greift nicht - alle 67 Sänger werden angezeigt statt nur Besetzungs-Sänger
+**Aufwand**: Unbekannt -Debug-Ausgabe erscheint nicht im Terminal
+
+### 7. Aktualisieren-Button
 **Status**: ✅ In Context-Toolbar bei Sänger, Termine, Besetzung
 
 ## Bereits behoben

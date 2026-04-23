@@ -291,24 +291,12 @@ class EventsTab(QWidget):
         if not event:
             return
 
-        # Try to get from besetzung_tab, with fallback to parent window
         besetzung_ids = None
-        main_win = None
-
-        # Method 1: Try self.parent() chain
         main_win = self.window()
         if main_win and hasattr(main_win, "besetzung_tab"):
             active_besetzung = main_win.besetzung_tab.get_active_besetzung()
             if active_besetzung:
                 besetzung_ids = active_besetzung.get_singer_ids()
-
-        if not besetzung_ids:
-            QMessageBox.warning(
-                self, "DEBUG",
-                f"Keine aktive Besetzung.\n"
-                f"main_window exists: {bool(main_win)}\n"
-                f"has besetzung_tab: {hasattr(main_win, 'besetzung_tab') if main_win else 'N/A'}"
-            )
 
         dialog = EventAvailabilityDialog(self.db, event, self, besetzung_ids=besetzung_ids)
         dialog.exec()

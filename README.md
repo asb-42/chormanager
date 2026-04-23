@@ -227,4 +227,32 @@ chormanager/
 - `address` ersetzt durch `street`, `postal_code`, `city`
 - Tests aktualisiert
 
-### Änderungen heute (2026-04-22)\n\n**UI/UX-Verbesserungen:**\n- Sidebar-Navigation mit Material Design Icons (📁 Projekte, 👤 Sänger, 📅 Termine, 🎵 Aufstellung)\n- Context Toolbar horizontal über Content-Bereich positioniert\n- Info-Bar unter Hauptmenü mit Projekt-/Termin-Status-Anzeige\n- Seitentitel für alle Tabs hinzugefügt\n- Suchfunktionalität in allen Tabs (inkl. neu hinzugefügter Suche in Choraufstellung)\n- Theme-Switching über Menü "Ansicht → Hell/Dunkel"\n\n**Theme-System überarbeitet:**\n- QDarkStyleSheet-Integration anstatt improvisierter Stylesheets\n- Professionelle 54KB Light/Dark-Themes\n- Material Design Icons integriert und heruntergeladen\n- PyQtDarkTheme durch QDarkStyle ersetzt (wegen Python 3.12-Kompatibilität)\n\n**Code-Verbesserungen:**\n- Duplicate Layout-Addition in singers_tab.py behoben\n- Tab-Switching-Logik korrigiert (self.tabs → self.content_stack)\n- Imports für QLabel und QIcon hinzugefügt\n- Dark Theme CSS für bessere Lesbarkeit optimiert\n\n**Dependencies:**\n- QDarkStyle zu requirements.txt hinzugefügt\n- Material Design Icons heruntergeladen in assets/icons/\n\n**Testing:**\n- Alle Unit-Tests erfolgreich (135 passed, 1 skipped)
+### Änderungen heute (2026-04-23)
+
+**Besetzung Feature (neu):**
+- Neuer Tab "Besetzungen" zur Verwaltung von Sänger-Lineups
+- SingerSelectionDialog: Checkbox-Tabelle mit Name, Kurzname, Stimmgruppe, Alter
+- Besetzungen persistent in Datenbank (`besetzung` Tabelle)
+- "Als aktiv setzen" speichert aktive Besetzung sitzungsübergreifend
+- Info-Bar zeigt aktive Besetzung an (zwischen Projekt und Termin)
+
+**UI-Verbesserungen:**
+- Context Toolbar mit vollständigen Aktionen für Besetzung-Tab
+- Context Menu: Bearbeiten, Umbenennen, Als aktiv, Löschen
+- Dunkeltheme: QCheckBox-Styling hinzugefügt
+- Tab-Indizes korrigiert (0=Projekte, 1=Sänger, 2=Besetzung, 3=Termine, 4=Aufstellung)
+- Projekt-Dropdown aus Besetzung-Tab entfernt (verwendet aktives Projekt)
+- Alter-Spalte in SingerSelectionDialog
+
+**Besetzung-Verfügbarkeit Filter (nicht vollständig implementiert):**
+- EventAvailabilityDialog mit besetzung_ids Parameter
+- Filter-Logik in _load_availability()
+- Kommunikation mit besetzung_tab nicht funktional
+
+**Diverses:**
+- SingerSelectionDialog: Klasse in dialogs.py definiert
+- QDialog.DialogCode.Accepted für PyQt6-Kompatibilität
+- Parent-Parameter für Theme-Vererbung
+
+**Testing:**
+- Alle Unit-Tests erfolgreich (135 passed, 1 skipped)
