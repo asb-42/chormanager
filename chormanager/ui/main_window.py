@@ -40,7 +40,7 @@ from ..history.service import (
     DeleteSingerCommand,
 )
 from ..backup.service import AutoBackupService
-from ..config import load_voice_groups, load_fields, get_theme, set_theme
+from ..config import load_voice_groups, load_fields, get_theme, set_theme, get_last_active_project_id, set_last_active_project_id
 
 
 def get_icon(icon_name: str, fallback_pixmap):
@@ -983,8 +983,6 @@ class MainWindow(QMainWindow):
         if project:
             set_last_active_project_id(project.id)
 
-        if hasattr(self, "singers_tab"):
-            self.singers_tab.set_project_filter(project)
         if hasattr(self, "events_tab"):
             self.events_tab.set_project_filter(project)
         if hasattr(self, "besetzung_tab"):
@@ -1020,9 +1018,6 @@ class MainWindow(QMainWindow):
             self.besetzung_info_label.setText("Keine")
             self.besetzung_info_label.setVisible(False)
 
-        if hasattr(self, "singers_tab"):
-            self.singers_tab.set_besetzung_filter(besetzung)
-
     def _on_tab_changed(self, index):
         if index == 2:
             self.events_tab._load_events()
@@ -1036,8 +1031,10 @@ class MainWindow(QMainWindow):
 
     def _refresh_tabs(self):
         """Refresh all tabs."""
-        self.singers_tab._load_singers()
-        self.events_tab._load_events()
+        if hasattr(self, "singers_tab"):
+            self.singers_tab._load_singers()
+        if hasattr(self, "events_tab"):
+            self.events_tab._load_events()
 
     def _on_search_text_changed(self, text):
         """Handle search text change."""
