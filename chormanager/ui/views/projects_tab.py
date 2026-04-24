@@ -128,6 +128,9 @@ class ProjectsTab(QWidget):
         self.table.horizontalHeader().setSortIndicatorShown(True)
         self.table.horizontalHeader().setSortIndicator(3, Qt.SortOrder.AscendingOrder)
         self.table.setSortingEnabled(True)
+        # Enable word wrap for better text display
+        self.table.setWordWrap(True)
+        self.table.setTextElideMode(Qt.TextElideMode.ElideNone)
 
         layout.addWidget(self.table)
 

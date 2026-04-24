@@ -29,7 +29,7 @@ from PyQt6.QtWidgets import (
     QDateEdit,
 )
 from PyQt6.QtCore import Qt, QDate, QTimer
-from PyQt6.QtGui import QKeySequence
+from PyQt6.QtGui import QAction, QKeySequence
 
 from ..data.database import Database
 from ..domain.repository import SingerRepository
