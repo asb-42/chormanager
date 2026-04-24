@@ -1322,6 +1322,10 @@ class MainWindow(QMainWindow):
             font-size: 13px;
         }
 
+        QHeaderView::section:vertical {
+            padding: 8px 16px;
+        }
+        
         /* Button styling */
         QPushButton {
             background-color: #ffffff;
@@ -1513,6 +1517,10 @@ class MainWindow(QMainWindow):
             font-size: 13px;
         }
 
+        QHeaderView::section:vertical {
+            padding: 8px 16px;
+        }
+        
         /* Button styling */
         QPushButton {
             background-color: #333333;
