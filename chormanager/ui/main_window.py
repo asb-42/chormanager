@@ -1700,7 +1700,8 @@ class MainWindow(QMainWindow):
         """Manage availability for events."""
         from .dialogs import EventListDialog
 
-        dialog = EventListDialog(self.db, parent=self)
+        active_event_id = self.current_event.id if self.current_event else None
+        dialog = EventListDialog(self.db, parent=self, active_event_id=active_event_id)
         dialog.exec()
 
     def _list_events(self):

@@ -190,16 +190,11 @@ class EventDialog(QDialog):
 
 class EventListDialog(QDialog):
     """Dialog showing events and their availability."""
-    
-    def __init__(self, db, parent=None):
-        """Initialize dialog.
-        
-        Args:
-            db: Database instance.
-            parent: Parent widget.
-        """
+
+    def __init__(self, db, parent=None, active_event_id=None):
         super().__init__(parent)
         self.db = db
+        self.active_event_id = active_event_id
         self._setup_ui()
         self._load_events()
     
@@ -232,10 +227,16 @@ class EventListDialog(QDialog):
         from ..domain.repository import EventRepository
         
         repo = EventRepository(self.db)
-        events = repo.get_all()
         
-        for event in events:
-            self.event_combo.addItem(f"{event.name} ({event.date})", event.id)
+        if self.active_event_id:
+            event = repo.get_by_id(self.active_event_id)
+            if event:
+                self.event_combo.addItem(f"{event.name} ({event.date})", event.id)
+                self.event_combo.setCurrentIndex(0)
+        else:
+            events = repo.get_all()
+            for event in events:
+                self.event_combo.addItem(f"{event.name} ({event.date})", event.id)
     
     def _on_event_changed(self, index):
         """Handle event selection change."""
