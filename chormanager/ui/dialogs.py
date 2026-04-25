@@ -249,32 +249,31 @@ class EventListDialog(QDialog):
     def _load_availability(self, event_id: str):
         """Load availability for selected event."""
         from ..domain.repository import SingerRepository, AvailabilityRepository
-        
+
         singer_repo = SingerRepository(self.db)
         avail_repo = AvailabilityRepository(self.db)
-        
+
         singers = singer_repo.get_all()
-        
-        status_symbols = {
-            "yes": "✓",
-            "no": "✗",
-            "none": "○",
-            "conditional": "✓?",
-            "unknown": "?",
-            "maybe": "?"
-        }
-        
+
         self.table.setRowCount(len(singers))
-        
+
         for row, singer in enumerate(singers):
             self.table.setItem(row, 0, QTableWidgetItem(singer.full_name or ""))
             self.table.setItem(row, 1, QTableWidgetItem(singer.voice_group or ""))
-            
+
             avail = avail_repo.get_by_ids(singer.id, event_id)
-            status = avail.status if avail else ""
-            symbol = status_symbols.get(status, "-")
-            self.table.setItem(row, 2, QTableWidgetItem(symbol))
-        
+            current_status = avail.status if avail else "none"
+
+            status_combo = QComboBox()
+            for status_code, status_label, short_label in AVAILABILITY_STATUS:
+                status_combo.addItem(f"{status_label}", status_code)
+
+            idx = status_combo.findData(current_status)
+            if idx >= 0:
+                status_combo.setCurrentIndex(idx)
+
+            self.table.setCellWidget(row, 2, status_combo)
+
         self.table.resizeColumnsToContents()
 
 
