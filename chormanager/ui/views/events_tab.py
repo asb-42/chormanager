@@ -289,6 +289,7 @@ class EventsTab(QWidget):
         """Manage availability for selected event."""
         from PyQt6.QtWidgets import QMessageBox
         from ..dialogs import EventAvailabilityDialog
+        from ...config import get_last_active_besetzung_id
 
         current_row = self.table.currentRow()
 
@@ -307,13 +308,28 @@ class EventsTab(QWidget):
             return
 
         besetzung_ids = None
-        main_win = self.window()
-        if main_win and hasattr(main_win, "besetzung_tab"):
-            active_besetzung = main_win.besetzung_tab.get_active_besetzung()
-            if active_besetzung:
-                besetzung_ids = active_besetzung.get_singer_ids()
+        besetzung_name = None
+        besetzung_count = 0
 
-        dialog = EventAvailabilityDialog(self.db, event, self, besetzung_ids=besetzung_ids)
+        saved_id = get_last_active_besetzung_id()
+        if saved_id:
+            from ...domain.repository import BesetzungRepository
+
+            repo = BesetzungRepository(self.db)
+            besetzung = repo.get_by_id(saved_id)
+            if besetzung:
+                besetzung_ids = besetzung.get_singer_ids()
+                besetzung_name = besetzung.name
+                besetzung_count = len(besetzung_ids)
+
+        dialog = EventAvailabilityDialog(
+            self.db,
+            event,
+            self,
+            besetzung_ids=besetzung_ids,
+            besetzung_name=besetzung_name,
+            besetzung_count=besetzung_count,
+        )
         dialog.exec()
 
         self._load_events()

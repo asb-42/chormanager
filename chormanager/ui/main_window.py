@@ -40,22 +40,29 @@ from ..history.service import (
     DeleteSingerCommand,
 )
 from ..backup.service import AutoBackupService
-from ..config import load_voice_groups, load_fields, get_theme, set_theme, get_last_active_project_id, set_last_active_project_id
+from ..config import (
+    load_voice_groups,
+    load_fields,
+    get_theme,
+    set_theme,
+    get_last_active_project_id,
+    set_last_active_project_id,
+)
 
 
 def get_icon(icon_name: str, fallback_pixmap):
     """Load icon from system theme with fallback to Qt standard pixmap.
-    
+
     Args:
         icon_name: System icon name (e.g., "document-new", "list-add")
         fallback_pixmap: QStyle.StandardPixmap to use if theme icon not found
-    
+
     Returns:
         QIcon instance
     """
     from PyQt6.QtGui import QIcon
     from PyQt6.QtWidgets import QApplication
-    
+
     icon = QIcon.fromTheme(icon_name)
     if icon.isNull():
         style = QApplication.instance().style() if QApplication.instance() else None
@@ -369,7 +376,9 @@ class MainWindow(QMainWindow):
         self.project_info_label.setObjectName("projectInfoLabel")
         self.project_info_label.setVisible(True)
         self.project_info_label.setWordWrap(False)
-        self.project_info_label.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+        self.project_info_label.setSizePolicy(
+            QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum
+        )
         info_layout.addWidget(self.project_info_label)
 
         # Besetzung-Status Label
@@ -381,7 +390,9 @@ class MainWindow(QMainWindow):
         self.besetzung_info_label.setObjectName("besetzungInfoLabel")
         self.besetzung_info_label.setVisible(True)
         self.besetzung_info_label.setWordWrap(False)
-        self.besetzung_info_label.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+        self.besetzung_info_label.setSizePolicy(
+            QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum
+        )
         info_layout.addWidget(self.besetzung_info_label)
 
         info_layout.addStretch()
@@ -395,7 +406,9 @@ class MainWindow(QMainWindow):
         self.event_info_label.setObjectName("eventInfoLabel")
         self.event_info_label.setVisible(True)
         self.event_info_label.setWordWrap(False)
-        self.event_info_label.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
+        self.event_info_label.setSizePolicy(
+            QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum
+        )
         info_layout.addWidget(self.event_info_label)
 
         info_layout.addStretch()
@@ -419,24 +432,32 @@ class MainWindow(QMainWindow):
         file_menu = menubar.addMenu("&Datei")
 
         export_csv_action = QAction("Als CSV exportieren...", self)
-        export_csv_action.setIcon(get_icon("x-office-spreadsheet", QStyle.StandardPixmap.SP_FileIcon))
+        export_csv_action.setIcon(
+            get_icon("x-office-spreadsheet", QStyle.StandardPixmap.SP_FileIcon)
+        )
         export_csv_action.triggered.connect(self._export_csv)
         file_menu.addAction(export_csv_action)
 
         export_pdf_action = QAction("Als PDF exportieren...", self)
-        export_pdf_action.setIcon(get_icon("application-pdf", QStyle.StandardPixmap.SP_FileIcon))
+        export_pdf_action.setIcon(
+            get_icon("application-pdf", QStyle.StandardPixmap.SP_FileIcon)
+        )
         export_pdf_action.triggered.connect(self._export_pdf)
         file_menu.addAction(export_pdf_action)
 
         export_lo_action = QAction("Als LibreOffice exportieren...", self)
-        export_lo_action.setIcon(get_icon("x-office-document", QStyle.StandardPixmap.SP_FileIcon))
+        export_lo_action.setIcon(
+            get_icon("x-office-document", QStyle.StandardPixmap.SP_FileIcon)
+        )
         export_lo_action.triggered.connect(self._export_libreoffice)
         file_menu.addAction(export_lo_action)
 
         file_menu.addSeparator()
 
         exit_action = QAction("Beenden", self)
-        exit_action.setIcon(get_icon("application-exit", QStyle.StandardPixmap.SP_DialogCloseButton))
+        exit_action.setIcon(
+            get_icon("application-exit", QStyle.StandardPixmap.SP_DialogCloseButton)
+        )
         exit_action.setShortcut(QKeySequence.StandardKey.Quit)
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
@@ -450,7 +471,9 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(undo_action)
 
         redo_action = QAction("Wiederholen", self)
-        redo_action.setIcon(get_icon("edit-redo", QStyle.StandardPixmap.SP_ArrowForward))
+        redo_action.setIcon(
+            get_icon("edit-redo", QStyle.StandardPixmap.SP_ArrowForward)
+        )
         redo_action.setShortcut(QKeySequence.StandardKey.Redo)
         redo_action.triggered.connect(self._redo)
         edit_menu.addAction(redo_action)
@@ -458,24 +481,32 @@ class MainWindow(QMainWindow):
         view_menu = menubar.addMenu("&Ansicht")
 
         light_theme_action = QAction("Hell", self)
-        light_theme_action.setIcon(get_icon("weather-clear", QStyle.StandardPixmap.SP_FileIcon))
+        light_theme_action.setIcon(
+            get_icon("weather-clear", QStyle.StandardPixmap.SP_FileIcon)
+        )
         light_theme_action.triggered.connect(self._set_light_theme)
         view_menu.addAction(light_theme_action)
 
         dark_theme_action = QAction("Dunkel", self)
-        dark_theme_action.setIcon(get_icon("weather-night", QStyle.StandardPixmap.SP_FileIcon))
+        dark_theme_action.setIcon(
+            get_icon("weather-night", QStyle.StandardPixmap.SP_FileIcon)
+        )
         dark_theme_action.triggered.connect(self._set_dark_theme)
         view_menu.addAction(dark_theme_action)
 
         sync_menu = menubar.addMenu("&Sync")
 
         export_singers_action = QAction("Sänger exportieren (JSON)...", self)
-        export_singers_action.setIcon(get_icon("document-export", QStyle.StandardPixmap.SP_FileIcon))
+        export_singers_action.setIcon(
+            get_icon("document-export", QStyle.StandardPixmap.SP_FileIcon)
+        )
         export_singers_action.triggered.connect(self._export_singers_json)
         sync_menu.addAction(export_singers_action)
 
         export_events_action = QAction("Termine exportieren (JSON)...", self)
-        export_events_action.setIcon(get_icon("document-export", QStyle.StandardPixmap.SP_FileIcon))
+        export_events_action.setIcon(
+            get_icon("document-export", QStyle.StandardPixmap.SP_FileIcon)
+        )
         export_events_action.triggered.connect(self._export_events_json)
         sync_menu.addAction(export_events_action)
 
@@ -488,81 +519,107 @@ class MainWindow(QMainWindow):
         sync_menu.addSeparator()
 
         export_all_action = QAction("Alle Sync-Dateien exportieren", self)
-        export_all_action.setIcon(get_icon("document-export", QStyle.StandardPixmap.SP_FileIcon))
+        export_all_action.setIcon(
+            get_icon("document-export", QStyle.StandardPixmap.SP_FileIcon)
+        )
         export_all_action.triggered.connect(self._export_all_sync)
         sync_menu.addAction(export_all_action)
 
         export_csv_action = QAction("CSV-Fallback exportieren...", self)
-        export_csv_action.setIcon(get_icon("x-office-spreadsheet", QStyle.StandardPixmap.SP_FileIcon))
+        export_csv_action.setIcon(
+            get_icon("x-office-spreadsheet", QStyle.StandardPixmap.SP_FileIcon)
+        )
         export_csv_action.triggered.connect(self._export_singers_csv)
         sync_menu.addAction(export_csv_action)
 
         projekt_menu = menubar.addMenu("&Projekt")
 
         new_projekt_action = QAction("Neu...", self)
-        new_projekt_action.setIcon(get_icon("document-new", QStyle.StandardPixmap.SP_FileIcon))
+        new_projekt_action.setIcon(
+            get_icon("document-new", QStyle.StandardPixmap.SP_FileIcon)
+        )
         new_projekt_action.triggered.connect(self._new_projekt)
         projekt_menu.addAction(new_projekt_action)
 
         save_projekt_action = QAction("Speichern", self)
-        save_projekt_action.setIcon(get_icon("document-save", QStyle.StandardPixmap.SP_DialogSaveButton))
+        save_projekt_action.setIcon(
+            get_icon("document-save", QStyle.StandardPixmap.SP_DialogSaveButton)
+        )
         save_projekt_action.triggered.connect(self._save_projekt)
         projekt_menu.addAction(save_projekt_action)
 
         open_projekt_action = QAction("Öffnen...", self)
-        open_projekt_action.setIcon(get_icon("document-open", QStyle.StandardPixmap.SP_DialogOpenButton))
+        open_projekt_action.setIcon(
+            get_icon("document-open", QStyle.StandardPixmap.SP_DialogOpenButton)
+        )
         open_projekt_action.triggered.connect(self._open_projekt)
         projekt_menu.addAction(open_projekt_action)
 
         konfig_menu = menubar.addMenu("Konfiguration")
 
         konfig_action = QAction("Einstellungen...", self)
-        konfig_action.setIcon(get_icon("preferences-system", QStyle.StandardPixmap.SP_FileIcon))
+        konfig_action.setIcon(
+            get_icon("preferences-system", QStyle.StandardPixmap.SP_FileIcon)
+        )
         konfig_action.triggered.connect(self._show_config)
         konfig_menu.addAction(konfig_action)
 
         marketing_menu = menubar.addMenu("Marketing")
 
         selbstdarstellung_action = QAction("Selbstdarstellung...", self)
-        selbstdarstellung_action.setIcon(get_icon("x-office-document", QStyle.StandardPixmap.SP_FileIcon))
+        selbstdarstellung_action.setIcon(
+            get_icon("x-office-document", QStyle.StandardPixmap.SP_FileIcon)
+        )
         selbstdarstellung_action.triggered.connect(self._show_selbstdarstellung)
         marketing_menu.addAction(selbstdarstellung_action)
 
         choraufstellung_menu = menubar.addMenu("Choraufstellung")
 
         open_action = QAction("In Choraufstellung öffnen...", self)
-        open_action.setIcon(get_icon("media-playback-start", QStyle.StandardPixmap.SP_FileIcon))
+        open_action.setIcon(
+            get_icon("media-playback-start", QStyle.StandardPixmap.SP_FileIcon)
+        )
         open_action.triggered.connect(self._open_choraufstellung)
         choraufstellung_menu.addAction(open_action)
 
         termin_menu = menubar.addMenu("&Termine")
 
         new_event_action = QAction("Neuer Termin...", self)
-        new_event_action.setIcon(get_icon("list-add", QStyle.StandardPixmap.SP_FileIcon))
+        new_event_action.setIcon(
+            get_icon("list-add", QStyle.StandardPixmap.SP_FileIcon)
+        )
         new_event_action.triggered.connect(self._new_event)
         termin_menu.addAction(new_event_action)
 
         manage_availability_action = QAction("Verfügbarkeit verwalten...", self)
-        manage_availability_action.setIcon(get_icon("view-calendar", QStyle.StandardPixmap.SP_FileIcon))
+        manage_availability_action.setIcon(
+            get_icon("view-calendar", QStyle.StandardPixmap.SP_FileIcon)
+        )
         manage_availability_action.triggered.connect(self._manage_availability)
         termin_menu.addAction(manage_availability_action)
 
         termin_menu.addSeparator()
 
         list_events_action = QAction("Terminliste anzeigen...", self)
-        list_events_action.setIcon(get_icon("x-office-spreadsheet", QStyle.StandardPixmap.SP_FileIcon))
+        list_events_action.setIcon(
+            get_icon("x-office-spreadsheet", QStyle.StandardPixmap.SP_FileIcon)
+        )
         list_events_action.triggered.connect(self._list_events)
         termin_menu.addAction(list_events_action)
 
         extras_menu = menubar.addMenu("Extras")
 
         export_data_action = QAction("Daten exportieren...", self)
-        export_data_action.setIcon(get_icon("document-export", QStyle.StandardPixmap.SP_FileIcon))
+        export_data_action.setIcon(
+            get_icon("document-export", QStyle.StandardPixmap.SP_FileIcon)
+        )
         export_data_action.triggered.connect(self._export_data)
         extras_menu.addAction(export_data_action)
 
         import_data_action = QAction("Daten importieren...", self)
-        import_data_action.setIcon(get_icon("document-import", QStyle.StandardPixmap.SP_FileIcon))
+        import_data_action.setIcon(
+            get_icon("document-import", QStyle.StandardPixmap.SP_FileIcon)
+        )
         import_data_action.triggered.connect(self._import_data)
         extras_menu.addAction(import_data_action)
 
@@ -599,32 +656,42 @@ class MainWindow(QMainWindow):
 
         # Navigation buttons (OBEN zuerst) - mit Icons
         self.nav_projects = QPushButton("Projekte")
-        self.nav_projects.setIcon(get_icon("folder", QStyle.StandardPixmap.SP_DirClosedIcon))
+        self.nav_projects.setIcon(
+            get_icon("folder", QStyle.StandardPixmap.SP_DirClosedIcon)
+        )
         self.nav_projects.setCheckable(True)
         self.nav_projects.setChecked(True)
         self.nav_projects.clicked.connect(lambda: self._switch_view(0))
         sidebar_layout.addWidget(self.nav_projects)
 
         self.nav_singers = QPushButton("Sänger")
-        self.nav_singers.setIcon(get_icon("user-info", QStyle.StandardPixmap.SP_FileIcon))
+        self.nav_singers.setIcon(
+            get_icon("user-info", QStyle.StandardPixmap.SP_FileIcon)
+        )
         self.nav_singers.setCheckable(True)
         self.nav_singers.clicked.connect(lambda: self._switch_view(1))
         sidebar_layout.addWidget(self.nav_singers)
 
         self.nav_besetzung = QPushButton("Besetzung")
-        self.nav_besetzung.setIcon(get_icon("system-users", QStyle.StandardPixmap.SP_DirHomeIcon))
+        self.nav_besetzung.setIcon(
+            get_icon("system-users", QStyle.StandardPixmap.SP_DirHomeIcon)
+        )
         self.nav_besetzung.setCheckable(True)
         self.nav_besetzung.clicked.connect(lambda: self._switch_view(2))
         sidebar_layout.addWidget(self.nav_besetzung)
 
         self.nav_events = QPushButton("Termine")
-        self.nav_events.setIcon(get_icon("x-office-calendar", QStyle.StandardPixmap.SP_FileIcon))
+        self.nav_events.setIcon(
+            get_icon("x-office-calendar", QStyle.StandardPixmap.SP_FileIcon)
+        )
         self.nav_events.setCheckable(True)
         self.nav_events.clicked.connect(lambda: self._switch_view(3))
         sidebar_layout.addWidget(self.nav_events)
 
         self.nav_formations = QPushButton("Aufstellung")
-        self.nav_formations.setIcon(get_icon("audio-volume-high", QStyle.StandardPixmap.SP_MediaVolume))
+        self.nav_formations.setIcon(
+            get_icon("audio-volume-high", QStyle.StandardPixmap.SP_MediaVolume)
+        )
         self.nav_formations.setCheckable(True)
         self.nav_formations.clicked.connect(lambda: self._switch_view(4))
         sidebar_layout.addWidget(self.nav_formations)
@@ -672,6 +739,7 @@ class MainWindow(QMainWindow):
         self.choraufstellung_tab = ChorAufstellungTab(self.db)
 
         from .views.besetzung_tab import BesetzungTab
+
         self.besetzung_tab = BesetzungTab(self.db)
         self.besetzung_tab.active_besetzung_changed.connect(self._on_besetzung_changed)
         self.besetzung_tab._restore_active_besetzung()
@@ -749,9 +817,7 @@ class MainWindow(QMainWindow):
                 item = self.events_tab.table.item(row, 0)
                 event_id = item.data(Qt.ItemDataRole.UserRole)
                 selection = (
-                    self.events_tab.event_repo.get_by_id(event_id)
-                    if event_id
-                    else None
+                    self.events_tab.event_repo.get_by_id(event_id) if event_id else None
                 )
         elif tab_index == 4:  # Aufstellung
             row = self.choraufstellung_tab.table.currentRow()
@@ -789,29 +855,43 @@ class MainWindow(QMainWindow):
             self.context_toolbar.addAction(add_action)
 
             refresh_action = QAction("Aktualisieren", self)
-            refresh_action.setIcon(get_icon("view-refresh", QStyle.StandardPixmap.SP_BrowserReload))
+            refresh_action.setIcon(
+                get_icon("view-refresh", QStyle.StandardPixmap.SP_BrowserReload)
+            )
             refresh_action.triggered.connect(self._refresh_tabs)
-            refresh_action.setIcon(get_icon("view-refresh", QStyle.StandardPixmap.SP_BrowserReload))
+            refresh_action.setIcon(
+                get_icon("view-refresh", QStyle.StandardPixmap.SP_BrowserReload)
+            )
             self.context_toolbar.addAction(refresh_action)
 
             if selection:
                 set_active_action = QAction("Als aktives Projekt setzen", self)
-                set_active_action.setIcon(get_icon("folder-remote", QStyle.StandardPixmap.SP_DirLinkIcon))
+                set_active_action.setIcon(
+                    get_icon("folder-remote", QStyle.StandardPixmap.SP_DirLinkIcon)
+                )
                 set_active_action.triggered.connect(self.projects_tab._set_active)
                 self.context_toolbar.addAction(set_active_action)
 
                 edit_action = QAction("Bearbeiten", self)
-                edit_action.setIcon(get_icon("document-edit", QStyle.StandardPixmap.SP_FileDialogDetailedView))
+                edit_action.setIcon(
+                    get_icon(
+                        "document-edit", QStyle.StandardPixmap.SP_FileDialogDetailedView
+                    )
+                )
                 edit_action.triggered.connect(self._edit_project)
                 self.context_toolbar.addAction(edit_action)
 
                 dup_action = QAction("Duplizieren", self)
-                dup_action.setIcon(get_icon("edit-copy", QStyle.StandardPixmap.SP_FileIcon))
+                dup_action.setIcon(
+                    get_icon("edit-copy", QStyle.StandardPixmap.SP_FileIcon)
+                )
                 dup_action.triggered.connect(self._duplicate_project)
                 self.context_toolbar.addAction(dup_action)
 
                 delete_action = QAction("Löschen", self)
-                delete_action.setIcon(get_icon("edit-delete", QStyle.StandardPixmap.SP_TrashIcon))
+                delete_action.setIcon(
+                    get_icon("edit-delete", QStyle.StandardPixmap.SP_TrashIcon)
+                )
                 delete_action.triggered.connect(self._delete_project)
                 self.context_toolbar.addAction(delete_action)
 
@@ -822,19 +902,29 @@ class MainWindow(QMainWindow):
             self.context_toolbar.addAction(add_action)
 
             refresh_action = QAction("Aktualisieren", self)
-            refresh_action.setIcon(get_icon("view-refresh", QStyle.StandardPixmap.SP_BrowserReload))
+            refresh_action.setIcon(
+                get_icon("view-refresh", QStyle.StandardPixmap.SP_BrowserReload)
+            )
             refresh_action.triggered.connect(self._refresh_tabs)
-            refresh_action.setIcon(get_icon("view-refresh", QStyle.StandardPixmap.SP_BrowserReload))
+            refresh_action.setIcon(
+                get_icon("view-refresh", QStyle.StandardPixmap.SP_BrowserReload)
+            )
             self.context_toolbar.addAction(refresh_action)
 
             if selection:
                 edit_action = QAction("Bearbeiten", self)
-                edit_action.setIcon(get_icon("document-edit", QStyle.StandardPixmap.SP_FileDialogDetailedView))
+                edit_action.setIcon(
+                    get_icon(
+                        "document-edit", QStyle.StandardPixmap.SP_FileDialogDetailedView
+                    )
+                )
                 edit_action.triggered.connect(self._edit_singer)
                 self.context_toolbar.addAction(edit_action)
 
                 delete_action = QAction("Löschen", self)
-                delete_action.setIcon(get_icon("edit-delete", QStyle.StandardPixmap.SP_TrashIcon))
+                delete_action.setIcon(
+                    get_icon("edit-delete", QStyle.StandardPixmap.SP_TrashIcon)
+                )
                 delete_action.triggered.connect(self._delete_singer)
                 self.context_toolbar.addAction(delete_action)
 
@@ -845,24 +935,38 @@ class MainWindow(QMainWindow):
             self.context_toolbar.addAction(add_action)
 
             refresh_action = QAction("Aktualisieren", self)
-            refresh_action.setIcon(get_icon("view-refresh", QStyle.StandardPixmap.SP_BrowserReload))
+            refresh_action.setIcon(
+                get_icon("view-refresh", QStyle.StandardPixmap.SP_BrowserReload)
+            )
             refresh_action.triggered.connect(self._refresh_tabs)
-            refresh_action.setIcon(get_icon("view-refresh", QStyle.StandardPixmap.SP_BrowserReload))
+            refresh_action.setIcon(
+                get_icon("view-refresh", QStyle.StandardPixmap.SP_BrowserReload)
+            )
             self.context_toolbar.addAction(refresh_action)
 
             if selection:
                 edit_action = QAction("Bearbeiten", self)
-                edit_action.setIcon(get_icon("document-edit", QStyle.StandardPixmap.SP_FileDialogDetailedView))
+                edit_action.setIcon(
+                    get_icon(
+                        "document-edit", QStyle.StandardPixmap.SP_FileDialogDetailedView
+                    )
+                )
                 edit_action.triggered.connect(self.besetzung_tab._edit_besetzung)
                 self.context_toolbar.addAction(edit_action)
 
                 active_action = QAction("Als aktiv setzen", self)
-                active_action.setIcon(get_icon("folder-remote", QStyle.StandardPixmap.SP_DirLinkIcon))
-                active_action.triggered.connect(self.besetzung_tab._set_active_besetzung)
+                active_action.setIcon(
+                    get_icon("folder-remote", QStyle.StandardPixmap.SP_DirLinkIcon)
+                )
+                active_action.triggered.connect(
+                    self.besetzung_tab._set_active_besetzung
+                )
                 self.context_toolbar.addAction(active_action)
 
                 delete_action = QAction("Löschen", self)
-                delete_action.setIcon(get_icon("edit-delete", QStyle.StandardPixmap.SP_TrashIcon))
+                delete_action.setIcon(
+                    get_icon("edit-delete", QStyle.StandardPixmap.SP_TrashIcon)
+                )
                 delete_action.triggered.connect(self.besetzung_tab._delete_besetzung)
                 self.context_toolbar.addAction(delete_action)
 
@@ -873,15 +977,21 @@ class MainWindow(QMainWindow):
             self.context_toolbar.addAction(add_action)
 
             refresh_action = QAction("Aktualisieren", self)
-            refresh_action.setIcon(get_icon("view-refresh", QStyle.StandardPixmap.SP_BrowserReload))
+            refresh_action.setIcon(
+                get_icon("view-refresh", QStyle.StandardPixmap.SP_BrowserReload)
+            )
             refresh_action.triggered.connect(self._refresh_tabs)
-            refresh_action.setIcon(get_icon("view-refresh", QStyle.StandardPixmap.SP_BrowserReload))
+            refresh_action.setIcon(
+                get_icon("view-refresh", QStyle.StandardPixmap.SP_BrowserReload)
+            )
             self.context_toolbar.addAction(refresh_action)
 
             if selection:
                 # Primary actions
                 avail_action = QAction("Verfügbarkeit erfassen", self)
-                avail_action.setIcon(get_icon("view-calendar", QStyle.StandardPixmap.SP_FileIcon))
+                avail_action.setIcon(
+                    get_icon("view-calendar", QStyle.StandardPixmap.SP_FileIcon)
+                )
                 avail_action.triggered.connect(self._manage_availability)
                 self.context_toolbar.addAction(avail_action)
 
@@ -894,10 +1004,19 @@ class MainWindow(QMainWindow):
 
                 if formation_exists:
                     open_action = QAction("Aufstellung bearbeiten", self)
-                    open_action.setIcon(get_icon("document-edit", QStyle.StandardPixmap.SP_FileDialogDetailedView))
+                    open_action.setIcon(
+                        get_icon(
+                            "document-edit",
+                            QStyle.StandardPixmap.SP_FileDialogDetailedView,
+                        )
+                    )
                 else:
                     open_action = QAction("Aufstellung öffnen", self)
-                    open_action.setIcon(get_icon("document-open", QStyle.StandardPixmap.SP_DialogOpenButton))
+                    open_action.setIcon(
+                        get_icon(
+                            "document-open", QStyle.StandardPixmap.SP_DialogOpenButton
+                        )
+                    )
                 open_action.triggered.connect(
                     lambda checked=False, ev=selection: (
                         self._open_choraufstellung_for_event(ev)
@@ -906,24 +1025,34 @@ class MainWindow(QMainWindow):
                 self.context_toolbar.addAction(open_action)
 
                 set_active_action = QAction("Als aktiven Termin setzen", self)
-                set_active_action.setIcon(get_icon("x-office-calendar", QStyle.StandardPixmap.SP_FileIcon))
+                set_active_action.setIcon(
+                    get_icon("x-office-calendar", QStyle.StandardPixmap.SP_FileIcon)
+                )
                 set_active_action.triggered.connect(self.events_tab._set_selected_event)
                 self.context_toolbar.addAction(set_active_action)
 
                 self.context_toolbar.addSeparator()
 
                 edit_action = QAction("Bearbeiten", self)
-                edit_action.setIcon(get_icon("document-edit", QStyle.StandardPixmap.SP_FileDialogDetailedView))
+                edit_action.setIcon(
+                    get_icon(
+                        "document-edit", QStyle.StandardPixmap.SP_FileDialogDetailedView
+                    )
+                )
                 edit_action.triggered.connect(self._edit_event)
                 self.context_toolbar.addAction(edit_action)
 
                 dup_action = QAction("Duplizieren", self)
-                dup_action.setIcon(get_icon("edit-copy", QStyle.StandardPixmap.SP_FileIcon))
+                dup_action.setIcon(
+                    get_icon("edit-copy", QStyle.StandardPixmap.SP_FileIcon)
+                )
                 dup_action.triggered.connect(self._duplicate_event)
                 self.context_toolbar.addAction(dup_action)
 
                 delete_action = QAction("Löschen", self)
-                delete_action.setIcon(get_icon("edit-delete", QStyle.StandardPixmap.SP_TrashIcon))
+                delete_action.setIcon(
+                    get_icon("edit-delete", QStyle.StandardPixmap.SP_TrashIcon)
+                )
                 delete_action.triggered.connect(self._delete_event)
                 self.context_toolbar.addAction(delete_action)
 
@@ -935,17 +1064,25 @@ class MainWindow(QMainWindow):
 
             if selection:
                 edit_action = QAction("Bearbeiten", self)
-                edit_action.setIcon(get_icon("document-edit", QStyle.StandardPixmap.SP_FileDialogDetailedView))
+                edit_action.setIcon(
+                    get_icon(
+                        "document-edit", QStyle.StandardPixmap.SP_FileDialogDetailedView
+                    )
+                )
                 edit_action.triggered.connect(self._edit_formation)
                 self.context_toolbar.addAction(edit_action)
 
                 dup_action = QAction("Duplizieren", self)
-                dup_action.setIcon(get_icon("edit-copy", QStyle.StandardPixmap.SP_FileIcon))
+                dup_action.setIcon(
+                    get_icon("edit-copy", QStyle.StandardPixmap.SP_FileIcon)
+                )
                 dup_action.triggered.connect(self._duplicate_formation)
                 self.context_toolbar.addAction(dup_action)
 
                 delete_action = QAction("Löschen", self)
-                delete_action.setIcon(get_icon("edit-delete", QStyle.StandardPixmap.SP_TrashIcon))
+                delete_action.setIcon(
+                    get_icon("edit-delete", QStyle.StandardPixmap.SP_TrashIcon)
+                )
                 delete_action.triggered.connect(self._delete_formation)
                 self.context_toolbar.addAction(delete_action)
 
@@ -1010,9 +1147,7 @@ class MainWindow(QMainWindow):
     def _on_besetzung_changed(self, besetzung):
         """Handle active besetzung change."""
         if besetzung:
-            self.besetzung_info_label.setText(
-                f"<b>{besetzung.name}</b>"
-            )
+            self.besetzung_info_label.setText(f"<b>{besetzung.name}</b>")
             self.besetzung_info_label.setVisible(True)
         else:
             self.besetzung_info_label.setText("Keine")
@@ -1112,7 +1247,9 @@ class MainWindow(QMainWindow):
             import csv
 
             with open(filename, "w", newline="", encoding="utf-8") as f:
-                writer = csv.DictWriter(f, fieldnames=[field["name"] for field in fields])
+                writer = csv.DictWriter(
+                    f, fieldnames=[field["name"] for field in fields]
+                )
                 writer.writeheader()
 
                 for singer in singers:
@@ -1207,7 +1344,7 @@ class MainWindow(QMainWindow):
             self,
             "LibreOffice Export",
             "Möchten Sie als Writer-Dokument (doc) oder Calc-Dokument (xls) exportieren?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         )
 
         if reply == QMessageBox.StandardButton.Yes:
@@ -1266,9 +1403,7 @@ class MainWindow(QMainWindow):
                 os.rename(expected_output, filename)
             self.statusBar().showMessage(f"Exportiert nach {filename}")
         else:
-            QMessageBox.warning(
-                self, "Fehler", f"LibreOffice Fehler:\n{result.stderr}"
-            )
+            QMessageBox.warning(self, "Fehler", f"LibreOffice Fehler:\n{result.stderr}")
 
         if os.path.exists(temp_csv):
             os.unlink(temp_csv)
@@ -1698,11 +1833,7 @@ class MainWindow(QMainWindow):
 
     def _manage_availability(self):
         """Manage availability for events."""
-        from .dialogs import EventListDialog
-
-        active_event_id = self.current_event.id if self.current_event else None
-        dialog = EventListDialog(self.db, parent=self, active_event_id=active_event_id)
-        dialog.exec()
+        self.events_tab._manage_availability()
 
     def _list_events(self):
         """List all events."""
