@@ -330,10 +330,9 @@ class EventAvailabilityDialog(QDialog):
         layout.addLayout(toolbar)
         
         self.table = QTableWidget()
-        self.table.setColumnCount(8)
+        self.table.setColumnCount(3)
         self.table.setHorizontalHeaderLabels([
-            "Kurzname", "Stimmgruppe", 
-            "✓ Ja", "✗ Nein", "○ Offen", "✓? Bed.", "? Weiß", "~ Maybe"
+            "Kurzname", "Stimmgruppe", "Status"
         ])
         self.table.horizontalHeader().setSortIndicatorShown(True)
         self.table.setSortingEnabled(True)
@@ -369,26 +368,23 @@ class EventAvailabilityDialog(QDialog):
             avail = self.avail_repo.get_by_ids(singer.id, self.event.id)
             current_status = avail.status if avail else None
             
-            status_group = QButtonGroup(self)
-            status_group.setId(None, -1)
+            status_combo = QComboBox()
+            for status_code, status_label, short_label in AVAILABILITY_STATUS:
+                status_combo.addItem(f"{status_label}", status_code)
             
-            radio_widgets = []
-            for col_idx, (status_code, status_label, short_label) in enumerate(AVAILABILITY_STATUS):
-                radio = QRadioButton()
-                if current_status == status_code:
-                    radio.setChecked(True)
-                
-                status_group.addButton(radio, col_idx)
-                self.table.setCellWidget(row, 2 + col_idx, radio)
-                radio_widgets.append(radio)
-                
-                vg = singer.voice_group or "Unbekannt"
-                if current_status == "yes" and status_code == "yes":
-                    voice_group_yes[vg] = voice_group_yes.get(vg, 0) + 1
-                elif current_status == "conditional" and status_code == "conditional":
-                    voice_group_conditional[vg] = voice_group_conditional.get(vg, 0) + 1
+            idx = status_combo.findData(current_status or "none")
+            if idx >= 0:
+                status_combo.setCurrentIndex(idx)
             
-            self.status_widgets[singer.id] = (status_group, radio_widgets, current_status)
+            self.table.setCellWidget(row, 2, status_combo)
+            
+            vg = singer.voice_group or "Unbekannt"
+            if current_status == "yes":
+                voice_group_yes[vg] = voice_group_yes.get(vg, 0) + 1
+            elif current_status == "conditional":
+                voice_group_conditional[vg] = voice_group_conditional.get(vg, 0) + 1
+            
+            self.status_widgets[singer.id] = (status_combo, current_status)
         
         self.table.resizeColumnsToContents()
         
@@ -417,13 +413,11 @@ class EventAvailabilityDialog(QDialog):
     
     def accept(self):
         """Save availability and close."""
-        for singer_id, (status_group, radio_widgets, original_status) in self.status_widgets.items():
-            selected_id = status_group.checkedId()
+        for singer_id, (status_combo, original_status) in self.status_widgets.items():
+            status_code = status_combo.currentData()
             
-            if selected_id is not None and selected_id >= 0:
-                status_code = AVAILABILITY_STATUS[selected_id][0]
-                if status_code != original_status:
-                    self.avail_repo.update(singer_id, self.event.id, status_code)
+            if status_code and status_code != original_status:
+                self.avail_repo.update(singer_id, self.event.id, status_code)
         
         super().accept()
     
