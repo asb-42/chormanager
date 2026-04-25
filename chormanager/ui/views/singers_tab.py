@@ -10,12 +10,26 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QComboBox,
     QLabel,
+    QStyledItemDelegate,
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtGui import QPainter
 
 from ...data.database import Database
 from ...domain.repository import SingerRepository
 from ...config import load_voice_groups, load_fields
+
+
+class PaddedDelegate(QStyledItemDelegate):
+    """Custom delegate with padding for better text display."""
+
+    def sizeHint(self, option, index):
+        size = super().sizeHint(option, index)
+        return QSize(size.width(), size.height() + 6)
+
+    def paint(self, painter, option, index):
+        option.rect = option.rect.adjusted(0, 3, 0, -3)
+        super().paint(painter, option, index)
 
 
 class SingersTab(QWidget):
@@ -113,6 +127,9 @@ class SingersTab(QWidget):
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.horizontalHeader().setSortIndicatorShown(True)
         self.table.setSortingEnabled(True)
+
+        # Apply custom delegate with padding
+        self.table.setItemDelegate(PaddedDelegate())
 
         layout.addWidget(self.table)
 
