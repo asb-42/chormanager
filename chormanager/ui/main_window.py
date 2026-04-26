@@ -501,6 +501,31 @@ class MainWindow(QMainWindow):
         open_projekt_action.triggered.connect(self._open_projekt)
         projekt_menu.addAction(open_projekt_action)
 
+        termin_menu = menubar.addMenu("&Termine")
+
+        new_event_action = QAction("Neuer Termin...", self)
+        new_event_action.setIcon(
+            get_icon("list-add", QStyle.StandardPixmap.SP_FileIcon)
+        )
+        new_event_action.triggered.connect(self._new_event)
+        termin_menu.addAction(new_event_action)
+
+        manage_availability_action = QAction("Verfügbarkeit verwalten...", self)
+        manage_availability_action.setIcon(
+            get_icon("view-calendar", QStyle.StandardPixmap.SP_FileIcon)
+        )
+        manage_availability_action.triggered.connect(self._manage_availability)
+        termin_menu.addAction(manage_availability_action)
+
+        termin_menu.addSeparator()
+
+        list_events_action = QAction("Terminliste anzeigen...", self)
+        list_events_action.setIcon(
+            get_icon("x-office-spreadsheet", QStyle.StandardPixmap.SP_FileIcon)
+        )
+        list_events_action.triggered.connect(self._list_events)
+        termin_menu.addAction(list_events_action)
+
         view_menu = menubar.addMenu("&Ansicht")
 
         light_theme_action = QAction("Hell", self)
@@ -581,31 +606,6 @@ class MainWindow(QMainWindow):
         )
         open_action.triggered.connect(self._open_choraufstellung)
         choraufstellung_menu.addAction(open_action)
-
-        termin_menu = menubar.addMenu("&Termine")
-
-        new_event_action = QAction("Neuer Termin...", self)
-        new_event_action.setIcon(
-            get_icon("list-add", QStyle.StandardPixmap.SP_FileIcon)
-        )
-        new_event_action.triggered.connect(self._new_event)
-        termin_menu.addAction(new_event_action)
-
-        manage_availability_action = QAction("Verfügbarkeit verwalten...", self)
-        manage_availability_action.setIcon(
-            get_icon("view-calendar", QStyle.StandardPixmap.SP_FileIcon)
-        )
-        manage_availability_action.triggered.connect(self._manage_availability)
-        termin_menu.addAction(manage_availability_action)
-
-        termin_menu.addSeparator()
-
-        list_events_action = QAction("Terminliste anzeigen...", self)
-        list_events_action.setIcon(
-            get_icon("x-office-spreadsheet", QStyle.StandardPixmap.SP_FileIcon)
-        )
-        list_events_action.triggered.connect(self._list_events)
-        termin_menu.addAction(list_events_action)
 
         extras_menu = menubar.addMenu("Extras")
 
