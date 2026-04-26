@@ -526,6 +526,15 @@ class MainWindow(QMainWindow):
         list_events_action.triggered.connect(self._list_events)
         termin_menu.addAction(list_events_action)
 
+        choraufstellung_menu = menubar.addMenu("Aufstellung")
+
+        open_action = QAction("In Aufstellung öffnen...", self)
+        open_action.setIcon(
+            get_icon("media-playback-start", QStyle.StandardPixmap.SP_FileIcon)
+        )
+        open_action.triggered.connect(self._open_choraufstellung)
+        choraufstellung_menu.addAction(open_action)
+
         view_menu = menubar.addMenu("&Ansicht")
 
         light_theme_action = QAction("Hell", self)
@@ -597,15 +606,6 @@ class MainWindow(QMainWindow):
         )
         selbstdarstellung_action.triggered.connect(self._show_selbstdarstellung)
         marketing_menu.addAction(selbstdarstellung_action)
-
-        choraufstellung_menu = menubar.addMenu("Choraufstellung")
-
-        open_action = QAction("In Choraufstellung öffnen...", self)
-        open_action.setIcon(
-            get_icon("media-playback-start", QStyle.StandardPixmap.SP_FileIcon)
-        )
-        open_action.triggered.connect(self._open_choraufstellung)
-        choraufstellung_menu.addAction(open_action)
 
         extras_menu = menubar.addMenu("Extras")
 
