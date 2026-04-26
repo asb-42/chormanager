@@ -437,36 +437,15 @@ class MainWindow(QMainWindow):
 
         file_menu = menubar.addMenu("&Datei")
 
-        export_csv_action = QAction("Als CSV exportieren...", self)
-        export_csv_action.setIcon(
-            get_icon("x-office-spreadsheet", QStyle.StandardPixmap.SP_FileIcon)
-        )
-        export_csv_action.triggered.connect(self._export_csv)
-        file_menu.addAction(export_csv_action)
-
-        export_pdf_action = QAction("Als PDF exportieren...", self)
-        export_pdf_action.setIcon(
-            get_icon("application-pdf", QStyle.StandardPixmap.SP_FileIcon)
-        )
-        export_pdf_action.triggered.connect(self._export_pdf)
-        file_menu.addAction(export_pdf_action)
-
-        export_lo_action = QAction("Als LibreOffice exportieren...", self)
-        export_lo_action.setIcon(
-            get_icon("x-office-document", QStyle.StandardPixmap.SP_FileIcon)
-        )
-        export_lo_action.triggered.connect(self._export_libreoffice)
-        file_menu.addAction(export_lo_action)
-
         file_menu.addSeparator()
 
-        backup_restore_menu = file_menu.addMenu("Backup & Restore")
         backup_restore_action = QAction("Backup & Restore...", self)
         backup_restore_action.setIcon(
             get_icon("media-floppy", QStyle.StandardPixmap.SP_DriveFDIcon)
         )
         backup_restore_action.triggered.connect(self._open_backup_restore)
-        backup_restore_menu.addAction(backup_restore_action)
+        file_menu.addAction(backup_restore_action)
+
 
         exit_action = QAction("Beenden", self)
         exit_action.setIcon(
@@ -618,44 +597,6 @@ class MainWindow(QMainWindow):
         )
         dark_theme_action.triggered.connect(self._set_dark_theme)
         view_menu.addAction(dark_theme_action)
-
-        sync_menu = menubar.addMenu("&Sync")
-
-        export_singers_action = QAction("Sänger exportieren (JSON)...", self)
-        export_singers_action.setIcon(
-            get_icon("document-export", QStyle.StandardPixmap.SP_FileIcon)
-        )
-        export_singers_action.triggered.connect(self._export_singers_json)
-        sync_menu.addAction(export_singers_action)
-
-        export_events_action = QAction("Termine exportieren (JSON)...", self)
-        export_events_action.setIcon(
-            get_icon("document-export", QStyle.StandardPixmap.SP_FileIcon)
-        )
-        export_events_action.triggered.connect(self._export_events_json)
-        sync_menu.addAction(export_events_action)
-
-        export_availability_action = QAction(
-            "Verfügbarkeit exportieren (JSON)...", self
-        )
-        export_availability_action.triggered.connect(self._export_availability_json)
-        sync_menu.addAction(export_availability_action)
-
-        sync_menu.addSeparator()
-
-        export_all_action = QAction("Alle Sync-Dateien exportieren", self)
-        export_all_action.setIcon(
-            get_icon("document-export", QStyle.StandardPixmap.SP_FileIcon)
-        )
-        export_all_action.triggered.connect(self._export_all_sync)
-        sync_menu.addAction(export_all_action)
-
-        export_csv_action = QAction("CSV-Fallback exportieren...", self)
-        export_csv_action.setIcon(
-            get_icon("x-office-spreadsheet", QStyle.StandardPixmap.SP_FileIcon)
-        )
-        export_csv_action.triggered.connect(self._export_singers_csv)
-        sync_menu.addAction(export_csv_action)
 
         konfig_menu = menubar.addMenu("Konfiguration")
 
