@@ -342,6 +342,208 @@ class MainWindow(QMainWindow):
         self._create_central_widget()
         self._create_status_bar()
 
+
+    def _create_menu_bar(self):
+        """Create menu bar."""
+        menubar = self.menuBar()
+
+        file_menu = menubar.addMenu("&Datei")
+
+        file_menu.addSeparator()
+
+        backup_restore_action = QAction("Backup & Restore...", self)
+        backup_restore_action.setIcon(
+            get_icon("media-floppy", QStyle.StandardPixmap.SP_DriveFDIcon)
+        )
+        backup_restore_action.triggered.connect(self._open_backup_restore)
+        file_menu.addAction(backup_restore_action)
+
+
+        exit_action = QAction("Beenden", self)
+        exit_action.setIcon(
+            get_icon("application-exit", QStyle.StandardPixmap.SP_DialogCloseButton)
+        )
+        exit_action.setShortcut(QKeySequence.StandardKey.Quit)
+        exit_action.triggered.connect(self.close)
+        file_menu.addAction(exit_action)
+
+        edit_menu = menubar.addMenu("&Bearbeiten")
+
+        undo_action = QAction("Rückgängig", self)
+        undo_action.setIcon(get_icon("edit-undo", QStyle.StandardPixmap.SP_ArrowBack))
+        undo_action.setShortcut(QKeySequence.StandardKey.Undo)
+        undo_action.triggered.connect(self._undo)
+        edit_menu.addAction(undo_action)
+
+        redo_action = QAction("Wiederholen", self)
+        redo_action.setIcon(
+            get_icon("edit-redo", QStyle.StandardPixmap.SP_ArrowForward)
+        )
+        redo_action.setShortcut(QKeySequence.StandardKey.Redo)
+        redo_action.triggered.connect(self._redo)
+        edit_menu.addAction(redo_action)
+
+        projekt_menu = menubar.addMenu("&Projekt")
+
+        new_projekt_action = QAction("Neu...", self)
+        new_projekt_action.setIcon(
+            get_icon("document-new", QStyle.StandardPixmap.SP_FileIcon)
+        )
+        new_projekt_action.triggered.connect(self._new_projekt)
+        projekt_menu.addAction(new_projekt_action)
+
+        save_projekt_action = QAction("Speichern", self)
+        save_projekt_action.setIcon(
+            get_icon("document-save", QStyle.StandardPixmap.SP_DialogSaveButton)
+        )
+        save_projekt_action.triggered.connect(self._save_projekt)
+        projekt_menu.addAction(save_projekt_action)
+
+        open_projekt_action = QAction("Öffnen...", self)
+        open_projekt_action.setIcon(
+            get_icon("document-open", QStyle.StandardPixmap.SP_DialogOpenButton)
+        )
+        open_projekt_action.triggered.connect(self._open_projekt)
+        projekt_menu.addAction(open_projekt_action)
+
+        projekt_menu.addSeparator()
+
+        export_menu = projekt_menu.addMenu("Export")
+
+        export_libreoffice_action = QAction("LibreOffice exportieren...", self)
+        export_libreoffice_action.setIcon(
+            get_icon("x-office-document", QStyle.StandardPixmap.SP_FileIcon)
+        )
+        export_libreoffice_action.triggered.connect(self._export_project_libreoffice)
+        export_menu.addAction(export_libreoffice_action)
+
+        export_csv_action = QAction("CSV exportieren...", self)
+        export_csv_action.setIcon(
+            get_icon("x-office-spreadsheet", QStyle.StandardPixmap.SP_FileIcon)
+        )
+        export_csv_action.triggered.connect(self._export_project_csv)
+        export_menu.addAction(export_csv_action)
+
+        saenger_menu = menubar.addMenu("Sänger")
+        saenger_export_menu = saenger_menu.addMenu("Export")
+        export_lo_saenger = QAction("LibreOffice exportieren...", self)
+        export_lo_saenger.triggered.connect(lambda: self._export_tab(1))
+        saenger_export_menu.addAction(export_lo_saenger)
+        export_csv_saenger = QAction("CSV exportieren...", self)
+        export_csv_saenger.triggered.connect(lambda: self._export_tab_csv(1))
+        saenger_export_menu.addAction(export_csv_saenger)
+
+        besetzung_menu = menubar.addMenu("Besetzung")
+        besetzung_export_menu = besetzung_menu.addMenu("Export")
+        export_lo_besetzung = QAction("LibreOffice exportieren...", self)
+        export_lo_besetzung.triggered.connect(self._export_besetzung)
+        besetzung_export_menu.addAction(export_lo_besetzung)
+        export_csv_besetzung = QAction("CSV exportieren...", self)
+        export_csv_besetzung.triggered.connect(self._export_besetzung)
+        besetzung_export_menu.addAction(export_csv_besetzung)
+
+        termin_menu = menubar.addMenu("&Termine")
+
+        new_event_action = QAction("Neuer Termin...", self)
+        new_event_action.setIcon(
+            get_icon("list-add", QStyle.StandardPixmap.SP_FileIcon)
+        )
+        new_event_action.triggered.connect(self._new_event)
+        termin_menu.addAction(new_event_action)
+
+        manage_availability_action = QAction("Verfügbarkeit verwalten...", self)
+        manage_availability_action.setIcon(
+            get_icon("view-calendar", QStyle.StandardPixmap.SP_FileIcon)
+        )
+        manage_availability_action.triggered.connect(self._manage_availability)
+        termin_menu.addAction(manage_availability_action)
+
+        termin_menu.addSeparator()
+
+        list_events_action = QAction("Terminliste anzeigen...", self)
+        list_events_action.setIcon(
+            get_icon("x-office-spreadsheet", QStyle.StandardPixmap.SP_FileIcon)
+        )
+        list_events_action.triggered.connect(self._list_events)
+        termin_menu.addAction(list_events_action)
+
+        termin_menu.addSeparator()
+        termin_export_menu = termin_menu.addMenu("Export")
+        export_lo_termin = QAction("LibreOffice exportieren...", self)
+        export_lo_termin.triggered.connect(self._export_termine)
+        termin_export_menu.addAction(export_lo_termin)
+        export_csv_termin = QAction("CSV exportieren...", self)
+        export_csv_termin.triggered.connect(self._export_termine)
+        termin_export_menu.addAction(export_csv_termin)
+
+        choraufstellung_menu = menubar.addMenu("Aufstellung")
+
+        open_action = QAction("In Aufstellung öffnen...", self)
+        open_action.setIcon(
+            get_icon("media-playback-start", QStyle.StandardPixmap.SP_FileIcon)
+        )
+        open_action.triggered.connect(self._open_choraufstellung)
+        choraufstellung_menu.addAction(open_action)
+
+        choraufstellung_menu.addSeparator()
+        aufstellung_export_menu = choraufstellung_menu.addMenu("Export")
+        export_lo_aufstellung = QAction("LibreOffice exportieren...", self)
+        export_lo_aufstellung.triggered.connect(self._export_aufstellung)
+        aufstellung_export_menu.addAction(export_lo_aufstellung)
+        export_csv_aufstellung = QAction("CSV exportieren...", self)
+        export_csv_aufstellung.triggered.connect(self._export_aufstellung)
+        aufstellung_export_menu.addAction(export_csv_aufstellung)
+
+        view_menu = menubar.addMenu("&Ansicht")
+
+        light_theme_action = QAction("Hell", self)
+        light_theme_action.setIcon(
+            get_icon("weather-clear", QStyle.StandardPixmap.SP_FileIcon)
+        )
+        light_theme_action.triggered.connect(self._set_light_theme)
+        view_menu.addAction(light_theme_action)
+
+        dark_theme_action = QAction("Dunkel", self)
+        dark_theme_action.setIcon(
+            get_icon("weather-night", QStyle.StandardPixmap.SP_FileIcon)
+        )
+        dark_theme_action.triggered.connect(self._set_dark_theme)
+        view_menu.addAction(dark_theme_action)
+
+        konfig_menu = menubar.addMenu("Konfiguration")
+
+        konfig_action = QAction("Einstellungen...", self)
+        konfig_action.setIcon(
+            get_icon("preferences-system", QStyle.StandardPixmap.SP_FileIcon)
+        )
+        konfig_action.triggered.connect(self._show_config)
+        konfig_menu.addAction(konfig_action)
+
+        marketing_menu = menubar.addMenu("Marketing")
+
+        selbstdarstellung_action = QAction("Selbstdarstellung...", self)
+        selbstdarstellung_action.setIcon(
+            get_icon("x-office-document", QStyle.StandardPixmap.SP_FileIcon)
+        )
+        selbstdarstellung_action.triggered.connect(self._show_selbstdarstellung)
+        marketing_menu.addAction(selbstdarstellung_action)
+
+
+        hilfe_menu = menubar.addMenu("&Hilfe")
+
+        check_version_action = QAction("Version prüfen", self)
+        check_version_action.setIcon(get_icon("system-software-update", QStyle.StandardPixmap.SP_FileIcon))
+        check_version_action.triggered.connect(self._check_version)
+        hilfe_menu.addAction(check_version_action)
+
+        hilfe_menu.addSeparator()
+
+        about_action = QAction("Über", self)
+        about_action.setIcon(get_icon("help-about", QStyle.StandardPixmap.SP_FileIcon))
+        about_action.triggered.connect(self._show_about)
+        hilfe_menu.addAction(about_action)
+
+
     def _create_info_bar(self):
         """Create info bar below menu bar."""
         self.info_bar = QWidget()
