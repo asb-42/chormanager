@@ -962,18 +962,12 @@ class SelbstdarstellungDialog(QDialog):
 class SingerSelectionDialog(QDialog):
     """Dialog for selecting singers for a Besetzung."""
 
-    def __init__(self, db, pre_selected_ids=None, parent=None):
-        """Initialize dialog.
-
-        Args:
-            db: Database instance.
-            pre_selected_ids: List of pre-selected singer IDs.
-            parent: Parent widget.
-        """
+    def __init__(self, db, pre_selected_ids=None, besetzung_name=None, parent=None):
         super().__init__(parent)
         self.db = db
         self.pre_selected_ids = pre_selected_ids or []
         self.selected_ids = set(self.pre_selected_ids)
+        self.besetzung_name = besetzung_name or 'besetzung'
         self._setup_ui()
         self._load_singers()
 
@@ -1007,6 +1001,10 @@ class SingerSelectionDialog(QDialog):
         deselect_all_btn = QPushButton("Alle abwählen")
         deselect_all_btn.clicked.connect(self._deselect_all)
         button_layout.addWidget(deselect_all_btn)
+
+        export_btn = QPushButton("Export")
+        export_btn.clicked.connect(self._export_singers)
+        button_layout.addWidget(export_btn)
 
         button_layout.addStretch()
 
@@ -1083,3 +1081,75 @@ class SingerSelectionDialog(QDialog):
     def get_selected_ids(self) -> list:
         """Get list of selected singer IDs."""
         return list(self.selected_ids)
+
+    def _export_singers(self):
+        """Export selected singers to file."""
+        if not self.selected_ids:
+            from PyQt6.QtWidgets import QMessageBox
+            QMessageBox.warning(self, 'Warnung', 'Keine Sänger ausgewählt.')
+            return
+
+        from ..ui.export_dialog import ExportDialog
+        singer_fields = [
+            {'name': 'full_name', 'label': 'Name'},
+            {'name': 'short_name', 'label': 'Kurzname'},
+            {'name': 'voice_group', 'label': 'Stimmgruppe'},
+            {'name': 'age', 'label': 'Alter'},
+        ]
+
+        dialog = ExportDialog(singer_fields, self)
+        if not dialog.exec():
+            return
+
+        selected_fields = dialog.get_selected_fields()
+        fmt = dialog.get_export_format()
+
+        if not selected_fields:
+            from PyQt6.QtWidgets import QMessageBox
+            QMessageBox.warning(self, 'Warnung', 'Keine Felder ausgewählt.')
+            return
+
+        from ..domain.repository import SingerRepository
+        from ..core.export_service import ExportService
+        from PyQt6.QtWidgets import QFileDialog
+        from pathlib import Path
+        from datetime import datetime
+
+        singer_repo = SingerRepository(self.db)
+        all_singers = singer_repo.get_all()
+        selected_singers = [s for s in all_singers if s.id in self.selected_ids]
+
+        service = ExportService()
+        data = service.get_export_data(selected_singers, selected_fields)
+
+        ext_map = {'writer': 'odt', 'calc': 'ods', 'csv': 'csv'}
+        ext = ext_map.get(fmt, 'csv')
+        today = datetime.now().strftime('%Y-%m-%d')
+        safe_name = self.besetzung_name.replace(' ', '-').replace('/', '-')
+        default_name = f'{today}-{safe_name}.{ext}'
+        workdir = Path(__file__).parent.parent.parent / 'workdir'
+        workdir.mkdir(exist_ok=True)
+        default_path = str(workdir / default_name)
+
+        if fmt == 'writer':
+            content_out = service.export_to_libreoffice_writer(data, selected_fields)
+            ext_filter = 'LibreOffice Writer (*.odt)'
+        elif fmt == 'calc':
+            content_out = service.export_to_libreoffice_calc(data, selected_fields)
+            ext_filter = 'LibreOffice Calc (*.ods)'
+        else:
+            content_out = service.export_to_csv(data, selected_fields)
+            ext_filter = 'CSV (*.csv)'
+
+        filename, _ = QFileDialog.getSaveFileName(
+            self, 'Sänger exportieren',
+            default_path, ext_filter
+        )
+        if not filename:
+            return
+
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(content_out)
+
+        from PyQt6.QtWidgets import QMessageBox
+        QMessageBox.information(self, 'Export', f'Exportiert nach:\n{filename}')
