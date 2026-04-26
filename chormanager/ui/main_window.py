@@ -2630,7 +2630,7 @@ class VersionCheckDialog(QDialog):
             
             with urllib.request.urlopen(req, timeout=10) as response:
                 data = json.loads(response.read().decode())
-                remote_sha = data['commit']['sha']
+                remote_sha = data['commit']['sha'].strip()[:7]
                 
                 # Get current local commit
                 result = subprocess.run(
@@ -2638,12 +2638,11 @@ class VersionCheckDialog(QDialog):
                     capture_output=True, text=True, cwd='/media/data/coding/chormanager'
                 )
                 local_sha = result.stdout.strip()[:7]
-                remote_short = remote_sha[:7]
                 
-                self.info_label.setText(f"Lokal: {local_sha} | Remote: {remote_short}")
+                self.info_label.setText(f"Lokal: {local_sha} | Remote: {remote_sha}")
                 
                 if remote_sha != local_sha:
-                    self.status_label.setText(f"Update verfügbar: {remote_short}")
+                    self.status_label.setText(f"Update verfügbar: {remote_sha}")
                     self.check_btn.setText("Update durchführen")
                     self.check_btn.clicked.disconnect()
                     self.check_btn.clicked.connect(self._do_update)
