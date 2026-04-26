@@ -1337,13 +1337,13 @@ class BackupRestoreDialog(QDialog):
 
         msg.setText('\n'.join(lines))
         msg.setStandardButtons(
-            QMessageBox.StandardButton.RestoreLastContent |
+            QMessageBox.StandardButton.Ok |
             QMessageBox.StandardButton.Cancel
         )
         msg.setDefaultButton(QMessageBox.StandardButton.Cancel)
 
         reply = msg.exec()
-        if reply == QMessageBox.StandardButton.RestoreLastContent:
+        if reply == QMessageBox.StandardButton.Ok:
             self._do_restore()
 
     def _do_restore(self):

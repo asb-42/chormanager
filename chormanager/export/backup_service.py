@@ -31,7 +31,7 @@ class BackupService:
 
     # Verzeichnisse, die rekursiv ins Backup gehören
     BACKUP_DIRS = [
-        'choraufstellung/data',
+        'chormanager/choraufstellung/data',
     ]
 
     def __init__(self, app_root: Path):
