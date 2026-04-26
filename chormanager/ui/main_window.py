@@ -625,6 +625,13 @@ class MainWindow(QMainWindow):
 
         hilfe_menu = menubar.addMenu("&Hilfe")
 
+        check_version_action = QAction("Version prüfen", self)
+        check_version_action.setIcon(get_icon("system-software-update", QStyle.StandardPixmap.SP_FileIcon))
+        check_version_action.triggered.connect(self._check_version)
+        hilfe_menu.addAction(check_version_action)
+
+        hilfe_menu.addSeparator()
+
         about_action = QAction("Über", self)
         about_action.setIcon(get_icon("help-about", QStyle.StandardPixmap.SP_FileIcon))
         about_action.triggered.connect(self._show_about)
@@ -2251,6 +2258,97 @@ class MainWindow(QMainWindow):
 
         self.db.close()
         event.accept()
+
+
+
+class VersionCheckDialog(QDialog):
+    """Dialog for checking application version."""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Version prüfen")
+        self.setMinimumSize(400, 200)
+        
+        layout = QVBoxLayout(self)
+        
+        self.info_label = QLabel("Aktuelle Version: Unbekannt")
+        self.info_label.setStyleSheet("font-weight: bold; padding: 10px;")
+        layout.addWidget(self.info_label)
+        
+        self.status_label = QLabel("Bereit zur Prüfung...")
+        self.status_label.setStyleSheet("padding: 10px;")
+        layout.addWidget(self.status_label)
+        
+        layout.addStretch()
+        
+        button_box = QDialogButtonBox()
+        self.check_btn = QPushButton("Auf neue Version prüfen")
+        self.check_btn.clicked.connect(self._check_version)
+        button_box.addButton(self.check_btn, QDialogButtonBox.ButtonRole.ActionRole)
+        
+        close_btn = QPushButton("Schließen")
+        close_btn.clicked.connect(self.reject)
+        button_box.addButton(close_btn, QDialogButtonBox.ButtonRole.RejectRole)
+        
+        layout.addWidget(button_box)
+    
+    def _check_version(self):
+        """Check GitHub for newer version."""
+        self.status_label.setText("Prüfe GitHub Repository...")
+        QApplication.processEvents()
+        
+        try:
+            import urllib.request
+            import json
+            
+            # Get latest release from GitHub API
+            url = "https://api.github.com/repos/asb-42/chormanager/releases/latest"
+            req = urllib.request.Request(url)
+            req.add_header('User-Agent', 'ChorManager')
+            
+            with urllib.request.urlopen(req, timeout=10) as response:
+                data = json.loads(response.read().decode())
+                latest_tag = data.get('tag_name', '')
+                
+                # Get current version (from git)
+                import subprocess
+                try:
+                    result = subprocess.run(['git', 'describe', '--tags', '--abbrev=0'],
+                                          capture_output=True, text=True, cwd='/media/data/coding/chormanager')
+                    current_version = result.stdout.strip()
+                except Exception:
+                    current_version = "0.4"  # fallback
+                
+                self.info_label.setText(f"Aktuelle Version: {current_version}")
+                
+                if latest_tag and latest_tag != current_version:
+                    self.status_label.setText(f"Update verfügbar: {latest_tag}")
+                    self.check_btn.setText("Update durchführen")
+                    self.check_btn.clicked.disconnect()
+                    self.check_btn.clicked.connect(self._do_update)
+                else:
+                    self.status_label.setText("Kein Update verfügbar - Code ist aktuell")
+                    
+        except Exception as e:
+            self.status_label.setText(f"Fehler bei der Prüfung: {str(e)}")
+    
+    def _do_update(self):
+        """Pull new code from GitHub."""
+        self.status_label.setText("Aktualisiere von GitHub...")
+        QApplication.processEvents()
+        
+        try:
+            import subprocess
+            result = subprocess.run(['git', 'pull', 'origin', '0.4'],
+                                  capture_output=True, text=True, cwd='/media/data/coding/chormanager')
+            
+            if result.returncode == 0:
+                self.status_label.setText("Aktualisierung erfolgreich! Bitte App neu starten.")
+                self.check_btn.setEnabled(False)
+            else:
+                self.status_label.setText(f"Fehler: {result.stderr}")
+        except Exception as e:
+            self.status_label.setText(f"Fehler: {str(e)}")
 
 
 def main():
