@@ -616,21 +616,6 @@ class MainWindow(QMainWindow):
         selbstdarstellung_action.triggered.connect(self._show_selbstdarstellung)
         marketing_menu.addAction(selbstdarstellung_action)
 
-        extras_menu = menubar.addMenu("Extras")
-
-        export_data_action = QAction("Daten exportieren...", self)
-        export_data_action.setIcon(
-            get_icon("document-export", QStyle.StandardPixmap.SP_FileIcon)
-        )
-        export_data_action.triggered.connect(self._export_data)
-        extras_menu.addAction(export_data_action)
-
-        import_data_action = QAction("Daten importieren...", self)
-        import_data_action.setIcon(
-            get_icon("document-import", QStyle.StandardPixmap.SP_FileIcon)
-        )
-        import_data_action.triggered.connect(self._import_data)
-        extras_menu.addAction(import_data_action)
 
         hilfe_menu = menubar.addMenu("&Hilfe")
 
@@ -2197,59 +2182,6 @@ class MainWindow(QMainWindow):
                 "Fehler",
                 f"Choraufstellung konnte nicht gestartet werden:\n{str(e)}",
             )
-
-    def _export_data(self):
-        """Export all data to ZIP archive."""
-        from PyQt6.QtWidgets import QFileDialog
-        from datetime import datetime
-        from ..export.portability import PortabilityService
-
-        data_dir = self._get_data_dir()
-        service = PortabilityService(str(data_dir))
-
-        default_name = f"chormanager_daten_{datetime.now().strftime('%Y-%m-%d')}.zip"
-
-        filename, _ = QFileDialog.getSaveFileName(
-            self, "Daten exportieren", default_name, "ZIP Dateien (*.zip)"
-        )
-
-        if filename:
-            service.export_data(filename)
-            QMessageBox.information(
-                self, "Export erfolgreich", f"Daten exportiert nach:\n{filename}"
-            )
-            self.statusBar().showMessage(f"Daten exportiert nach {filename}")
-
-    def _import_data(self):
-        """Import data from ZIP archive."""
-        from PyQt6.QtWidgets import QFileDialog, QMessageBox
-        from ..export.portability import PortabilityService
-
-        filename, _ = QFileDialog.getOpenFileName(
-            self, "Daten importieren", "", "ZIP Dateien (*.zip)"
-        )
-
-        if not filename:
-            return
-
-        data_dir = self._get_data_dir()
-        service = PortabilityService(str(data_dir))
-
-        reply = QMessageBox.question(
-            self,
-            "Import bestätigen",
-            "Achtung: Existierende Daten werden überschrieben!\n\nFortfahren?",
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-        )
-
-        if reply == QMessageBox.StandardButton.Yes:
-            service.import_data(filename, str(data_dir))
-            QMessageBox.information(
-                self,
-                "Import erfolgreich",
-                "Daten wurden importiert.\nBitte starten Sie die Anwendung neu.",
-            )
-            self.statusBar().showMessage("Daten importiert - Neustart erforderlich")
 
     def _open_backup_restore(self):
         """Open Backup & Restore dialog."""
