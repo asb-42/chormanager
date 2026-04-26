@@ -2021,23 +2021,29 @@ class MainWindow(QMainWindow):
         """Show about dialog."""
         from PyQt6.QtWidgets import QMessageBox
         import subprocess
+        from datetime import datetime
 
-        # Get git commit hash for version
         try:
             git_hash = subprocess.check_output(
                 ["git", "describe", "--tags", "--abbrev=7", "--always", "--dirty"],
                 cwd="/media/data/coding/chormanager",
                 text=True,
             ).strip()
+            commit_date = subprocess.check_output(
+                ["git", "log", "-1", "--format=%cd", "--date=short"],
+                cwd="/media/data/coding/chormanager",
+                text=True,
+            ).strip()
         except Exception:
             git_hash = "dev"
+            commit_date = "unbekannt"
 
         QMessageBox.about(
             self,
             "Über ChorManager",
             f"<h3>ChorManager</h3>"
             f"<p>Desktop-Anwendung zur Verwaltung eines Chors</p>"
-            f"<p>Version: {git_hash}</p>",
+            f"<p>Version: {git_hash} ({commit_date})</p>",
         )
 
     def _show_selbstdarstellung(self):
