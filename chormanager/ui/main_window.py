@@ -707,16 +707,17 @@ class MainWindow(QMainWindow):
         content_layout.setContentsMargins(0, 0, 0, 0)
         content_layout.setSpacing(0)
 
-        # Page title bar
+# Page title bar
         self.page_title_label = QLabel("Projektverwaltung")
+        self.page_title_label.setObjectName("pageTitle")
         self.page_title_label.setStyleSheet("""
-            QLabel {
-                font-size: 18px;
+            QLabel#pageTitle {
+                font-size: 22px;
                 font-weight: bold;
                 color: #2c3e50;
-                padding: 12px 15px 8px 15px;
+                padding: 14px 15px 10px 15px;
                 background-color: #f8f9fa;
-                border-bottom: 1px solid #dee2e6;
+                border-bottom: 2px solid #dee2e6;
             }
         """)
         content_layout.addWidget(self.page_title_label)

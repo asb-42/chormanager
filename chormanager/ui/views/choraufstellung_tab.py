@@ -78,11 +78,6 @@ class ChorAufstellungTab(QWidget):
         )
         info_label.setStyleSheet("color: #666; padding: 10px;")
         layout.addWidget(info_label)
-
-        self.formations_label = QLabel("Gespeicherte Choraufstellungen:")
-        self.formations_label.setStyleSheet("font-weight: bold; margin-top: 10px;")
-        layout.addWidget(self.formations_label)
-
         self.table = QTableWidget()
         self.table.verticalHeader().setDefaultSectionSize(36)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)

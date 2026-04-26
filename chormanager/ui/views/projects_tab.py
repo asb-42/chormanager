@@ -23,7 +23,6 @@ from ...data.database import Database
 from ...domain.repository import ProjectRepository, EventRepository
 from ...config import get_last_active_project_id, set_last_active_project_id
 
-
 class PaddedDelegate(QStyledItemDelegate):
     """Custom delegate with padding for better text display."""
 
@@ -34,7 +33,6 @@ class PaddedDelegate(QStyledItemDelegate):
     def paint(self, painter, option, index):
         option.rect = option.rect.adjusted(0, 5, 0, -5)
         super().paint(painter, option, index)
-
 
 class ProjectDialog:
     """Dialog for adding/editing projects."""
@@ -79,7 +77,6 @@ class ProjectDialog:
             "description": self.description_input.toPlainText().strip(),
         }
 
-
 class ProjectsTab(QWidget):
     """Tab widget for project management."""
 
@@ -105,15 +102,6 @@ class ProjectsTab(QWidget):
     def _setup_ui(self):
         """Set up the UI."""
         layout = QVBoxLayout(self)
-
-        # Seitentitel
-        title = QLabel("📁 Projektverwaltung")
-        title.setObjectName("pageTitle")
-        title.setStyleSheet(
-            "font-size: 18pt; font-weight: bold; color: #2c3e50; margin-bottom: 10px;"
-        )
-        layout.addWidget(title)
-
         toolbar = QHBoxLayout()
         toolbar.addStretch()
 

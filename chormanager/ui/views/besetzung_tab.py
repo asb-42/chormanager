@@ -22,7 +22,6 @@ from ...data.database import Database
 from ...ui.dialogs import SingerSelectionDialog
 from ...config import get_last_active_besetzung_id, set_last_active_besetzung_id
 
-
 class BesetzungTab(QWidget):
     """Tab for managing Besetzung (singer lineups)."""
 
@@ -52,14 +51,6 @@ class BesetzungTab(QWidget):
     def _setup_ui(self):
         """Set up the user interface."""
         layout = QVBoxLayout(self)
-
-        page_title = QLabel("👥 Besetzungen")
-        page_title.setObjectName("pageTitle")
-        page_title.setStyleSheet(
-            "font-size: 18pt; font-weight: bold; color: #2c3e50; margin-bottom: 10px;"
-        )
-        layout.addWidget(page_title)
-
         self.table = QTableWidget()
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(["Name", "Projekt", "Anzahl Sänger", "Zuletzt gespeichert"])

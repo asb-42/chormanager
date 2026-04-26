@@ -28,7 +28,6 @@ from ...domain.repository import (
 from ..dialogs import EventDialog
 from ...config import get_last_active_event_id, set_last_active_event_id
 
-
 class EventsTab(QWidget):
     """Tab widget for term management."""
 
@@ -70,15 +69,6 @@ class EventsTab(QWidget):
     def _setup_ui(self):
         """Set up the UI."""
         layout = QVBoxLayout(self)
-
-        # Seitentitel
-        title = QLabel("📅 Terminverwaltung")
-        title.setObjectName("pageTitle")
-        title.setStyleSheet(
-            "font-size: 18pt; font-weight: bold; color: #2c3e50; margin-bottom: 10px;"
-        )
-        layout.addWidget(title)
-
         toolbar = QHBoxLayout()
         toolbar.addStretch()
 

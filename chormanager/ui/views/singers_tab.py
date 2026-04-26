@@ -19,7 +19,6 @@ from ...data.database import Database
 from ...domain.repository import SingerRepository
 from ...config import load_voice_groups, load_fields
 
-
 class PaddedDelegate(QStyledItemDelegate):
     """Custom delegate with padding for better text display."""
 
@@ -30,7 +29,6 @@ class PaddedDelegate(QStyledItemDelegate):
     def paint(self, painter, option, index):
         option.rect = option.rect.adjusted(0, 3, 0, -3)
         super().paint(painter, option, index)
-
 
 class SingersTab(QWidget):
     """Tab widget for singer management."""
@@ -52,15 +50,6 @@ class SingersTab(QWidget):
     def _setup_ui(self):
         """Set up the UI."""
         layout = QVBoxLayout(self)
-
-        # Seitentitel
-        title = QLabel("👤 Sängerverwaltung")
-        title.setObjectName("pageTitle")
-        title.setStyleSheet(
-            "font-size: 18pt; font-weight: bold; color: #2c3e50; margin-bottom: 10px;"
-        )
-        layout.addWidget(title)
-
         toolbar = QHBoxLayout()
         toolbar.addStretch()
 
