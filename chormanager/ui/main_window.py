@@ -50,6 +50,9 @@ from ..config import (
     get_last_active_project_id,
     set_last_active_project_id,
 )
+from ..core.export_service import ExportService
+from .export_dialog import ExportDialog
+from PyQt6.QtWidgets import QFileDialog
 
 
 def get_icon(icon_name: str, fallback_pixmap):
@@ -2289,65 +2292,78 @@ class MainWindow(QMainWindow):
         dialog.exec()
     
 
-    def _export_project_libreoffice(self):
-        """Export projects with LibreOffice format using new modular system."""
-        from ..config import load_fields
-        from ..core.export_service import ExportService
-        
-        fields = load_fields()
-        if not fields:
-            QMessageBox.warning(self, "Warnung", "Keine Feldkonfiguration gefunden!")
+    _TAB_EXPORT_CONFIG = {
+        'projekte': ('projects', 'projects_tab', 'project_repo', 'Projekte'),
+        'saenger': ('singers', 'singers_tab', 'singer_repo', 'Sänger'),
+        'besetzung': ('besetzung', 'besetzung_tab', 'besetzung_repo', 'Besetzungen'),
+        'termine': ('events', 'events_tab', 'event_repo', 'Termine'),
+    }
+
+    def _get_export_config_for_current_tab(self):
+        tab_index = self.content_stack.currentIndex()
+        tab_map = {0: 'projekte', 1: 'saenger', 2: 'besetzung', 3: 'termine'}
+        tab_key = tab_map.get(tab_index)
+        if tab_key and tab_key in self._TAB_EXPORT_CONFIG:
+            return self._TAB_EXPORT_CONFIG[tab_key]
+        return None
+
+    def _export_tab_generic(self):
+        config = self._get_export_config_for_current_tab()
+        if not config:
+            QMessageBox.warning(self, 'Export', 'Export für diesen Tab nicht verfügbar.')
             return
-        
-        # Filter fields for projects (all fields available)
-        selected_fields = [f['name'] for f in fields if f.get('name')]
-        
+
+        table_name, tab_attr, repo_attr, display_name = config
+        repo = getattr(getattr(self, tab_attr), repo_attr)
+        service = ExportService()
+
+        fields = service.get_table_fields(self.db.get_connection(), table_name)
+        if not fields:
+            QMessageBox.warning(self, 'Warnung', f'Keine Felder für Tabelle {table_name} gefunden.')
+            return
+
         dialog = ExportDialog(fields, self)
-        if dialog.exec():
-            selected = dialog.get_selected_fields()
-            fmt = dialog.get_export_format()
-            
-            service = ExportService()
-            projects = self.projects_tab.project_repo.get_all()
-            data = service.get_export_data(projects, selected)
-            
-            if fmt == "writer":
-                content = service.export_to_libreoffice_writer(data, selected)
-                # Save .odt file
-                filename, _ = QFileDialog.getSaveFileName(
-                    self, "LibreOffice Writer exportieren",
-                    "", "LibreOffice Writer (*.odt)"
-                )
-                if filename:
-                    with open(filename, 'w', encoding='utf-8') as f:
-                        f.write(content)
-                    self.statusBar().showMessage("Projekte exportiert (LibreOffice Writer)")
-                    
-            elif fmt == "calc":
-                content = service.export_to_libreoffice_calc(data, selected)
-                filename, _ = QFileDialog.getSaveFileName(
-                    self, "LibreOffice Calc exportieren",
-                    "", "LibreOffice Calc (*.ods)"
-                )
-                if filename:
-                    with open(filename, 'w', encoding='utf-8') as f:
-                        f.write(content)
-                    self.statusBar().showMessage("Projekte exportiert (LibreOffice Calc)")
-                    
-            else:  # csv
-                content = service.export_to_csv(data, selected)
-                filename, _ = QFileDialog.getSaveFileName(
-                    self, "CSV exportieren",
-                    "", "CSV (*.csv)"
-                )
-                if filename:
-                    with open(filename, 'w', encoding='utf-8') as f:
-                        f.write(content)
-                    self.statusBar().showMessage("Projekte exportiert (CSV)")
-    
+        if not dialog.exec():
+            return
+
+        selected_fields = dialog.get_selected_fields()
+        fmt = dialog.get_export_format()
+
+        if not selected_fields:
+            QMessageBox.warning(self, 'Warnung', 'Keine Felder ausgewählt.')
+            return
+
+        items = repo.get_all()
+        data = service.get_export_data(items, selected_fields)
+
+        if fmt == 'writer':
+            content = service.export_to_libreoffice_writer(data, selected_fields)
+            ext_filter = 'LibreOffice Writer (*.odt)'
+        elif fmt == 'calc':
+            content = service.export_to_libreoffice_calc(data, selected_fields)
+            ext_filter = 'LibreOffice Calc (*.ods)'
+        else:
+            content = service.export_to_csv(data, selected_fields)
+            ext_filter = 'CSV (*.csv)'
+
+        filename, _ = QFileDialog.getSaveFileName(
+            self, f'{display_name} exportieren',
+            f'{display_name.lower()}_export', ext_filter
+        )
+        if not filename:
+            return
+
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(content)
+        self.statusBar().showMessage(f'{display_name} exportiert ({fmt.upper()})')
+
+    def _export_project_libreoffice(self):
+        self.content_stack.setCurrentIndex(0)
+        self._export_tab_generic()
+
     def _export_project_csv(self):
-        """Export projects to CSV using new modular system."""
-        self._export_project_libreoffice()  # Will be called with CSV format
+        self.content_stack.setCurrentIndex(0)
+        self._export_tab_generic()
     
 class VersionCheckDialog(QDialog):
     """Dialog for checking application version."""

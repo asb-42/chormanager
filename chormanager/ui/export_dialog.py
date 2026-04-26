@@ -6,6 +6,7 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QRadioButton,
     QDialogButtonBox,
     QCheckBox,
     QGroupBox,
@@ -48,20 +49,17 @@ class ExportDialog(QDialog):
         format_group = QGroupBox("Export-Format")
         format_layout = QHBoxLayout()
 
-        self.calc_radio = QPushButton("LibreOffice Calc")
-        self.calc_radio.setCheckable(True)
+        self.calc_radio = QRadioButton("LibreOffice Calc")
         self.calc_radio.setChecked(True)
-        self.calc_radio.clicked.connect(lambda: self._set_format("calc"))
+        self.calc_radio.toggled.connect(lambda checked: checked and self._set_format("calc"))
         format_layout.addWidget(self.calc_radio)
 
-        self.writer_radio = QPushButton("LibreOffice Writer")
-        self.writer_radio.setCheckable(True)
-        self.writer_radio.clicked.connect(lambda: self._set_format("writer"))
+        self.writer_radio = QRadioButton("LibreOffice Writer")
+        self.writer_radio.toggled.connect(lambda checked: checked and self._set_format("writer"))
         format_layout.addWidget(self.writer_radio)
 
-        self.csv_radio = QPushButton("CSV")
-        self.csv_radio.setCheckable(True)
-        self.csv_radio.clicked.connect(lambda: self._set_format("csv"))
+        self.csv_radio = QRadioButton("CSV")
+        self.csv_radio.toggled.connect(lambda checked: checked and self._set_format("csv"))
         format_layout.addWidget(self.csv_radio)
 
         format_layout.addStretch()

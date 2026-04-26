@@ -2,7 +2,8 @@
 
 import csv
 import io
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+import sqlite3
 
 
 class ExportService:
@@ -104,3 +105,31 @@ class ExportService:
         
         html.append('</table></body></html>')
         return '\n'.join(html)
+
+    def get_table_fields(self, db_connection: sqlite3.Connection,
+                         table_name: str,
+                         exclude_system: bool = True) -> List[Dict[str, str]]:
+        '''Liest Spalten einer SQLite-Tabelle dynamisch aus.
+
+        Args:
+            db_connection: SQLite database connection.
+            table_name: Name of the table to inspect.
+            exclude_system: If True, excludes 'id', 'created_at', 'updated_at'.
+
+        Returns:
+            List of dicts with 'name' and 'label' keys.
+        '''
+        cursor = db_connection.execute(f'PRAGMA table_info({table_name})')
+        columns = cursor.fetchall()
+
+        system_fields = {'id', 'created_at', 'updated_at'} if exclude_system else set()
+        fields = []
+        for col in columns:
+            col_name = col['name']
+            if col_name in system_fields:
+                continue
+            # Create human-readable label: snake_case -> Title Case
+            label = col_name.replace('_', ' ').title()
+            fields.append({'name': col_name, 'label': label})
+
+        return fields
