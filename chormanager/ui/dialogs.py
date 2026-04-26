@@ -21,6 +21,7 @@ from PyQt6.QtWidgets import (
     QGroupBox,
     QStyledItemDelegate,
     QSizePolicy,
+    QMessageBox,
 )
 from PyQt6.QtCore import QDateTime, Qt
 
@@ -422,8 +423,8 @@ class EventAvailabilityDialog(QDialog):
         export_pdf_btn.clicked.connect(self._export_pdf)
         toolbar.addWidget(export_pdf_btn)
 
-        export_lo_btn = QPushButton("Als LibreOffice exportieren")
-        export_lo_btn.clicked.connect(self._export_libreoffice)
+        export_lo_btn = QPushButton("Export")
+        export_lo_btn.clicked.connect(self._export_availability)
         toolbar.addWidget(export_lo_btn)
 
         toolbar.addStretch()
@@ -671,83 +672,98 @@ class EventAvailabilityDialog(QDialog):
 
         QMessageBox.information(self, "Export", f"Exportiert nach:\n{filename}")
 
-    def _export_libreoffice(self):
-        """Export availability to LibreOffice."""
-        from PyQt6.QtWidgets import QFileDialog, QMessageBox
-        import subprocess
-        import tempfile
-        import os
+    def _export_availability(self):
+        """Export availability to file with field selection."""
+        avail_fields = [
+            {'name': 'short_name', 'label': 'Kurzname'},
+            {'name': 'voice_group', 'label': 'Stimmgruppe'},
+            {'name': 'status', 'label': 'Status'},
+        ]
+
+        from ..ui.export_dialog import ExportDialog
+        dialog = ExportDialog(avail_fields, self)
+        if not dialog.exec():
+            return
+
+        selected_fields = dialog.get_selected_fields()
+        fmt = dialog.get_export_format()
+
+        if not selected_fields:
+            QMessageBox.warning(self, 'Warnung', 'Keine Felder ausgewählt.')
+            return
+
+        from ..core.export_service import ExportService
+        from PyQt6.QtWidgets import QFileDialog
+        from pathlib import Path
+        from datetime import datetime
 
         singers = self.singer_repo.get_active()
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".csv", delete=False, encoding="utf-8"
-        ) as f:
-            import csv
+        if self.besetzung_ids is not None:
+            singers = [s for s in singers if s.id in self.besetzung_ids]
 
-            writer = csv.writer(f)
-            writer.writerow(["Name", "Stimmgruppe", "Status"])
+        VG_ORDER = ['Sopran 1', 'Sopran 2', 'Alt 1', 'Alt 2', 'Tenor 1', 'Tenor 2', 'Bass 1', 'Bass 2']
 
-            status_symbols = {
-                "yes": "✓",
-                "no": "✗",
-                "none": "○",
-                "conditional": "✓?",
-                "unknown": "?",
-                "maybe": "~",
-            }
+        def sort_key(singer):
+            vg = singer.voice_group or ''
+            vg_idx = VG_ORDER.index(vg) if vg in VG_ORDER else 999
+            return (vg_idx, singer.short_name or singer.full_name or '')
 
-            for singer in singers:
-                avail = self.avail_repo.get_by_ids(singer.id, self.event.id)
-                status = status_symbols.get(avail.status if avail else "", "-")
-                writer.writerow(
-                    [
-                        singer.short_name or singer.full_name or "",
-                        singer.voice_group or "",
-                        status,
-                    ]
-                )
+        singers_sorted = sorted(singers, key=sort_key)
 
-            temp_csv = f.name
+        status_labels = {
+            'yes': 'Zusage',
+            'no': 'Absage',
+            'none': 'Offen',
+            'conditional': 'Vorbehalt',
+            'unknown': 'Weiß nicht',
+            'maybe': 'Vielleicht',
+        }
 
-        try:
-            filename, _ = QFileDialog.getSaveFileName(
-                self, "Exportieren", "", "LibreOffice Dateien (*.xls)"
-            )
+        data = []
+        for s in singers_sorted:
+            row = {}
+            if 'short_name' in selected_fields:
+                row['short_name'] = s.short_name or s.full_name or ''
+            if 'voice_group' in selected_fields:
+                row['voice_group'] = s.voice_group or ''
+            if 'status' in selected_fields:
+                avail = self.avail_repo.get_by_ids(s.id, self.event.id)
+                status_code = avail.status if avail else 'none'
+                row['status'] = status_labels.get(status_code, status_code)
+            data.append(row)
 
-            if not filename:
-                return
+        service = ExportService()
+        if fmt == 'writer':
+            content_out = service.export_to_libreoffice_writer(data, selected_fields)
+            ext_filter = 'LibreOffice Writer (*.odt)'
+        elif fmt == 'calc':
+            content_out = service.export_to_libreoffice_calc(data, selected_fields)
+            ext_filter = 'LibreOffice Calc (*.ods)'
+        else:
+            content_out = service.export_to_csv(data, selected_fields)
+            ext_filter = 'CSV (*.csv)'
 
-            out_dir = os.path.dirname(filename) or "."
-            result = subprocess.run(
-                [
-                    "libreoffice",
-                    "--headless",
-                    "--convert-to",
-                    "xls",
-                    "--outdir",
-                    out_dir,
-                    temp_csv,
-                ],
-                capture_output=True,
-                text=True,
-                timeout=30,
-            )
+        today = datetime.now().strftime('%Y-%m-%d')
+        safe_event = self.event.name.replace(' ', '-').replace('/', '-')
+        ext_map = {'writer': 'odt', 'calc': 'ods', 'csv': 'csv'}
+        ext = ext_map.get(fmt, 'csv')
+        default_name = f'{today}-verfuegbarkeit-{safe_event}.{ext}'
+        workdir = Path(__file__).parent.parent.parent / 'workdir'
+        workdir.mkdir(exist_ok=True)
+        default_path = str(workdir / default_name)
 
-            if result.returncode == 0:
-                base_name = os.path.splitext(os.path.basename(temp_csv))[0]
-                expected_output = os.path.join(out_dir, base_name + ".xls")
-                if expected_output != filename and os.path.exists(expected_output):
-                    os.rename(expected_output, filename)
-                QMessageBox.information(self, "Export", f"Exportiert nach:\n{filename}")
-            else:
-                QMessageBox.warning(
-                    self, "Fehler", f"LibreOffice Fehler:\n{result.stderr}"
-                )
+        filename, _ = QFileDialog.getSaveFileName(
+            self, 'Verfügbarkeit exportieren',
+            default_path, ext_filter
+        )
+        if not filename:
+            return
 
-        finally:
-            if os.path.exists(temp_csv):
-                os.unlink(temp_csv)
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(content_out)
+
+        QMessageBox.information(self, 'Export', f'Exportiert nach:\n{filename}')
 
 
 class ConfigDialog(QDialog):
