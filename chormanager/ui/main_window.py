@@ -342,6 +342,94 @@ class MainWindow(QMainWindow):
         self._create_central_widget()
         self._create_status_bar()
 
+    def _create_info_bar(self):
+        """Create info bar below menu bar."""
+        self.info_bar = QWidget()
+        self.info_bar.setObjectName("infoBarWidget")
+        self.info_bar.setMinimumHeight(45)
+        self.info_bar.setStyleSheet("""
+            QWidget {
+                background-color: #e8f4f8;
+                border-bottom: 2px solid #4a90d9;
+                padding: 5px;
+            }
+            QLabel {
+                font-weight: bold;
+                color: #2c3e50;
+                padding: 4px 12px;
+                border-radius: 4px;
+            }
+            QLabel#projectInfoLabel {
+                background-color: #4a90d9;
+                color: white;
+            }
+            QLabel#eventInfoLabel {
+                background-color: #e67e22;
+                color: white;
+            }
+        """)
+
+        info_layout = QHBoxLayout(self.info_bar)
+        info_layout.setContentsMargins(15, 8, 15, 8)
+        info_layout.setSpacing(15)
+
+        # Projekt-Status Label
+        project_status_label = QLabel("Aktives Projekt:")
+        project_status_label.setStyleSheet("font-weight: normal; color: #666;")
+        info_layout.addWidget(project_status_label)
+
+        self.project_info_label = QLabel("Keines")
+        self.project_info_label.setObjectName("projectInfoLabel")
+        self.project_info_label.setVisible(True)
+        self.project_info_label.setWordWrap(False)
+        self.project_info_label.setSizePolicy(
+            QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum
+        )
+        info_layout.addWidget(self.project_info_label)
+
+        # Besetzung-Status Label
+        besetzung_status_label = QLabel("Aktive Besetzung:")
+        besetzung_status_label.setStyleSheet("font-weight: normal; color: #666;")
+        info_layout.addWidget(besetzung_status_label)
+
+        self.besetzung_info_label = QLabel("Keine")
+        self.besetzung_info_label.setObjectName("besetzungInfoLabel")
+        self.besetzung_info_label.setVisible(True)
+        self.besetzung_info_label.setWordWrap(False)
+        self.besetzung_info_label.setSizePolicy(
+            QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum
+        )
+        info_layout.addWidget(self.besetzung_info_label)
+
+        info_layout.addStretch()
+
+        # Termin-Status Label
+        event_status_label = QLabel("Aktiver Termin:")
+        event_status_label.setStyleSheet("font-weight: normal; color: #666;")
+        info_layout.addWidget(event_status_label)
+
+        self.event_info_label = QLabel("Keiner")
+        self.event_info_label.setObjectName("eventInfoLabel")
+        self.event_info_label.setVisible(True)
+        self.event_info_label.setWordWrap(False)
+        self.event_info_label.setSizePolicy(
+            QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum
+        )
+        info_layout.addWidget(self.event_info_label)
+
+        info_layout.addStretch()
+
+        # Add info bar to main layout
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+        main_layout.addWidget(self.menuBar())
+        main_layout.addWidget(self.info_bar)
+
+        # Create container for menu + info bar
+        menu_container = QWidget()
+        menu_container.setLayout(main_layout)
+        self.setMenuWidget(menu_container)
 
     def _create_menu_bar(self):
         """Create menu bar."""
@@ -409,14 +497,14 @@ class MainWindow(QMainWindow):
         projekt_menu.addSeparator()
 
         export_menu = projekt_menu.addMenu("Export")
-
+        
         export_libreoffice_action = QAction("LibreOffice exportieren...", self)
         export_libreoffice_action.setIcon(
             get_icon("x-office-document", QStyle.StandardPixmap.SP_FileIcon)
         )
         export_libreoffice_action.triggered.connect(self._export_project_libreoffice)
         export_menu.addAction(export_libreoffice_action)
-
+        
         export_csv_action = QAction("CSV exportieren...", self)
         export_csv_action.setIcon(
             get_icon("x-office-spreadsheet", QStyle.StandardPixmap.SP_FileIcon)
@@ -543,36 +631,85 @@ class MainWindow(QMainWindow):
         about_action.triggered.connect(self._show_about)
         hilfe_menu.addAction(about_action)
 
+    def _create_tool_bar(self):
+        """Create toolbar."""
+        toolbar = QToolBar()
+        self.addToolBar(toolbar)
 
-    def _create_info_bar(self):
-        """Create info bar below menu bar."""
-        self.info_bar = QWidget()
-        self.info_bar.setObjectName("infoBarWidget")
-        self.info_bar.setMinimumHeight(45)
-        self.info_bar.setStyleSheet("""
-            QWidget {
-                background-color: #e8f4f8;
-                border-bottom: 2px solid #4a90d9;
-                padding: 5px;
-            }
-            QLabel {
-                font-weight: bold;
-                color: #2c3e50;
-                padding: 4px 12px;
-                border-radius: 4px;
-            }
-            QLabel#projectInfoLabel {
-                background-color: #4a90d9;
-                color: white;
-            }
-QLabel#eventInfoLabel {
-                background-color: #e67e22;
-                color: white;
-            }
-            QLabel#pageTitle {
-                color: #2c3e50;
-            }
-        """)
+    def _create_central_widget(self):
+        """Create central widget with sidebar navigation."""
+        central = QWidget()
+        self.setCentralWidget(central)
+
+        # Horizontal splitter: Sidebar links, Content rechts
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+        layout = QHBoxLayout(central)
+        layout.addWidget(splitter)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        # Sidebar (linke Navigationsspalte)
+        sidebar = QWidget()
+        sidebar.setMinimumWidth(140)
+        sidebar.setMaximumWidth(140)
+        sidebar_layout = QVBoxLayout(sidebar)
+        sidebar_layout.setContentsMargins(5, 10, 5, 10)
+        sidebar_layout.setSpacing(5)
+
+        # Navigation buttons (OBEN zuerst) - mit Icons
+        self.nav_projects = QPushButton("Projekte")
+        self.nav_projects.setIcon(
+            get_icon("folder", QStyle.StandardPixmap.SP_DirClosedIcon)
+        )
+        self.nav_projects.setCheckable(True)
+        self.nav_projects.setChecked(True)
+        self.nav_projects.clicked.connect(lambda: self._switch_view(0))
+        sidebar_layout.addWidget(self.nav_projects)
+
+        self.nav_singers = QPushButton("Sänger")
+        self.nav_singers.setIcon(
+            get_icon("user-info", QStyle.StandardPixmap.SP_FileIcon)
+        )
+        self.nav_singers.setCheckable(True)
+        self.nav_singers.clicked.connect(lambda: self._switch_view(1))
+        sidebar_layout.addWidget(self.nav_singers)
+
+        self.nav_besetzung = QPushButton("Besetzung")
+        self.nav_besetzung.setIcon(
+            get_icon("system-users", QStyle.StandardPixmap.SP_DirHomeIcon)
+        )
+        self.nav_besetzung.setCheckable(True)
+        self.nav_besetzung.clicked.connect(lambda: self._switch_view(2))
+        sidebar_layout.addWidget(self.nav_besetzung)
+
+        self.nav_events = QPushButton("Termine")
+        self.nav_events.setIcon(
+            get_icon("x-office-calendar", QStyle.StandardPixmap.SP_FileIcon)
+        )
+        self.nav_events.setCheckable(True)
+        self.nav_events.clicked.connect(lambda: self._switch_view(3))
+        sidebar_layout.addWidget(self.nav_events)
+
+        self.nav_formations = QPushButton("Aufstellung")
+        self.nav_formations.setIcon(
+            get_icon("audio-volume-high", QStyle.StandardPixmap.SP_MediaVolume)
+        )
+        self.nav_formations.setCheckable(True)
+        self.nav_formations.clicked.connect(lambda: self._switch_view(4))
+        sidebar_layout.addWidget(self.nav_formations)
+
+        sidebar_layout.addStretch()
+
+        splitter.addWidget(sidebar)
+
+        # Content-Bereich (rechts) - mit horizontaler Context Toolbar oben
+        content_area = QWidget()
+        content_layout = QVBoxLayout(content_area)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(0)
+
+# Page title bar
+        self.page_title_label = QLabel("Projektverwaltung")
+        self.page_title_label.setObjectName("pageTitle")
         content_layout.addWidget(self.page_title_label)
 
         # Context toolbar (horizontal oberhalb des Content)
@@ -1458,6 +1595,14 @@ QLabel#eventInfoLabel {
             border: none;
             background: none;
         }
+        QLabel#pageTitle {
+            font-size: 22px;
+            font-weight: bold;
+            color: #2c3e50;
+            padding: 14px 15px 10px 15px;
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
         """
         self.setStyleSheet(light_style)
         set_theme("light")
@@ -1489,7 +1634,12 @@ QLabel#eventInfoLabel {
             color: white;
         }
         QLabel#pageTitle {
+            background-color: #2d2d2d;
             color: #ffffff;
+            font-size: 22px;
+            font-weight: bold;
+            padding: 14px 15px 10px 15px;
+            border-bottom: 2px solid #404040;
         }
 
         /* Main application colors */
@@ -1683,6 +1833,14 @@ QLabel#eventInfoLabel {
 
         QSplitter::handle:hover {
             background-color: #555555;
+        }
+        QLabel#pageTitle {
+            font-size: 22px;
+            font-weight: bold;
+            color: #ffffff;
+            padding: 14px 15px 10px 15px;
+            background-color: #2d2d2d;
+            border-bottom: 2px solid #404040;
         }
         """
         self.setStyleSheet(dark_style)
