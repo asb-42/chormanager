@@ -2614,45 +2614,45 @@ class VersionCheckDialog(QDialog):
         layout.addWidget(button_box)
     
     def _check_version(self):
-        """Check GitHub for newer version."""
+        """Check GitHub for newer version on branch 0.4."""
         self.status_label.setText("Prüfe GitHub Repository...")
         QApplication.processEvents()
         
         try:
             import urllib.request
             import json
+            import subprocess
             
-            # Get latest release from GitHub API
-            url = "https://api.github.com/repos/asb-42/chormanager/releases/latest"
+            # Get latest commit on branch 0.4 from GitHub API
+            url = "https://api.github.com/repos/asb-42/chormanager/branches/0.4"
             req = urllib.request.Request(url)
             req.add_header('User-Agent', 'ChorManager')
             
             with urllib.request.urlopen(req, timeout=10) as response:
                 data = json.loads(response.read().decode())
-                latest_tag = data.get('tag_name', '')
+                remote_sha = data['commit']['sha']
                 
-                # Get current version (from git)
-                import subprocess
-                try:
-                    result = subprocess.run(['git', 'describe', '--tags', '--abbrev=0'],
-                                          capture_output=True, text=True, cwd='/media/data/coding/chormanager')
-                    current_version = result.stdout.strip()
-                except Exception:
-                    current_version = "0.4"  # fallback
+                # Get current local commit
+                result = subprocess.run(
+                    ['git', 'rev-parse', 'HEAD'],
+                    capture_output=True, text=True, cwd='/media/data/coding/chormanager'
+                )
+                local_sha = result.stdout.strip()[:7]
+                remote_short = remote_sha[:7]
                 
-                self.info_label.setText(f"Aktuelle Version: {current_version}")
+                self.info_label.setText(f"Lokal: {local_sha} | Remote: {remote_short}")
                 
-                if latest_tag and latest_tag != current_version:
-                    self.status_label.setText(f"Update verfügbar: {latest_tag}")
+                if remote_sha != local_sha:
+                    self.status_label.setText(f"Update verfügbar: {remote_short}")
                     self.check_btn.setText("Update durchführen")
                     self.check_btn.clicked.disconnect()
                     self.check_btn.clicked.connect(self._do_update)
                 else:
-                    self.status_label.setText("Kein Update verfügbar - Code ist aktuell")
+                    self.status_label.setText("Code ist aktuell")
                     
         except Exception as e:
             self.status_label.setText(f"Fehler bei der Prüfung: {str(e)}")
-    
+
     def _do_update(self):
         """Pull new code from GitHub."""
         self.status_label.setText("Aktualisiere von GitHub...")
@@ -2660,29 +2660,16 @@ class VersionCheckDialog(QDialog):
         
         try:
             import subprocess
-            result = subprocess.run(['git', 'pull', 'origin', '0.4'],
-                                  capture_output=True, text=True, cwd='/media/data/coding/chormanager')
+            result = subprocess.run(
+                ['git', 'pull', 'origin', '0.4'],
+                capture_output=True, text=True, cwd='/media/data/coding/chormanager'
+            )
             
             if result.returncode == 0:
                 self.status_label.setText("Aktualisierung erfolgreich! Bitte App neu starten.")
                 self.check_btn.setEnabled(False)
             else:
-                self.status_label.setText(f"Fehler: {result.stderr}")
+                self.status_label.setText(f"Update fehlgeschlagen: {result.stderr}")
         except Exception as e:
-            self.status_label.setText(f"Fehler: {str(e)}")
+            self.status_label.setText(f"Update fehlgeschlagen: {str(e)}")
 
-
-def main():
-    """Main entry point."""
-    from PyQt6.QtWidgets import QApplication
-
-    app = QApplication(sys.argv)
-
-    window = MainWindow()
-    window.show()
-
-    sys.exit(app.exec())
-
-
-if __name__ == "__main__":
-    main()
