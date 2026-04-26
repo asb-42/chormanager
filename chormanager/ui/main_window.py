@@ -1,6 +1,7 @@
 """Main window for ChorManager."""
 
 import sys
+import json
 from pathlib import Path
 from PyQt6.QtCore import QSize
 
@@ -524,6 +525,24 @@ class MainWindow(QMainWindow):
         export_csv_action.triggered.connect(self._export_project_csv)
         export_menu.addAction(export_csv_action)
 
+        saenger_menu = menubar.addMenu("Sänger")
+        saenger_export_menu = saenger_menu.addMenu("Export")
+        export_lo_saenger = QAction("LibreOffice exportieren...", self)
+        export_lo_saenger.triggered.connect(lambda: self._export_tab(1))
+        saenger_export_menu.addAction(export_lo_saenger)
+        export_csv_saenger = QAction("CSV exportieren...", self)
+        export_csv_saenger.triggered.connect(lambda: self._export_tab_csv(1))
+        saenger_export_menu.addAction(export_csv_saenger)
+
+        besetzung_menu = menubar.addMenu("Besetzung")
+        besetzung_export_menu = besetzung_menu.addMenu("Export")
+        export_lo_besetzung = QAction("LibreOffice exportieren...", self)
+        export_lo_besetzung.triggered.connect(self._export_besetzung)
+        besetzung_export_menu.addAction(export_lo_besetzung)
+        export_csv_besetzung = QAction("CSV exportieren...", self)
+        export_csv_besetzung.triggered.connect(self._export_besetzung)
+        besetzung_export_menu.addAction(export_csv_besetzung)
+
         termin_menu = menubar.addMenu("&Termine")
 
         new_event_action = QAction("Neuer Termin...", self)
@@ -549,6 +568,15 @@ class MainWindow(QMainWindow):
         list_events_action.triggered.connect(self._list_events)
         termin_menu.addAction(list_events_action)
 
+        termin_menu.addSeparator()
+        termin_export_menu = termin_menu.addMenu("Export")
+        export_lo_termin = QAction("LibreOffice exportieren...", self)
+        export_lo_termin.triggered.connect(self._export_termine)
+        termin_export_menu.addAction(export_lo_termin)
+        export_csv_termin = QAction("CSV exportieren...", self)
+        export_csv_termin.triggered.connect(self._export_termine)
+        termin_export_menu.addAction(export_csv_termin)
+
         choraufstellung_menu = menubar.addMenu("Aufstellung")
 
         open_action = QAction("In Aufstellung öffnen...", self)
@@ -557,6 +585,15 @@ class MainWindow(QMainWindow):
         )
         open_action.triggered.connect(self._open_choraufstellung)
         choraufstellung_menu.addAction(open_action)
+
+        choraufstellung_menu.addSeparator()
+        aufstellung_export_menu = choraufstellung_menu.addMenu("Export")
+        export_lo_aufstellung = QAction("LibreOffice exportieren...", self)
+        export_lo_aufstellung.triggered.connect(self._export_aufstellung)
+        aufstellung_export_menu.addAction(export_lo_aufstellung)
+        export_csv_aufstellung = QAction("CSV exportieren...", self)
+        export_csv_aufstellung.triggered.connect(self._export_aufstellung)
+        aufstellung_export_menu.addAction(export_csv_aufstellung)
 
         view_menu = menubar.addMenu("&Ansicht")
 
@@ -2346,9 +2383,18 @@ class MainWindow(QMainWindow):
             content = service.export_to_csv(data, selected_fields)
             ext_filter = 'CSV (*.csv)'
 
+        tab_name_map = {'Projekte': 'projekte', 'Sänger': 'saenger', 'Besetzungen': 'besetzungen', 'Termine': 'termine'}
+        ext_map = {'writer': 'odt', 'calc': 'ods', 'csv': 'csv'}
+        tab_file = tab_name_map.get(display_name, display_name.lower())
+        ext = ext_map.get(fmt, 'csv')
+        default_name = f'2026-04-26-{tab_file}.{ext}'
+        workdir = Path(__file__).parent.parent.parent / 'workdir'
+        workdir.mkdir(exist_ok=True)
+        default_path = str(workdir / default_name)
+
         filename, _ = QFileDialog.getSaveFileName(
             self, f'{display_name} exportieren',
-            f'{display_name.lower()}_export', ext_filter
+            default_path, ext_filter
         )
         if not filename:
             return
@@ -2364,7 +2410,277 @@ class MainWindow(QMainWindow):
     def _export_project_csv(self):
         self.content_stack.setCurrentIndex(0)
         self._export_tab_generic()
-    
+
+    def _export_tab(self, tab_index):
+        self.content_stack.setCurrentIndex(tab_index)
+        self._export_tab_generic()
+
+    def _export_tab_csv(self, tab_index):
+        self.content_stack.setCurrentIndex(tab_index)
+        self._export_tab_generic()
+
+    def _export_besetzung(self):
+        besetzung_fields = [
+            {'name': 'name', 'label': 'Name'},
+            {'name': 'project', 'label': 'Projekt'},
+            {'name': 'singer_count', 'label': 'Anzahl Sänger'},
+            {'name': 'updated_at', 'label': 'Zuletzt gespeichert'},
+        ]
+
+        dialog = ExportDialog(besetzung_fields, self)
+        if not dialog.exec():
+            return
+
+        selected = dialog.get_selected_fields()
+        fmt = dialog.get_export_format()
+
+        if not selected:
+            QMessageBox.warning(self, 'Warnung', 'Keine Felder ausgewählt.')
+            return
+
+        service = ExportService()
+        besetzungen = self.besetzung_tab.besetzung_repo.get_all()
+
+        data = []
+        for b in besetzungen:
+            row = {}
+            if 'name' in selected:
+                row['name'] = b.name
+            if 'project' in selected:
+                proj = self.besetzung_tab.project_repo.get_by_id(b.project_id)
+                row['project'] = proj.name if proj else '-'
+            if 'singer_count' in selected:
+                singer_ids = b.get_singer_ids()
+                row['singer_count'] = len(singer_ids) if singer_ids else 0
+            if 'updated_at' in selected:
+                try:
+                    from datetime import datetime
+                    dt = datetime.fromisoformat(b.updated_at)
+                    row['updated_at'] = dt.strftime('%d.%m.%Y %H:%M')
+                except (ValueError, OSError):
+                    row['updated_at'] = '-'
+            data.append(row)
+
+        if fmt == 'writer':
+            content = service.export_to_libreoffice_writer(data, selected)
+            ext_filter = 'LibreOffice Writer (*.odt)'
+        elif fmt == 'calc':
+            content = service.export_to_libreoffice_calc(data, selected)
+            ext_filter = 'LibreOffice Calc (*.ods)'
+        else:
+            content = service.export_to_csv(data, selected)
+            ext_filter = 'CSV (*.csv)'
+
+        from pathlib import Path
+        from datetime import datetime
+        today = datetime.now().strftime('%Y-%m-%d')
+        workdir = Path(__file__).parent.parent / 'workdir'
+        workdir.mkdir(exist_ok=True)
+        ext_map = {'writer': 'odt', 'calc': 'ods', 'csv': 'csv'}
+        ext = ext_map.get(fmt, 'csv')
+        default_path = str(workdir / f'{today}-besetzungen.{ext}')
+
+        filename, _ = QFileDialog.getSaveFileName(
+            self, 'Besetzungen exportieren',
+            default_path, ext_filter
+        )
+        if not filename:
+            return
+
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(content)
+        self.statusBar().showMessage(f'Besetzungen exportiert ({fmt.upper()})')
+
+    def _export_termine(self):
+        termin_fields = [
+            {'name': 'date', 'label': 'Datum'},
+            {'name': 'name', 'label': 'Name'},
+            {'name': 'type', 'label': 'Typ'},
+            {'name': 'project', 'label': 'Projekt'},
+            {'name': 'yes_count', 'label': 'Verbindl. Zusagen'},
+            {'name': 'conditional_count', 'label': 'Vorbehalt'},
+        ]
+
+        dialog = ExportDialog(termin_fields, self)
+        if not dialog.exec():
+            return
+
+        selected = dialog.get_selected_fields()
+        fmt = dialog.get_export_format()
+
+        if not selected:
+            QMessageBox.warning(self, 'Warnung', 'Keine Felder ausgewählt.')
+            return
+
+        service = ExportService()
+        events = self.events_tab.event_repo.get_all()
+
+        event_type_labels = {
+            'gp': 'GP', 'op': 'OP', 'sofa': 'SOFA',
+            'probe': 'Probe', 'konzert': 'Konzert',
+            'auftritt': 'Auftritt', 'sonstiges': 'Sonstiges',
+        }
+
+        data = []
+        for e in events:
+            row = {}
+            if 'date' in selected:
+                try:
+                    from datetime import datetime
+                    if e.date and len(e.date) >= 10:
+                        dt = datetime.strptime(e.date[:10], '%Y-%m-%d')
+                        row['date'] = dt.strftime('%d.%m.%Y')
+                    else:
+                        row['date'] = e.date or '-'
+                except:
+                    row['date'] = e.date[:10] if e.date else '-'
+            if 'name' in selected:
+                row['name'] = e.name or ''
+            if 'type' in selected:
+                row['type'] = event_type_labels.get(e.event_type, e.event_type or '')
+            if 'project' in selected:
+                proj = self.events_tab.project_repo.get_by_id(e.project_id)
+                row['project'] = proj.name if proj else ''
+            if 'yes_count' in selected:
+                avails = self.events_tab.avail_repo.get_by_event(e.id)
+                row['yes_count'] = sum(1 for a in avails if a.status == 'yes')
+            if 'conditional_count' in selected:
+                avails = self.events_tab.avail_repo.get_by_event(e.id)
+                row['conditional_count'] = sum(1 for a in avails if a.status == 'conditional')
+            data.append(row)
+
+        if fmt == 'writer':
+            content = service.export_to_libreoffice_writer(data, selected)
+            ext_filter = 'LibreOffice Writer (*.odt)'
+        elif fmt == 'calc':
+            content = service.export_to_libreoffice_calc(data, selected)
+            ext_filter = 'LibreOffice Calc (*.ods)'
+        else:
+            content = service.export_to_csv(data, selected)
+            ext_filter = 'CSV (*.csv)'
+
+        from pathlib import Path
+        from datetime import datetime
+        today = datetime.now().strftime('%Y-%m-%d')
+        workdir = Path(__file__).parent.parent / 'workdir'
+        workdir.mkdir(exist_ok=True)
+        ext_map = {'writer': 'odt', 'calc': 'ods', 'csv': 'csv'}
+        ext = ext_map.get(fmt, 'csv')
+        default_path = str(workdir / f'{today}-termine.{ext}')
+
+        filename, _ = QFileDialog.getSaveFileName(
+            self, 'Termine exportieren',
+            default_path, ext_filter
+        )
+        if not filename:
+            return
+
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(content)
+        self.statusBar().showMessage(f'Termine exportiert ({fmt.upper()})')
+
+    def _export_aufstellung(self):
+        aufstellung_fields = [
+            {'name': 'filename', 'label': 'Dateiname'},
+            {'name': 'size', 'label': 'Dateigröße'},
+            {'name': 'project', 'label': 'Projekt'},
+            {'name': 'event_date', 'label': 'Termin'},
+            {'name': 'event', 'label': 'Typ'},
+            {'name': 'saved_at', 'label': 'Gespeichert'},
+        ]
+
+        dialog = ExportDialog(aufstellung_fields, self)
+        if not dialog.exec():
+            return
+
+        selected = dialog.get_selected_fields()
+        fmt = dialog.get_export_format()
+
+        if not selected:
+            QMessageBox.warning(self, 'Warnung', 'Keine Felder ausgewählt.')
+            return
+
+        import os
+        service = ExportService()
+        data_dir = self.choraufstellung_tab._data_dir
+
+        files = []
+        if os.path.exists(data_dir):
+            for f in os.listdir(data_dir):
+                if f.endswith('.json'):
+                    fp = os.path.join(data_dir, f)
+                    stats = os.stat(fp)
+                    entry = {'filename': f, 'size': stats.st_size}
+                    try:
+                        with open(fp, 'r', encoding='utf-8') as jf:
+                            content_json = json.load(jf)
+                            entry['metadata'] = content_json.get('metadata', {})
+                            entry['saved_at'] = content_json.get('saved_at', '')
+                    except:
+                        entry['metadata'] = {}
+                        entry['saved_at'] = ''
+                    files.append(entry)
+
+        data = []
+        for f in files:
+            meta = f.get('metadata', {})
+            row = {}
+            if 'filename' in selected:
+                row['filename'] = f['filename']
+            if 'size' in selected:
+                sz = f.get('size', 0)
+                row['size'] = f'{sz // 1024} KB' if sz >= 1024 else f'{sz} B'
+            if 'project' in selected:
+                row['project'] = meta.get('project', '')
+            if 'event_date' in selected:
+                ed = meta.get('event_date', '')
+                row['event_date'] = ed[:10] if ed else ''
+            if 'event' in selected:
+                row['event'] = meta.get('event', '')
+            if 'saved_at' in selected:
+                saved = f.get('saved_at', '')
+                if saved:
+                    try:
+                        from datetime import datetime
+                        dt = datetime.fromisoformat(saved)
+                        row['saved_at'] = dt.strftime('%d.%m.%Y %H:%M')
+                    except:
+                        row['saved_at'] = saved
+                else:
+                    row['saved_at'] = ''
+            data.append(row)
+
+        if fmt == 'writer':
+            content = service.export_to_libreoffice_writer(data, selected)
+            ext_filter = 'LibreOffice Writer (*.odt)'
+        elif fmt == 'calc':
+            content = service.export_to_libreoffice_calc(data, selected)
+            ext_filter = 'LibreOffice Calc (*.ods)'
+        else:
+            content = service.export_to_csv(data, selected)
+            ext_filter = 'CSV (*.csv)'
+
+        from pathlib import Path
+        from datetime import datetime
+        today = datetime.now().strftime('%Y-%m-%d')
+        workdir = Path(__file__).parent.parent / 'workdir'
+        workdir.mkdir(exist_ok=True)
+        ext_map = {'writer': 'odt', 'calc': 'ods', 'csv': 'csv'}
+        ext = ext_map.get(fmt, 'csv')
+        default_path = str(workdir / f'{today}-aufstellungen.{ext}')
+
+        filename, _ = QFileDialog.getSaveFileName(
+            self, 'Aufstellungen exportieren',
+            default_path, ext_filter
+        )
+        if not filename:
+            return
+
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(content)
+        self.statusBar().showMessage(f'Aufstellungen exportiert ({fmt.upper()})')
+
+
 class VersionCheckDialog(QDialog):
     """Dialog for checking application version."""
     
