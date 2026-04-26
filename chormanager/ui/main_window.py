@@ -5,6 +5,7 @@ from pathlib import Path
 from PyQt6.QtCore import QSize
 
 from PyQt6.QtWidgets import (
+    QApplication,
     QMainWindow,
     QWidget,
     QVBoxLayout,
@@ -26,6 +27,7 @@ from PyQt6.QtWidgets import (
     QStyle,
     QStackedWidget,
     QDialog,
+    QDialogButtonBox,
     QDateEdit,
 )
 from PyQt6.QtCore import Qt, QDate, QTimer
@@ -2063,6 +2065,7 @@ class MainWindow(QMainWindow):
         import os
         import sqlite3
         from PyQt6.QtWidgets import (
+    QApplication,
             QMessageBox,
             QInputDialog,
             QDialog,
@@ -2261,6 +2264,12 @@ class MainWindow(QMainWindow):
 
 
 
+
+    def _check_version(self):
+        """Open version check dialog."""
+        dialog = VersionCheckDialog(self)
+        dialog.exec()
+    
 class VersionCheckDialog(QDialog):
     """Dialog for checking application version."""
     
