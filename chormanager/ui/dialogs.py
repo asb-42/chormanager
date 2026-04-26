@@ -405,14 +405,6 @@ class EventAvailabilityDialog(QDialog):
 
         layout = QVBoxLayout(self)
 
-        event_info = QLabel(
-            f"<b>{self.event.name}</b><br>"
-            f"Datum: {self.event.date[:10] if self.event.date else '-'}<br>"
-            f"Typ: {self.event.event_type}<br>"
-            f"Beschreibung: {self.event.description or '-'}",
-            self,
-        )
-        layout.addWidget(event_info)
 
         # Show Besetzung info if available
         if self.besetzung_name:
@@ -420,7 +412,7 @@ class EventAvailabilityDialog(QDialog):
                 f"Die aktuelle Besetzung '{self.besetzung_name}' umfasst {self.besetzung_count} Sänger."
             )
             besetzung_info.setStyleSheet(
-                "padding: 8px; background-color: #e8f5e9; border-radius: 4px; margin: 4px 0;"
+                "padding: 8px; background-color: palette(base); color: palette(text); border-radius: 4px; margin: 4px 0;"
             )
             layout.addWidget(besetzung_info)
 
