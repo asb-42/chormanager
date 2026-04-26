@@ -478,6 +478,29 @@ class MainWindow(QMainWindow):
         redo_action.triggered.connect(self._redo)
         edit_menu.addAction(redo_action)
 
+        projekt_menu = menubar.addMenu("&Projekt")
+
+        new_projekt_action = QAction("Neu...", self)
+        new_projekt_action.setIcon(
+            get_icon("document-new", QStyle.StandardPixmap.SP_FileIcon)
+        )
+        new_projekt_action.triggered.connect(self._new_projekt)
+        projekt_menu.addAction(new_projekt_action)
+
+        save_projekt_action = QAction("Speichern", self)
+        save_projekt_action.setIcon(
+            get_icon("document-save", QStyle.StandardPixmap.SP_DialogSaveButton)
+        )
+        save_projekt_action.triggered.connect(self._save_projekt)
+        projekt_menu.addAction(save_projekt_action)
+
+        open_projekt_action = QAction("Öffnen...", self)
+        open_projekt_action.setIcon(
+            get_icon("document-open", QStyle.StandardPixmap.SP_DialogOpenButton)
+        )
+        open_projekt_action.triggered.connect(self._open_projekt)
+        projekt_menu.addAction(open_projekt_action)
+
         view_menu = menubar.addMenu("&Ansicht")
 
         light_theme_action = QAction("Hell", self)
@@ -531,29 +554,6 @@ class MainWindow(QMainWindow):
         )
         export_csv_action.triggered.connect(self._export_singers_csv)
         sync_menu.addAction(export_csv_action)
-
-        projekt_menu = menubar.addMenu("&Projekt")
-
-        new_projekt_action = QAction("Neu...", self)
-        new_projekt_action.setIcon(
-            get_icon("document-new", QStyle.StandardPixmap.SP_FileIcon)
-        )
-        new_projekt_action.triggered.connect(self._new_projekt)
-        projekt_menu.addAction(new_projekt_action)
-
-        save_projekt_action = QAction("Speichern", self)
-        save_projekt_action.setIcon(
-            get_icon("document-save", QStyle.StandardPixmap.SP_DialogSaveButton)
-        )
-        save_projekt_action.triggered.connect(self._save_projekt)
-        projekt_menu.addAction(save_projekt_action)
-
-        open_projekt_action = QAction("Öffnen...", self)
-        open_projekt_action.setIcon(
-            get_icon("document-open", QStyle.StandardPixmap.SP_DialogOpenButton)
-        )
-        open_projekt_action.triggered.connect(self._open_projekt)
-        projekt_menu.addAction(open_projekt_action)
 
         konfig_menu = menubar.addMenu("Konfiguration")
 
