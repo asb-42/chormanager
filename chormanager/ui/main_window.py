@@ -460,6 +460,14 @@ class MainWindow(QMainWindow):
 
         file_menu.addSeparator()
 
+        backup_restore_menu = file_menu.addMenu("Backup & Restore")
+        backup_restore_action = QAction("Backup & Restore...", self)
+        backup_restore_action.setIcon(
+            get_icon("media-floppy", QStyle.StandardPixmap.SP_DriveFDIcon)
+        )
+        backup_restore_action.triggered.connect(self._open_backup_restore)
+        backup_restore_menu.addAction(backup_restore_action)
+
         exit_action = QAction("Beenden", self)
         exit_action.setIcon(
             get_icon("application-exit", QStyle.StandardPixmap.SP_DialogCloseButton)
@@ -2301,6 +2309,20 @@ class MainWindow(QMainWindow):
                 "Daten wurden importiert.\nBitte starten Sie die Anwendung neu.",
             )
             self.statusBar().showMessage("Daten importiert - Neustart erforderlich")
+
+    def _open_backup_restore(self):
+        """Open Backup & Restore dialog."""
+        from ..export.backup_service import BackupService
+        from ..ui.dialogs import BackupRestoreDialog
+        from pathlib import Path
+
+        app_root = Path(__file__).parent.parent.parent
+        service = BackupService(app_root)
+
+        dialog = BackupRestoreDialog(self)
+        dialog.service = service
+        dialog.exec()
+
 
     def _get_data_dir(self):
         """Get current data directory."""
