@@ -707,6 +707,20 @@ class MainWindow(QMainWindow):
         content_layout.setContentsMargins(0, 0, 0, 0)
         content_layout.setSpacing(0)
 
+        # Page title bar
+        self.page_title_label = QLabel("Projektverwaltung")
+        self.page_title_label.setStyleSheet("""
+            QLabel {
+                font-size: 18px;
+                font-weight: bold;
+                color: #2c3e50;
+                padding: 12px 15px 8px 15px;
+                background-color: #f8f9fa;
+                border-bottom: 1px solid #dee2e6;
+            }
+        """)
+        content_layout.addWidget(self.page_title_label)
+
         # Context toolbar (horizontal oberhalb des Content)
         self.context_toolbar = QToolBar("Aktionen")
         self.context_toolbar.setToolButtonStyle(
@@ -780,6 +794,14 @@ class MainWindow(QMainWindow):
 
     def _switch_view(self, index):
         """Switch content view."""
+        titles = [
+            "Projektverwaltung",
+            "Sängerverwaltung",
+            "Besetzungen",
+            "Terminverwaltung",
+            "Choraufstellung",
+        ]
+        self.page_title_label.setText(titles[index])
         self.content_stack.setCurrentIndex(index)
         self.nav_projects.setChecked(index == 0)
         self.nav_singers.setChecked(index == 1)
