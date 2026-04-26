@@ -80,7 +80,7 @@ def create_singer_fallback(name: str, voice_group, height: int = 0, singer_id: s
 
 def get_valid_voice_groups() -> List[str]:
     try:
-        config_file = "voice_groups.json"
+        config_file = "config/voice_groups.json"
         if os.path.exists(config_file):
             with open(config_file, 'r', encoding='utf-8') as f:
                 return [vg["id"] for vg in json.load(f).get("voice_groups", [])]
@@ -91,7 +91,7 @@ def get_valid_voice_groups() -> List[str]:
 
 def get_voice_group_color_fallback(vid: str) -> str:
     try:
-        config_file = "voice_groups.json"
+        config_file = "config/voice_groups.json"
         if os.path.exists(config_file):
             with open(config_file, 'r', encoding='utf-8') as f:
                 for vg in json.load(f).get("voice_groups", []):

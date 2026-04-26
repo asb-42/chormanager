@@ -138,7 +138,7 @@ if __name__ == "__main__":
     
     csv_path = "/media/data/coding/choraufstellung/Inputs/Export.csv"
     json_uuid_path = "/media/data/coding/choraufstellung/Outputs/jugendchor-5.json"
-    json_vg_path = base_path / "voice_groups.json"
+    json_vg_path = base_path / "config" / "voice_groups.json"
     # Use default data directory
     db_path = Path.home() / ".local/share/chormanager/chor.db"
     db_path.parent.mkdir(parents=True, exist_ok=True)

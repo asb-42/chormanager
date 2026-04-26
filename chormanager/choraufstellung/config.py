@@ -47,7 +47,7 @@ def save_settings(settings: Dict[str, str]) -> bool:
 
 
 # Voice groups configuration
-VOICE_GROUPS_CONFIG_FILE = "voice_groups.json"
+VOICE_GROUPS_CONFIG_FILE = "config/voice_groups.json"
 
 def load_voice_groups_config() -> list:
     """Lädt die Stimmgruppen-Konfiguration. Gibt Fallback zurück."""

@@ -1005,6 +1005,7 @@ class SingerSelectionDialog(QDialog):
             ["✓", "Name", "Kurzname", "Stimmgruppe", "Alter"]
         )
         self.table.setColumnWidth(0, 40)
+        self.table.verticalHeader().setDefaultSectionSize(36)
         self.table.horizontalHeader().setStretchLastSection(True)
         layout.addWidget(self.table)
 

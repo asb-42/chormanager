@@ -63,6 +63,7 @@ class BesetzungTab(QWidget):
         self.table = QTableWidget()
         self.table.setColumnCount(4)
         self.table.setHorizontalHeaderLabels(["Name", "Projekt", "Anzahl Sänger", "Zuletzt gespeichert"])
+        self.table.verticalHeader().setDefaultSectionSize(36)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)

@@ -29,10 +29,10 @@ class PaddedDelegate(QStyledItemDelegate):
 
     def sizeHint(self, option, index):
         size = super().sizeHint(option, index)
-        return QSize(size.width(), size.height() + 6)
+        return QSize(size.width(), size.height() + 10)
 
     def paint(self, painter, option, index):
-        option.rect = option.rect.adjusted(0, 3, 0, -3)
+        option.rect = option.rect.adjusted(0, 5, 0, -5)
         super().paint(painter, option, index)
 
 
@@ -148,6 +148,7 @@ class ProjectsTab(QWidget):
 
         # Apply custom delegate with padding
         self.table.setItemDelegate(PaddedDelegate())
+        self.table.verticalHeader().setDefaultSectionSize(36)
 
         layout.addWidget(self.table)
 

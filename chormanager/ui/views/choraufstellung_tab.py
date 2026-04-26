@@ -84,6 +84,7 @@ class ChorAufstellungTab(QWidget):
         layout.addWidget(self.formations_label)
 
         self.table = QTableWidget()
+        self.table.verticalHeader().setDefaultSectionSize(36)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
