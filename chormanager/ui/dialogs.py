@@ -189,6 +189,8 @@ class EventDialog(QDialog):
             for p in projects:
                 self.project_combo.addItem(p.name, p.id)
         layout.addRow("Projekt:", self.project_combo)
+        self.location_input = QLineEdit()
+        layout.addRow("Ort:", self.location_input)
 
         self.description_input = QTextEdit()
         self.description_input.setMaximumHeight(100)
@@ -222,6 +224,9 @@ class EventDialog(QDialog):
             if index >= 0:
                 self.project_combo.setCurrentIndex(index)
 
+        if self.event.location:
+            self.location_input.setText(self.event.location)
+
     def _select_project(self, project_id):
         """Pre-select project in combo box."""
         index = self.project_combo.findData(project_id)
@@ -236,6 +241,7 @@ class EventDialog(QDialog):
             "date": self.date_input.dateTime().toString(Qt.DateFormat.ISODate),
             "description": self.description_input.toPlainText().strip(),
             "project_id": self.project_combo.currentData(),
+            "location": self.location_input.text().strip(),
         }
         return data
 

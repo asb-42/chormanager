@@ -363,7 +363,14 @@ class EventsTab(QWidget):
         )
 
         dialog = EventDialog(event=new_event, db=self.db, parent=self)
-        dialog.exec()
+
+        if dialog.exec():
+            data = dialog.get_data()
+
+            data = {k: v for k, v in data.items() if v is not None}
+
+            self.event_repo.update(new_event.id, **data)
+
         self._load_events()
 
     def _set_selected_event(self):
