@@ -199,7 +199,6 @@ class SingersTab(QWidget):
                 filtered.append(singer)
             singers = filtered
 
-        self.table.clear()
         self.table.setRowCount(len(singers))
 
         for row, singer in enumerate(singers):
