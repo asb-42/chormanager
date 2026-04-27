@@ -167,6 +167,7 @@ class ProjectsTab(QWidget):
 
         last_active_id = get_last_active_project_id()
 
+        self.table.clear()
         self.table.setRowCount(len(projects))
 
         # Select the active project row (search in full unsorted list)
