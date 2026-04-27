@@ -1852,7 +1852,8 @@ class MainWindow(QMainWindow):
         from .dialogs import EventDialog
         from ..domain.repository import EventRepository
 
-        dialog = EventDialog(parent=self)
+        prefilled_project_id = self.current_project.id if self.current_project else None
+        dialog = EventDialog(parent=self, prefilled_project_id=prefilled_project_id)
 
         if dialog.exec() == QDialog.DialogCode.Accepted:
             data = dialog.get_data()
