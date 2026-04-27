@@ -30,6 +30,7 @@ from PyQt6.QtGui import QDragEnterEvent, QDropEvent
 from PyQt6.QtCore import QDateTime, Qt
 
 from ..domain.repository import SingerRepository, AvailabilityRepository
+from ..config import load_voice_groups
 
 
 AVAILABILITY_STATUS = [
@@ -1003,6 +1004,32 @@ class SingerSelectionDialog(QDialog):
         )
         layout.addWidget(info_label)
 
+        filter_layout = QHBoxLayout()
+
+        self.search_box = QLineEdit()
+        self.search_box.setPlaceholderText('Suchen (Name, Kurzname)...')
+        self.search_box.textChanged.connect(self._load_singers)
+        filter_layout.addWidget(self.search_box)
+
+        self.voice_filter = QComboBox()
+        self.voice_filter.addItem('Alle Stimmgruppen', None)
+        voice_groups = load_voice_groups()
+        for vg in voice_groups:
+            self.voice_filter.addItem(vg['name'], vg['name'])
+        self.voice_filter.currentIndexChanged.connect(self._load_singers)
+        filter_layout.addWidget(self.voice_filter)
+
+        self.status_filter = QComboBox()
+        self.status_filter.addItem('Alle Mitglieder', 'all')
+        self.status_filter.addItem('Aktive Mitglieder', 'active')
+        self.status_filter.addItem('Minderjährige', 'minor')
+        self.status_filter.addItem('U16', 'u16')
+        self.status_filter.currentIndexChanged.connect(self._load_singers)
+        filter_layout.addWidget(self.status_filter)
+
+        layout.addLayout(filter_layout)
+
+
         self.table = QTableWidget()
         self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels(
@@ -1042,6 +1069,35 @@ class SingerSelectionDialog(QDialog):
         """Load singers into table."""
         singer_repo = SingerRepository(self.db)
         singers = singer_repo.get_all()
+
+        search_text = self.search_box.text().strip().lower()
+        voice_filter = self.voice_filter.currentData()
+        status_filter = self.status_filter.currentData()
+
+        filtered = []
+        for singer in singers:
+            if voice_filter and singer.voice_group != voice_filter:
+                continue
+            if status_filter and status_filter != 'all':
+                if status_filter == 'active':
+                    if singer.left_year or singer.left_month:
+                        continue
+                elif status_filter == 'minor':
+                    age = singer.age()
+                    if age is None or age >= 18:
+                        continue
+                elif status_filter == 'u16':
+                    age = singer.age()
+                    if age is None or age >= 16:
+                        continue
+            if search_text:
+                search_fields = [singer.full_name or '', singer.short_name or '']
+                if not any(search_text in str(f).lower() for f in search_fields):
+                    continue
+            filtered.append(singer)
+
+        singers = filtered
+
 
         self.table.setRowCount(len(singers))
 
