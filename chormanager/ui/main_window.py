@@ -273,7 +273,7 @@ class SingerDialog(QDialog):
 
         # yearmonth fields are now split into name_year and name_month
         # so just pass through if present
-        for name in ("joined_year", "joined_month", "left_year", "left_month"):
+        for name in ("joined_year", "joined_month"):
             if name in data and data[name] is None:
                 del data[name]
 
