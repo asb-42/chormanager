@@ -265,7 +265,9 @@ class SingersTab(QWidget):
         if dialog.exec():
             data = dialog.get_data()
 
-            data = {k: v for k, v in data.items() if v is not None}
+            data = {k: v for k, v in data.items() if v is not None or k in (
+                "left_year", "left_month"
+            )}
 
             self.singer_repo.update(singer_id, **data)
             self._load_singers()
