@@ -339,18 +339,17 @@ class ProjectsTab(QWidget):
 
             self._load_projects()
 
-    def _set_active(self):
+def _set_active(self):
         """Set selected project as active."""
         current_row = self.table.currentRow()
 
         if current_row < 0:
             return
 
-        item = self.table.item(current_row, 0)
-        project_name = item.text()
+        item = self.table.item(current_row, 1)
+        project_id = item.data(Qt.ItemDataRole.UserRole)
 
-        projects = self.project_repo.get_all()
-        project = next((p for p in projects if p.name == project_name), None)
+        project = self.project_repo.get_by_id(project_id)
 
         if not project:
             return
