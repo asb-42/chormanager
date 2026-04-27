@@ -187,7 +187,9 @@ class ProjectsTab(QWidget):
 
         for row, project in enumerate(projects):
             self.table.setItem(row, 0, QTableWidgetItem(project.spielzeit or ""))
-            self.table.setItem(row, 1, QTableWidgetItem(project.name or ""))
+            name_item = QTableWidgetItem(project.name or "")
+            name_item.setData(Qt.ItemDataRole.UserRole, project.id)
+            self.table.setItem(row, 1, name_item)
 
             desc = project.description or ""
             if len(desc) > 50:
@@ -227,11 +229,10 @@ class ProjectsTab(QWidget):
         if current_row < 0:
             return
 
-        item = self.table.item(current_row, 0)
-        project_name = item.text()
+        item = self.table.item(current_row, 1)
+        project_id = item.data(Qt.ItemDataRole.UserRole)
 
-        projects = self.project_repo.get_all()
-        project = next((p for p in projects if p.name == project_name), None)
+        project = self.project_repo.get_by_id(project_id)
 
         if not project:
             return
