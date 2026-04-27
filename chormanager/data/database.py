@@ -111,6 +111,7 @@ class Database:
                 name TEXT NOT NULL,
                 date TEXT NOT NULL,
                 event_type TEXT NOT NULL,
+                location TEXT,
                 description TEXT,
                 project_id TEXT REFERENCES projects(id) ON DELETE SET NULL,
                 created_at TEXT NOT NULL,
