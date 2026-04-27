@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
     QTextEdit,
     QStyledItemDelegate,
     QComboBox,
+    QComboBox,
 )
 from PyQt6.QtCore import Qt, pyqtSignal, QSize
 from PyQt6.QtGui import QPainter
@@ -119,6 +120,18 @@ class ProjectsTab(QWidget):
         self.search_box.setMaximumWidth(200)
         self.search_box.textChanged.connect(self._load_projects)
         toolbar.addWidget(self.search_box)
+        self.sort_field = QComboBox()
+        self.sort_field.addItem("Sortieren nach Name", "name")
+        self.sort_field.addItem("Sortieren nach Spielzeit", "spielzeit")
+        self.sort_field.currentIndexChanged.connect(self._load_projects)
+        toolbar.addWidget(self.sort_field)
+
+        self.sort_order = QComboBox()
+        self.sort_order.addItem("Aufsteigend", Qt.SortOrder.AscendingOrder)
+        self.sort_order.addItem("Absteigend", Qt.SortOrder.DescendingOrder)
+        self.sort_order.currentIndexChanged.connect(self._load_projects)
+        toolbar.addWidget(self.sort_order)
+
 
         self.sort_field = QComboBox()
         self.sort_field.addItem("Sortieren nach Name", "name")
@@ -288,10 +301,11 @@ class ProjectsTab(QWidget):
             return
 
         item = self.table.item(current_row, 0)
-        project_name = item.text()
+        project_id = item.data(Qt.ItemDataRole.UserRole)
+
+        project = self.project_repo.get_by_id(project_id)
 
         projects = self.project_repo.get_all()
-        project = next((p for p in projects if p.name == project_name), None)
 
         if not project:
             return
@@ -316,10 +330,11 @@ class ProjectsTab(QWidget):
             return
 
         item = self.table.item(current_row, 0)
-        project_name = item.text()
+        project_id = item.data(Qt.ItemDataRole.UserRole)
+
+        project = self.project_repo.get_by_id(project_id)
 
         projects = self.project_repo.get_all()
-        project = next((p for p in projects if p.name == project_name), None)
 
         if not project:
             return
@@ -339,7 +354,7 @@ class ProjectsTab(QWidget):
 
             self._load_projects()
 
-def _set_active(self):
+    def _set_active(self):
         """Set selected project as active."""
         current_row = self.table.currentRow()
 
