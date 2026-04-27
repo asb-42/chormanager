@@ -436,6 +436,24 @@ class EventAvailabilityDialog(QDialog):
 
         layout.addLayout(toolbar)
 
+
+        filter_layout = QHBoxLayout()
+
+        self.search_box = QLineEdit()
+        self.search_box.setPlaceholderText('Schnellsuche (Kurzname)...')
+        self.search_box.textChanged.connect(self._load_availability)
+        filter_layout.addWidget(self.search_box)
+
+        self.voice_filter = QComboBox()
+        self.voice_filter.addItem('Alle Stimmgruppen', None)
+        voice_groups = load_voice_groups()
+        for vg in voice_groups:
+            self.voice_filter.addItem(vg['name'], vg['name'])
+        self.voice_filter.currentIndexChanged.connect(self._load_availability)
+        filter_layout.addWidget(self.voice_filter)
+
+        layout.addLayout(filter_layout)
+
         self.table = QTableWidget()
         self.table.setColumnCount(3)
         self.table.setHorizontalHeaderLabels(["Kurzname", "Stimmgruppe", "Status"])
@@ -484,6 +502,22 @@ class EventAvailabilityDialog(QDialog):
             with open(trace_file, "a") as f:
                 f.write("No filter applied (besetzung_ids is None)\n")
             logger.info("_load_availability: no filter applied (besetzung_ids is None)")
+
+        search_text = self.search_box.text().strip().lower()
+        voice_filter = self.voice_filter.currentData()
+
+        if search_text or voice_filter:
+            filtered = []
+            for singer in singers:
+                if voice_filter and singer.voice_group != voice_filter:
+                    continue
+                if search_text:
+                    search_fields = [singer.short_name or '', singer.full_name or '']
+                    if not any(search_text in str(f).lower() for f in search_fields):
+                        continue
+                filtered.append(singer)
+            singers = filtered
+
 
         self.table.setRowCount(len(singers))
 
