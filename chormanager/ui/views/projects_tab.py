@@ -119,6 +119,19 @@ class ProjectsTab(QWidget):
         self.search_box.textChanged.connect(self._load_projects)
         toolbar.addWidget(self.search_box)
 
+        self.sort_field = QComboBox()
+        self.sort_field.addItem("Sortieren nach Name", "name")
+        self.sort_field.addItem("Sortieren nach Spielzeit", "spielzeit")
+        self.sort_field.currentIndexChanged.connect(self._load_projects)
+        toolbar.addWidget(self.sort_field)
+
+        self.sort_order = QComboBox()
+        self.sort_order.addItem("Aufsteigend", Qt.SortOrder.AscendingOrder)
+        self.sort_order.addItem("Absteigend", Qt.SortOrder.DescendingOrder)
+        self.sort_order.currentIndexChanged.connect(self._load_projects)
+        toolbar.addWidget(self.sort_order)
+
+
         layout.addLayout(toolbar)
 
         self.table = QTableWidget()
@@ -135,10 +148,6 @@ class ProjectsTab(QWidget):
             ["Spielzeit", "Name", "Beschreibung", "Aktiv", "Anz. Termine"]
         )
         self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.horizontalHeader().setSortIndicatorShown(True)
-        self.table.horizontalHeader().setSortIndicator(4, Qt.SortOrder.AscendingOrder)
-        self.table.setSortingEnabled(True)
-        # Enable word wrap for better text display
         self.table.setWordWrap(True)
         self.table.setTextElideMode(Qt.TextElideMode.ElideNone)
 
@@ -171,13 +180,22 @@ class ProjectsTab(QWidget):
             events = self.event_repo.get_all()
             event_counts[p.id] = len([e for e in events if e.project_id == p.id])
 
-        projects = sorted(projects, key=lambda p: event_counts.get(p.id, 0))
+        sort_field = self.sort_field.currentData()
+        sort_order = self.sort_order.currentData()
+        reverse_sort = sort_order == Qt.SortOrder.DescendingOrder
+
+        def get_sort_key(p):
+            if sort_field == 'spielzeit':
+                return (p.spielzeit or '').lower()
+            else:
+                return (p.name or '').lower()
+
+        projects = sorted(projects, key=get_sort_key, reverse=reverse_sort)
+
 
         last_active_id = get_last_active_project_id()
 
-        self.table.setSortingEnabled(False)
         self.table.setRowCount(len(projects))
-        self.table.setSortingEnabled(True)
 
         # Select the active project row (search in full unsorted list)
         if self.current_project:
