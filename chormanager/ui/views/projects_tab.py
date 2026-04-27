@@ -47,6 +47,10 @@ class ProjectDialog:
         self.name_input = QLineEditW()
         layout.addRow("Name:", self.name_input)
 
+        self.spielzeit_input = QLineEdit()
+        self.spielzeit_input.setMaxLength(25)
+        layout.addRow("Spielzeit:", self.spielzeit_input)
+
         self.description_input = QTextEdit()
         self.description_input.setMaximumHeight(80)
         layout.addRow("Beschreibung:", self.description_input)
@@ -62,6 +66,9 @@ class ProjectDialog:
             self.name_input.setText(project.name)
             if project.description:
                 self.description_input.setPlainText(project.description)
+            if project.spielzeit:
+                self.spielzeit_input.setText(project.spielzeit)
+
             self.dialog.setWindowTitle("Projekt bearbeiten")
         else:
             self.dialog.setWindowTitle("Neues Projekt")
@@ -75,6 +82,7 @@ class ProjectDialog:
         return {
             "name": self.name_input.text().strip(),
             "description": self.description_input.toPlainText().strip(),
+            "spielzeit": self.spielzeit_input.text().strip(),
         }
 
 class ProjectsTab(QWidget):
@@ -122,13 +130,13 @@ class ProjectsTab(QWidget):
         self.table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.table.customContextMenuRequested.connect(self._show_context_menu)
 
-        self.table.setColumnCount(4)
+        self.table.setColumnCount(5)
         self.table.setHorizontalHeaderLabels(
-            ["Name", "Beschreibung", "Aktiv", "Anz. Termine"]
+            ["Spielzeit", "Name", "Beschreibung", "Aktiv", "Anz. Termine"]
         )
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.horizontalHeader().setSortIndicatorShown(True)
-        self.table.horizontalHeader().setSortIndicator(3, Qt.SortOrder.AscendingOrder)
+        self.table.horizontalHeader().setSortIndicator(4, Qt.SortOrder.AscendingOrder)
         self.table.setSortingEnabled(True)
         # Enable word wrap for better text display
         self.table.setWordWrap(True)
@@ -179,21 +187,22 @@ class ProjectsTab(QWidget):
                     break
 
         for row, project in enumerate(projects):
-            self.table.setItem(row, 0, QTableWidgetItem(project.name or ""))
+            self.table.setItem(row, 0, QTableWidgetItem(project.spielzeit or ""))
+            self.table.setItem(row, 1, QTableWidgetItem(project.name or ""))
 
             desc = project.description or ""
             if len(desc) > 50:
                 desc = desc[:47] + "..."
-            self.table.setItem(row, 1, QTableWidgetItem(desc))
+            self.table.setItem(row, 2, QTableWidgetItem(desc))
 
             is_active = 1 if project.id == last_active_id else 0
-            active_text = "✓" if is_active else ""
-            self.table.setItem(row, 2, QTableWidgetItem(active_text))
+            active_text = chr(0x2713) if is_active else ""
+            self.table.setItem(row, 3, QTableWidgetItem(active_text))
 
             event_count = event_counts.get(project.id, 0)
             count_item = QTableWidgetItem(str(event_count))
             count_item.setData(Qt.ItemDataRole.UserRole, event_count)
-            self.table.setItem(row, 3, count_item)
+            self.table.setItem(row, 4, count_item)
 
         self.table.resizeColumnsToContents()
 

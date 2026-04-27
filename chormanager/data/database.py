@@ -125,6 +125,7 @@ class Database:
                 name TEXT NOT NULL,
                 description TEXT,
                 is_active INTEGER DEFAULT 0,
+                spielzeit TEXT,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             )

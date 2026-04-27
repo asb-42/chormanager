@@ -177,6 +177,7 @@ class Project:
     id: str = ""
     name: str = ""
     description: Optional[str] = None
+    spielzeit: Optional[str] = None
     is_active: int = 0
     created_at: str = ""
     updated_at: str = ""
