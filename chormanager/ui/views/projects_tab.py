@@ -132,8 +132,12 @@ class ProjectsTab(QWidget):
         self.sort_order.currentIndexChanged.connect(self._load_projects)
         toolbar.addWidget(self.sort_order)
 
+        self.sort_field.blockSignals(True)
+        self.sort_order.blockSignals(True)
         self.sort_field.setCurrentIndex(1)
         self.sort_order.setCurrentIndex(1)
+        self.sort_field.blockSignals(False)
+        self.sort_order.blockSignals(False)
 
         layout.addLayout(toolbar)
 
@@ -294,6 +298,7 @@ class ProjectsTab(QWidget):
 
         project = self.project_repo.get_by_id(project_id)
 
+
         if not project:
             return
 
@@ -317,12 +322,11 @@ class ProjectsTab(QWidget):
         if current_row < 0:
             return
 
-        item = self.table.item(current_row, 0)
+        item = self.table.item(current_row, 1)
         project_id = item.data(Qt.ItemDataRole.UserRole)
 
         project = self.project_repo.get_by_id(project_id)
 
-        projects = self.project_repo.get_all()
 
         if not project:
             return
