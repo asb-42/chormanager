@@ -66,6 +66,11 @@ class EventsTab(QWidget):
         self.project_filter = project
         self._load_events()
 
+    def clear_project_filter(self):
+        self.project_filter = None
+        self._load_events()
+
+
     def _setup_ui(self):
         """Set up the UI."""
         layout = QVBoxLayout(self)

@@ -1853,7 +1853,7 @@ class MainWindow(QMainWindow):
         from ..domain.repository import EventRepository
 
         prefilled_project_id = self.current_project.id if self.current_project else None
-        dialog = EventDialog(parent=self, prefilled_project_id=prefilled_project_id)
+        dialog = EventDialog(db=self.db, parent=self, prefilled_project_id=prefilled_project_id)
 
         if dialog.exec() == QDialog.DialogCode.Accepted:
             data = dialog.get_data()
@@ -1864,6 +1864,10 @@ class MainWindow(QMainWindow):
 
             repo = EventRepository(self.db)
             repo.create(**data)
+            if hasattr(self, 'projects_tab'):
+                self.projects_tab._load_projects()
+            if hasattr(self, 'events_tab'):
+                self.events_tab._load_events()
 
             self.statusBar().showMessage("Termin erstellt")
 
