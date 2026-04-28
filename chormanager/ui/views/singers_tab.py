@@ -253,7 +253,7 @@ class SingersTab(QWidget):
         """Add new singer."""
         from ..main_window import SingerDialog
 
-        dialog = SingerDialog(parent=self)
+        dialog = SingerDialog(parent=self, db=self.db)
 
         if dialog.exec():
             data = dialog.get_data()
@@ -284,7 +284,7 @@ class SingersTab(QWidget):
         if not singer:
             return
 
-        dialog = SingerDialog(singer=singer, parent=self)
+        dialog = SingerDialog(singer=singer, db=self.db, parent=self)
 
         if dialog.exec():
             data = dialog.get_data()

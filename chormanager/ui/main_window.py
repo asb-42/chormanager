@@ -80,7 +80,7 @@ def get_icon(icon_name: str, fallback_pixmap):
 class SingerDialog(QDialog):
     """Dialog for adding/editing a singer."""
 
-    def __init__(self, singer=None, parent=None):
+    def __init__(self, singer=None, db=None, parent=None):
         """Initialize dialog.
 
         Args:
@@ -89,6 +89,7 @@ class SingerDialog(QDialog):
         """
         super().__init__(parent)
         self.singer = singer
+        self.db = db
         self._setup_ui()
 
         if singer:
