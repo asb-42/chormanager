@@ -300,12 +300,10 @@ class ProjectsTab(QWidget):
         if current_row < 0:
             return
 
-        item = self.table.item(current_row, 0)
+        item = self.table.item(current_row, 1)
         project_id = item.data(Qt.ItemDataRole.UserRole)
 
         project = self.project_repo.get_by_id(project_id)
-
-        projects = self.project_repo.get_all()
 
         if not project:
             return
@@ -313,6 +311,7 @@ class ProjectsTab(QWidget):
         new_project = self.project_repo.create(
             name=f"{project.name} (Kopie)",
             description=project.description,
+            spielzeit=project.spielzeit,
             is_active=False,
         )
 
