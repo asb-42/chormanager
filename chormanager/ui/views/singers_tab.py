@@ -227,6 +227,28 @@ class SingersTab(QWidget):
 
         self.table.resizeColumnsToContents()
 
+    def _find_singer_by_affinity(self, affinity_uuid):
+        for s in self.singer_repo.get_all():
+            if s.affinity_uuid == affinity_uuid:
+                return s
+        return None
+
+    def _sync_affinity_bidirectional(self, singer_id, new_affinity_uuid):
+        singer = self.singer_repo.get_by_id(singer_id)
+        if not singer:
+            return
+        old = singer.affinity_uuid
+        if old == new_affinity_uuid:
+            return
+        if old and old != new_affinity_uuid:
+            partner = self._find_singer_by_affinity(old)
+            if partner and partner.affinity_uuid == singer_id:
+                self.singer_repo.update(partner.id, affinity_uuid=None)
+        if new_affinity_uuid:
+            partner = self._find_singer_by_affinity(new_affinity_uuid)
+            if partner:
+                self.singer_repo.update(partner.id, affinity_uuid=singer_id)
+
     def _add_singer(self):
         """Add new singer."""
         from ..main_window import SingerDialog
@@ -236,7 +258,9 @@ class SingersTab(QWidget):
         if dialog.exec():
             data = dialog.get_data()
             data = {k: v for k, v in data.items() if v is not None}
-            self.singer_repo.create(**data)
+            new_singer = self.singer_repo.create(**data)
+            if new_singer.affinity_uuid:
+                self._sync_affinity_bidirectional(new_singer.id, new_singer.affinity_uuid)
             self._load_singers()
 
     def _edit_singer(self):
@@ -270,6 +294,7 @@ class SingersTab(QWidget):
             )}
 
             self.singer_repo.update(singer_id, **data)
+            self._sync_affinity_bidirectional(singer_id, data.get('affinity_uuid'))
             self._load_singers()
 
     def _delete_singer(self):
