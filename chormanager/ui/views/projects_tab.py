@@ -132,19 +132,8 @@ class ProjectsTab(QWidget):
         self.sort_order.currentIndexChanged.connect(self._load_projects)
         toolbar.addWidget(self.sort_order)
 
-
-        self.sort_field = QComboBox()
-        self.sort_field.addItem("Sortieren nach Name", "name")
-        self.sort_field.addItem("Sortieren nach Spielzeit", "spielzeit")
-        self.sort_field.currentIndexChanged.connect(self._load_projects)
-        toolbar.addWidget(self.sort_field)
-
-        self.sort_order = QComboBox()
-        self.sort_order.addItem("Aufsteigend", Qt.SortOrder.AscendingOrder)
-        self.sort_order.addItem("Absteigend", Qt.SortOrder.DescendingOrder)
-        self.sort_order.currentIndexChanged.connect(self._load_projects)
-        toolbar.addWidget(self.sort_order)
-
+        self.sort_field.setCurrentIndex(1)
+        self.sort_order.setCurrentIndex(1)
 
         layout.addLayout(toolbar)
 
