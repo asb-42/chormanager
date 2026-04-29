@@ -428,6 +428,18 @@ class EventAvailabilityDialog(QDialog):
             )
             layout.addWidget(besetzung_info)
 
+        # Show event info
+        event_date = ""
+        if self.event.date and len(self.event.date) >= 10:
+            event_date = self.event.date[:10]
+        event_info = QLabel(
+            f"Termin: <b>{self.event.name}</b> ({event_date})"
+        )
+        event_info.setStyleSheet(
+            "padding: 8px; background-color: palette(window); color: palette(text); border-radius: 4px; margin: 4px 0;"
+        )
+        layout.addWidget(event_info)
+
         toolbar = QHBoxLayout()
 
         export_pdf_btn = QPushButton("Als PDF exportieren")
