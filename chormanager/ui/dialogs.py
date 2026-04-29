@@ -679,7 +679,6 @@ class EventAvailabilityDialog(QDialog):
 
     def _export_pdf(self):
         """Export availability to PDF."""
-        from PyQt6.QtWidgets import QFileDialog
         from reportlab.lib.pagesizes import A4
         from reportlab.lib import colors
         from reportlab.platypus import (
@@ -691,17 +690,31 @@ class EventAvailabilityDialog(QDialog):
         )
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.lib.units import cm
-
-        filename, _ = QFileDialog.getSaveFileName(
-            self, "Als PDF exportieren", "", "PDF Dateien (*.pdf)"
-        )
-
-        if not filename:
-            return
+        from pathlib import Path
 
         singers = self.singer_repo.get_active()
+        
+        event_date = self.event.date[:10] if self.event.date and len(self.event.date) >= 10 else "ohne Datum"
+        event_type = self.event.event_type or "ohne Typ"
+        
+        project_name = ""
+        if self.event.project_id:
+            from ..domain.repository import ProjectRepository
+            project_repo = ProjectRepository(self.db)
+            project = project_repo.get_by_id(self.event.project_id)
+            if project:
+                project_name = project.name
+        
+        filename_str = f"{event_date}-{event_type}"
+        if project_name:
+            filename_str += f"-{project_name}"
+        filename_str += ".pdf"
+        
+        export_dir = Path("/media/data/coding/chormanager/workdir")
+        export_dir.mkdir(parents=True, exist_ok=True)
+        filename = export_dir / filename_str
 
-        doc = SimpleDocTemplate(filename, pagesize=A4)
+        doc = SimpleDocTemplate(str(filename), pagesize=A4)
         elements = []
         styles = getSampleStyleSheet()
 
@@ -709,54 +722,100 @@ class EventAvailabilityDialog(QDialog):
             "CustomTitle", parent=styles["Heading1"], fontSize=14, spaceAfter=10
         )
 
+        event_date = self.event.date[:10] if self.event.date and len(self.event.date) >= 10 else "ohne Datum"
+        event_type = self.event.event_type or "ohne Typ"
+        
+        project_name = ""
+        if self.event.project_id:
+            from ..domain.repository import ProjectRepository
+            project_repo = ProjectRepository(self.db)
+            project = project_repo.get_by_id(self.event.project_id)
+            if project:
+                project_name = project.name
+        
+        filename_str = f"{event_date}-{event_type}"
+        if project_name:
+            filename_str += f"-{project_name}"
+        filename_str += ".pdf"
+        
+        export_dir = Path("/media/data/coding/chormanager/workdir")
+        export_dir.mkdir(parents=True, exist_ok=True)
+        filename = export_dir / filename_str
+
         elements.append(Paragraph(f"Verfügbarkeit: {self.event.name}", title_style))
         elements.append(
             Paragraph(
-                f"Datum: {self.event.date[:10]} | Typ: {self.event.event_type}",
+                f"Datum: {event_date} | Typ: {event_type}" + (f" | Projekt: {project_name}" if project_name else ""),
                 styles["Normal"],
             )
         )
         elements.append(Spacer(1, 0.3 * cm))
 
-        status_symbols = {
-            "yes": "✓",
-            "no": "✗",
-            "none": "○",
-            "conditional": "✓?",
-            "unknown": "?",
-            "maybe": "~",
+        status_labels = {
+            "yes": "✓ Verfügbar / Zusage",
+            "no": "✗ Nicht verfügbar / Absage",
+            "none": "○ Keine Rückmeldung",
+            "conditional": "✓? Zusage unter Vorbehalt",
+            "unknown": "? Weiß nicht",
+            "maybe": "~ Vielleicht",
+            "": "-",
         }
 
-        table_data = [["Name", "Stimmgruppe", "Status"]]
+        voice_group_order = ["Sopran 1", "Sopran 2", "Alt 1", "Alt 2", "Tenor 1", "Tenor 2", "Bass 1", "Bass 2"]
+        
+        singers_by_group = {}
         for singer in singers:
-            avail = self.avail_repo.get_by_ids(singer.id, self.event.id)
-            status = status_symbols.get(avail.status if avail else "", "-")
-            table_data.append(
-                [
-                    singer.short_name or singer.full_name or "",
-                    singer.voice_group or "",
-                    status,
-                ]
+            vg = singer.voice_group or "Ohne Stimmgruppe"
+            if vg not in singers_by_group:
+                singers_by_group[vg] = []
+            singers_by_group[vg].append(singer)
+        
+        for vg in singers_by_group:
+            singers_by_group[vg] = sorted(singers_by_group[vg], key=lambda s: s.short_name or s.full_name or "")
+        
+        def voice_group_sort_key(vg):
+            vg = vg or "ZzZ"
+            for i, prefix in enumerate(voice_group_order):
+                if vg.startswith(prefix):
+                    return (i, vg)
+            return (len(voice_group_order), vg)
+        
+        sorted_groups = sorted(singers_by_group.keys(), key=voice_group_sort_key)
+
+        for vg in sorted_groups:
+            group_singers = singers_by_group[vg]
+            elements.append(Paragraph(f"<b>{vg}</b>", styles["Heading2"]))
+            
+            table_data = [["Name", "Status"]]
+            for singer in group_singers:
+                avail = self.avail_repo.get_by_ids(singer.id, self.event.id)
+                status = status_labels.get(avail.status if avail else "", "-")
+                table_data.append(
+                    [
+                        singer.short_name or singer.full_name or "",
+                        status,
+                    ]
+                )
+
+            table = Table(table_data, colWidths=[6 * cm, 6 * cm])
+            table.setStyle(
+                TableStyle(
+                    [
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+                        ("TEXTCOLOR", (0, 0), (-1, 0), colors.black),
+                        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                        ("FONTSIZE", (0, 0), (-1, 0), 10),
+                        ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
+                        ("BACKGROUND", (0, 1), (-1, -1), colors.white),
+                        ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
+                        ("FONTSIZE", (0, 1), (-1, -1), 9),
+                    ]
+                )
             )
 
-        table = Table(table_data, colWidths=[5 * cm, 3 * cm, 2 * cm])
-        table.setStyle(
-            TableStyle(
-                [
-                    ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
-                    ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
-                    ("ALIGN", (0, 0), (-1, -1), "LEFT"),
-                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                    ("FONTSIZE", (0, 0), (-1, 0), 10),
-                    ("BOTTOMPADDING", (0, 0), (-1, 0), 8),
-                    ("BACKGROUND", (0, 1), (-1, -1), colors.beige),
-                    ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
-                    ("FONTSIZE", (0, 1), (-1, -1), 9),
-                ]
-            )
-        )
-
-        elements.append(table)
+            elements.append(table)
+            elements.append(Spacer(1, 0.2 * cm))
 
         doc.build(elements)
 
