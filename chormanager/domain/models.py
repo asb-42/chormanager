@@ -292,3 +292,32 @@ class Besetzung:
     def from_dict(cls, data: dict) -> "Besetzung":
         """Create Besetzung from dictionary."""
         return cls(**{k: v for k, v in data.items() if k in cls.__dataclass_fields__})
+
+
+@dataclass
+class Repertoire:
+
+    id: str = ""
+    composer: str = ""
+    title: str = ""
+    dates: str = ""
+    country: str = ""
+    publisher: str = ""
+    arrangement: str = ""
+    location: str = ""
+    created_at: str = ""
+    updated_at: str = ""
+
+    def __post_init__(self):
+        now = datetime.now().isoformat()
+        if not self.created_at:
+            self.created_at = now
+        if not self.updated_at:
+            self.updated_at = now
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Repertoire":
+        return cls(**{k: v for k, v in data.items() if k in cls.__dataclass_fields__})

@@ -164,6 +164,21 @@ class Database:
             )
         """)
 
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS repertoire (
+                id TEXT PRIMARY KEY,
+                composer TEXT,
+                title TEXT NOT NULL,
+                dates TEXT,
+                country TEXT,
+                publisher TEXT,
+                arrangement TEXT,
+                location TEXT,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+        """)
+
         conn.commit()
 
         for col, typ in [
