@@ -588,6 +588,10 @@ class EventAvailabilityDialog(QDialog):
             idx = status_combo.findData(current_status or "none")
             if idx >= 0:
                 status_combo.setCurrentIndex(idx)
+            
+            status_combo.currentIndexChanged.connect(
+                lambda index, sid=singer.id, widget=status_combo: self._save_availability_on_change(sid, widget)
+            )
 
             self.table.setCellWidget(row, 2, status_combo)
             self.table.setColumnWidth(2, 200)
@@ -648,6 +652,14 @@ class EventAvailabilityDialog(QDialog):
             summary_html += "</table>"
 
         self.summary_label.setText(summary_html)
+
+    def _save_availability_on_change(self, singer_id: str, widget):
+        """Save availability immediately when dropdown changes."""
+        status_code = widget.currentData()
+        if status_code is not None:
+            avail = self.avail_repo.get_by_ids(singer_id, self.event.id)
+            if not avail or avail.status != status_code:
+                self.avail_repo.update(singer_id, self.event.id, status_code)
 
     def accept(self):
         """Save availability using per-row dropdown widgets."""
