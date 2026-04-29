@@ -105,6 +105,11 @@ class SingerRepository:
         kwargs["updated_at"] = datetime.now().isoformat()
         
         set_clause = ", ".join([f"{k} = ?" for k in kwargs.keys()])
+        old_affinity = None
+        if "affinity_uuid" in kwargs:
+            singer_before = self.get_by_id(singer_id)
+            if singer_before:
+                old_affinity = singer_before.affinity_uuid
         
         self.db.execute(
             f"UPDATE singers SET {set_clause} WHERE id = ?",
@@ -112,6 +117,29 @@ class SingerRepository:
         )
         self.db.commit()
         
+        # Handle bidirectional affinity synchronization
+        if "affinity_uuid" in kwargs:
+            new_affinity = kwargs["affinity_uuid"]
+            singer_after = self.get_by_id(singer_id)
+            if singer_after:
+                # If there was an old affinity and it's different from new, clear the old partner's affinity
+                if old_affinity and old_affinity != new_affinity:
+                    old_partner = self.get_by_id(old_affinity)
+                    if old_partner and old_partner.affinity_uuid == singer_id:
+                        self.db.execute(
+                            "UPDATE singers SET affinity_uuid = NULL, updated_at = ? WHERE id = ?",
+                            (datetime.now().isoformat(), old_affinity)
+                        )
+                # If there is a new affinity, set the partner's affinity to this singer
+                if new_affinity:
+                    new_partner = self.get_by_id(new_affinity)
+                    if new_partner and new_partner.affinity_uuid != singer_id:
+                        self.db.execute(
+                            "UPDATE singers SET affinity_uuid = ?, updated_at = ? WHERE id = ?",
+                            (singer_id, datetime.now().isoformat(), new_affinity)
+                        )
+        
+        self.db.commit()
         return self.get_by_id(singer_id)
     
     def delete(self, singer_id: str) -> bool:

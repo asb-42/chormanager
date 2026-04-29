@@ -458,13 +458,28 @@ class EventAvailabilityDialog(QDialog):
         self.voice_filter.currentIndexChanged.connect(self._load_availability)
         filter_layout.addWidget(self.voice_filter)
 
+        sort_label = QLabel("Sortieren:")
+        filter_layout.addWidget(sort_label)
+
+        self.sort_by_combo = QComboBox()
+        self.sort_by_combo.addItem("Kurzname", "short_name")
+        self.sort_by_combo.addItem("Stimmgruppe", "voice_group")
+        self.sort_by_combo.currentIndexChanged.connect(self._load_availability)
+        filter_layout.addWidget(self.sort_by_combo)
+
+        self.sort_order_combo = QComboBox()
+        self.sort_order_combo.addItem("Aufsteigend", "asc")
+        self.sort_order_combo.addItem("Absteigend", "desc")
+        self.sort_order_combo.currentIndexChanged.connect(self._load_availability)
+        filter_layout.addWidget(self.sort_order_combo)
+
         layout.addLayout(filter_layout)
 
         self.table = QTableWidget()
         self.table.setColumnCount(3)
         self.table.setHorizontalHeaderLabels(["Kurzname", "Stimmgruppe", "Status"])
-        self.table.horizontalHeader().setSortIndicatorShown(True)
-        self.table.setSortingEnabled(True)
+        self.table.horizontalHeader().setSortIndicatorShown(False)
+        self.table.setSortingEnabled(False)
 
         layout.addWidget(self.table)
 
@@ -524,6 +539,14 @@ class EventAvailabilityDialog(QDialog):
                 filtered.append(singer)
             singers = filtered
 
+        sort_by = self.sort_by_combo.currentData()
+        sort_order = self.sort_order_combo.currentData()
+
+        reverse = sort_order == "desc"
+        if sort_by == "voice_group":
+            singers = sorted(singers, key=lambda s: (s.voice_group or "", s.short_name or ""), reverse=reverse)
+        else:
+            singers = sorted(singers, key=lambda s: s.short_name or s.full_name or "", reverse=reverse)
 
         self.table.setRowCount(len(singers))
 
@@ -1167,9 +1190,7 @@ class SingerSelectionDialog(QDialog):
 
     def _on_checkbox_changed(self, singer_id, state):
         """Handle checkbox state change."""
-        from PyQt6.QtCore import Qt
-
-        if state == Qt.CheckState.Checked:
+        if state == Qt.CheckState.Checked or state == 2:
             self.selected_ids.add(singer_id)
         else:
             self.selected_ids.discard(singer_id)

@@ -111,8 +111,8 @@ fields:
     order: 18
 
   - name: "affinity_uuid"
-    label: "Affinity/Singpartner (UUID)"
-    type: "uuid"
+    label: "Affinity/Singpartner"
+    type: "singer_reference"
     required: false
     order: 19
 

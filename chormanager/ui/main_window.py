@@ -185,19 +185,31 @@ class SingerDialog(QDialog):
                 self.inputs[name] = widget
                 layout.addRow(label, widget)
 
-            elif field_type == "choice":
+            elif field_type == "singer_reference":
                 widget = QComboBox()
-                choices = field.get("choices", [])
                 widget.addItem("", None)
-                for choice in choices:
-                    widget.addItem(choice, choice)
+                singer_repo = SingerRepository(self.db)
+                singers = singer_repo.get_all()
+                for singer in singers:
+                    display = singer.full_name or singer.short_name or f"Sänger {singer.id[:8]}"
+                    widget.addItem(display, singer.id)
                 self.inputs[name] = widget
                 layout.addRow(label, widget)
+                if self.singer and hasattr(self.singer, name):
+                    current_value = getattr(self.singer, name)
+                    if current_value:
+                        index = widget.findData(current_value)
+                        if index >= 0:
+                            widget.setCurrentIndex(index)
 
             elif field_type == "uuid":
                 widget = QLineEdit()
                 self.inputs[name] = widget
                 layout.addRow(label, widget)
+                if self.singer and hasattr(self.singer, name):
+                    current_value = getattr(self.singer, name)
+                    if current_value:
+                        widget.setText(str(current_value))
 
         button_box = QHBoxLayout()
         ok_button = QPushButton("OK")
