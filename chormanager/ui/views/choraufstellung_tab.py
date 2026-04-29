@@ -44,14 +44,6 @@ class ChorAufstellungTab(QWidget):
         """Set up the user interface."""
         layout = QVBoxLayout(self)
 
-        # Seitentitel
-        page_title = QLabel("🎵 Choraufstellungen")
-        page_title.setObjectName("pageTitle")
-        page_title.setStyleSheet(
-            "font-size: 18pt; font-weight: bold; color: #2c3e50; margin-bottom: 15px;"
-        )
-        layout.addWidget(page_title)
-
         header = QHBoxLayout()
         self.load_btn = QPushButton("Aus ChorManager laden")
         self.load_btn.clicked.connect(self._load_from_chormanager)
