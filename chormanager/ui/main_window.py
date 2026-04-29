@@ -1243,7 +1243,7 @@ class MainWindow(QMainWindow):
         self.choraufstellung_tab._delete_formation()
 
     def _new_formation(self):
-        self.choraufstellung_tab._load_from_chormanager()
+        self.choraufstellung_tab._new_formation()
 
     def _undo(self):
         """Undo last action."""
@@ -2173,58 +2173,6 @@ class MainWindow(QMainWindow):
         )
         env["CHOR_DB_PATH"] = db_path
 
-        debug_info = f"Übergabe: {', '.join(vars_to_pass)}\n"
-        debug_info += f"Project: {project.name if project else 'NIX'}\n"
-        debug_info += f"Event: {event.name if event and event.date else 'NIX'}\n"
-        debug_info += (
-            f"current_row={current_row}, event_id={event_id if event_id else 'NIX'}\n\n"
-        )
-
-        if event and os.path.exists(db_path):
-            try:
-                conn = sqlite3.connect(db_path)
-                conn.row_factory = sqlite3.Row
-                cursor = conn.cursor()
-                cursor.execute(
-                    """
-                    SELECT s.id, s.full_name, s.short_name, s.voice_group, a.status
-                    FROM singers s
-                    JOIN availability a ON s.id = a.singer_id
-                    WHERE a.event_id = ? AND a.status IN ('yes', 'conditional')
-                """,
-                    (event.id,),
-                )
-                rows = cursor.fetchall()
-
-                debug_info += (
-                    f"Sänger mit Zusage für {event.date[:10]} ({len(rows)}):\n"
-                )
-                for row in rows:
-                    debug_info += f"  - {row['short_name'] or row['full_name']} ({row['voice_group']}) [{row['status']}]\n"
-
-                cursor.execute(
-                    "SELECT date, event_type FROM events ORDER BY date DESC LIMIT 5"
-                )
-                debug_info += f"\nLetzte Events: {cursor.fetchall()}"
-
-                cursor.execute(
-                    "SELECT e.id, e.date, e.name, COUNT(a.id) as cnt FROM events e LEFT JOIN availability a ON a.event_id = e.id GROUP BY e.id ORDER BY e.date DESC LIMIT 10"
-                )
-                debug_info += f"\nVerfügbarkeit: {cursor.fetchall()}"
-                conn.close()
-            except Exception as e:
-                debug_info += f"Debug-Fehler: {e}"
-        else:
-            debug_info += "(Keine Verfügbarkeitsdaten)"
-
-        d = QDialog(self)
-        d.setWindowTitle("Debug: Choraufstellung starten")
-        d.setMinimumSize(400, 300)
-        lay = QVBoxLayout(d)
-        lay.addWidget(QLabel(debug_info))
-        close_btn = QPushButton("Schließen")
-        close_btn.clicked.connect(d.accept)
-
         try:
             main_py = os.path.join(choraufstellung_path, "__main__.py")
             if os.path.exists(main_py):
@@ -2232,8 +2180,6 @@ class MainWindow(QMainWindow):
                     [sys.executable, main_py], cwd=choraufstellung_path, env=env
                 )
                 self.choraufstellung_tab._load_formations()
-            lay.addWidget(close_btn)
-            d.exec()
         except Exception as e:
             QMessageBox.warning(
                 self,

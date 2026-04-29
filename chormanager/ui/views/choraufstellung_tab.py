@@ -14,6 +14,7 @@ from PyQt6.QtWidgets import (
     QFileDialog,
     QInputDialog,
     QLineEdit,
+    QDialog,
 )
 from PyQt6.QtCore import pyqtSignal, Qt
 
@@ -62,7 +63,7 @@ class ChorAufstellungTab(QWidget):
         layout.addLayout(search_layout)
 
         info_label = QLabel(
-            "Klicken Sie auf 'Aus ChorManager laden', um die Choraufstellung-App mit den Sängern für den gewählten Termin zu öffnen."
+            "Klicken Sie auf 'Neue Aufstellung', um eine Aufstellung für einen Termin zu erstellen."
         )
         info_label.setStyleSheet("color: #666; padding: 10px;")
         layout.addWidget(info_label)
@@ -93,8 +94,29 @@ class ChorAufstellungTab(QWidget):
         """Set the current event."""
         self._current_event = event
 
+    def _new_formation(self):
+        from ..dialogs import NewFormationDialog
+
+        main_window = self.window()
+        projects_tab = getattr(main_window, "projects_tab", None)
+        current_project = projects_tab.current_project if projects_tab else None
+
+        dialog = NewFormationDialog(self.db, current_project, self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        event = dialog.get_event()
+        if not event:
+            return
+
+        if hasattr(main_window, "_open_choraufstellung_for_event"):
+            main_window._open_choraufstellung_for_event(event)
+        else:
+            QMessageBox.warning(
+                self, "Fehler", "Funktion zum Öffnen der Choraufstellung nicht verfügbar."
+            )
+
     def _load_from_chormanager(self):
-        """Open standalone ChorAufstellung app."""
         try:
             main_window = self.window()
             if not hasattr(main_window, "_open_choraufstellung"):
