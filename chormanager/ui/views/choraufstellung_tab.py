@@ -292,6 +292,33 @@ class ChorAufstellungTab(QWidget):
                 self, "Fehler", f"Duplizieren fehlgeschlagen:\n{str(e)}"
             )
 
+    def _delete_formation(self):
+        current_row = self.table.currentRow()
+        if current_row < 0:
+            return
+
+        filename = self.table.item(current_row, 0).text()
+        filepath = os.path.join(self._data_dir, filename)
+
+        reply = QMessageBox.question(
+            self,
+            "Löschen bestätigen",
+            f"Möchten Sie '{filename}' wirklich löschen?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+
+        try:
+            os.remove(filepath)
+            self._load_formations()
+        except Exception as e:
+            QMessageBox.warning(
+                self, "Fehler", f"Löschen fehlgeschlagen:\n{str(e)}"
+            )
+
     def has_formation_for_event(self, event):
         """Check if a formation file exists for the given event."""
         if not event or not event.name:
