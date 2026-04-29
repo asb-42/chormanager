@@ -53,10 +53,6 @@ class ChorAufstellungTab(QWidget):
         layout.addWidget(page_title)
 
         header = QHBoxLayout()
-        self.title_label = QLabel("Choraufstellung")
-        self.title_label.setStyleSheet("font-size: 16pt; font-weight: bold;")
-        header.addWidget(self.title_label)
-
         self.load_btn = QPushButton("Aus ChorManager laden")
         self.load_btn.clicked.connect(self._load_from_chormanager)
         header.addWidget(self.load_btn)
