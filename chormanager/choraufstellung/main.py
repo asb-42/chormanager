@@ -1299,10 +1299,65 @@ class MainWindow(QMainWindow):
         placed = len(self.grid.get_placed_singer_ids())
         self.grid_count_label.setText(f"{placed} Sänger")
         self.pool.update_placed_singers(self.grid.get_placed_singer_ids())
+    
+    def _check_grid_capacity(self, new_rows, new_cols):
+        """Check if new grid can hold all placed singers. Returns (is_ok, excess_count)."""
+        grid_cells = new_rows * new_cols
+        placed_count = len(self.grid.singers)
+        excess = placed_count - grid_cells
+        return (excess <= 0, excess)
+    
+    def _show_resize_warning(self, excess):
+        """Show warning dialog when shrinking grid would lose singers."""
+        placed = len(self.grid.singers)
+        msg = (f"In das eingestellte Aufstellungsraster passen die {placed} Sänger "
+               f"aus der Aufstellung nicht hinein.\n\n"
+               f"{excess} überzählige Sänger müssen in den Sängerpool zurückgesetzt werden, "
+               f"oder das Aufstellungsraster muss angepasst werden.")
+        
+        buttons = QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        reply = QMessageBox.warning(self, "Raster zu klein", msg, buttons,
+                              QMessageBox.StandardButton.No)
+        
+        if reply == QMessageBox.StandardButton.Yes:
+            # Reset excess singers to pool
+            self._reset_excess_to_pool(excess)
+            return True
+        return False
+    
+    def _reset_excess_to_pool(self, count):
+        """Reset excess singers (newest placed) back to pool."""
+        singers_to_remove = self.grid.singers[-count:] if count > 0 else []
+        for singer in singers_to_remove:
+            singer.row = -1
+            singer.col = -1
+        # Rebuild placed list
+        self.grid.singers = [s for s in self.grid.singers if s.row >= 0]
+        self.grid.refresh_grid()
+        self.pool.placed_singer_ids = self.grid.get_placed_singer_ids()
+        self.pool.update_singers(self.singers, self.pool.placed_singer_ids)
+        self.update_grid_count()
+        self.is_modified = True
 
     def upd_grid(self):
         r = int(self.rs.currentText())
         c = int(self.cs.currentText())
+        
+        # Check capacity before resizing
+        is_ok, excess = self._check_grid_capacity(r, c)
+        if not is_ok:
+            # Show warning - user chooses to cancel or reset excess
+            user_proceeds = self._show_resize_warning(excess)
+            if not user_proceeds:
+                # Revert ComboBox to current grid values
+                self.rs.blockSignals(True)
+                self.rs.setCurrentText(str(self.grid.rows))
+                self.rs.blockSignals(False)
+                self.cs.blockSignals(True)
+                self.cs.setCurrentText(str(self.grid.cols))
+                self.cs.blockSignals(False)
+                return
+        
         self.grid.set_dimensions(r, c)
 
     def on_raster_mode_changed(self):
@@ -1363,6 +1418,17 @@ class MainWindow(QMainWindow):
         self.update_grid_count()
 
     def save_f(self):
+        # Check grid capacity before saving
+        grid_cells = self.grid.rows * self.grid.cols
+        placed = len(self.grid.singers)
+        if placed > grid_cells:
+            QMessageBox.warning(self, "Zu viele Sänger",
+                             f"Die Aufstellung hat {placed} Sänger im Raster, "
+                             f"aber nur {grid_cells} Plätze.\n\n"
+                             f"Bitte vergrößern Sie das Raster oder setzen Sie "
+                             f"überzählige Sänger in den Sängerpool zurück.")
+            return False
+        
         if not self.file:
             return self.save_as_f()
         metadata = {
@@ -1385,6 +1451,17 @@ class MainWindow(QMainWindow):
             return False
         if not fp.endswith(".json"):
             fp += ".json"
+        
+        # Check grid capacity before saving
+        grid_cells = self.grid.rows * self.grid.cols
+        placed = len(self.grid.singers)
+        if placed > grid_cells:
+            QMessageBox.warning(self, "Zu viele Sänger",
+                             f"Die Aufstellung hat {placed} Sänger im Raster, "
+                             f"aber nur {grid_cells} Plätze.\n\n"
+                             f"Bitte vergrößern Sie das Raster oder setzen Sie "
+                             f"überzählige Sänger in den Sängerpool zurück.")
+            return False
         
         metadata = {
             "project": os.environ.get("CHOR_PROJECT", ""),
