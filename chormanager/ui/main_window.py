@@ -2310,6 +2310,7 @@ class MainWindow(QMainWindow):
             vars_to_pass.append(f"CHOR_EVENT_DATE={event.date[:10]}")
             vars_to_pass.append(f"CHOR_EVENT_NAME={event.name}")
             vars_to_pass.append(f"CHOR_EVENT_ID={event.id}")
+            vars_to_pass.append(f"CHOR_EVENT_TYPE={event.event_type}")
         if filepath:
             vars_to_pass.append(f"CHOR_FILE={filepath}")
 

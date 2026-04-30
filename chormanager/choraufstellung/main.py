@@ -1134,7 +1134,7 @@ class VoicingConfigDialog(QDialog):
     def get_active(self): return [g for g, c in self.chk.items() if c.isChecked()]
 
 class MainWindow(QMainWindow):
-    def __init__(self, chormanager_mode=False, project_name=None, event_date=None, event_name=None, db_path=None, event_id=None):
+    def __init__(self, chormanager_mode=False, project_name=None, event_date=None, event_name=None, db_path=None, event_id=None, event_type=None):
         super().__init__()
         
         self.chormanager_mode = chormanager_mode
@@ -1143,6 +1143,7 @@ class MainWindow(QMainWindow):
         self.event_name = event_name
         self.db_path = db_path
         self.event_id = event_id
+        self.event_type = event_type or ""
         
         self.storage = FormationStorage()
         self.pdf = PDFExporter()
@@ -1364,7 +1365,13 @@ class MainWindow(QMainWindow):
     def save_f(self):
         if not self.file:
             return self.save_as_f()
-        return self._save_file(self.file)
+        metadata = {
+            "project": os.environ.get("CHOR_PROJECT", "") or self.project_name or "",
+            "event": os.environ.get("CHOR_EVENT_NAME", "") or self.event_name or "",
+            "event_date": os.environ.get("CHOR_EVENT_DATE", "") or self.event_date or "",
+            "event_type": os.environ.get("CHOR_EVENT_TYPE", "") or self.event_type or ""
+        }
+        return self._save_file(self.file, metadata=metadata)
 
     def save_as_f(self):
         from config import get_data_dir
@@ -1729,12 +1736,16 @@ def main():
     import os
     event_date = os.environ.get("CHOR_EVENT_DATE", "")
     event_id = os.environ.get("CHOR_EVENT_ID", "")
+    event_name = os.environ.get("CHOR_EVENT_NAME", "")
+    project_name = os.environ.get("CHOR_PROJECT", "")
+    event_type = os.environ.get("CHOR_EVENT_TYPE", "")
     db_path = os.environ.get("CHOR_DB_PATH", "")
     chor_file = os.environ.get("CHOR_FILE", "")
     chormanager_mode = bool(event_date or event_id or db_path or chor_file)
     
     app = QApplication(sys.argv); app.setStyle("Fusion")
-    w = MainWindow(chormanager_mode=chormanager_mode, event_id=event_id)
+    w = MainWindow(chormanager_mode=chormanager_mode, event_id=event_id, event_date=event_date, 
+                  event_name=event_name, project_name=project_name, event_type=event_type)
     
     if chor_file and os.path.exists(chor_file):
         w.file = chor_file
