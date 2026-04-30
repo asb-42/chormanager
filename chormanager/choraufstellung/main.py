@@ -1730,6 +1730,16 @@ class MainWindow(QMainWindow):
         self.pool.update_singers(self.singers, self.pool.placed_singer_ids)
         self.is_modified = False
         self.update_grid_count()
+        
+        # Sync ComboBoxes with loaded grid dimensions
+        if hasattr(self, 'rs'):
+            self.rs.blockSignals(True)
+            self.rs.setCurrentText(str(self.grid.rows))
+            self.rs.blockSignals(False)
+        if hasattr(self, 'cs'):
+            self.cs.blockSignals(True)
+            self.cs.setCurrentText(str(self.grid.cols))
+            self.cs.blockSignals(False)
 
 
 def main():
