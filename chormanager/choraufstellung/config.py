@@ -46,8 +46,9 @@ def save_settings(settings: Dict[str, str]) -> bool:
         return False
 
 
-# Voice groups configuration
-VOICE_GROUPS_CONFIG_FILE = "config/voice_groups.json"
+# Voice groups configuration - use absolute path from chormanager root
+_config_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+VOICE_GROUPS_CONFIG_FILE = os.path.join(_config_dir, "config", "voice_groups.json")
 
 def load_voice_groups_config() -> list:
     """Lädt die Stimmgruppen-Konfiguration. Gibt Fallback zurück."""
