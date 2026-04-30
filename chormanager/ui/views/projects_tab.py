@@ -57,7 +57,7 @@ class ProjectDialog:
         form_layout.addRow("Spielzeit:", self.spielzeit_input)
 
         self.description_input = QTextEdit()
-        self.description_input.setMaximumHeight(80)
+        self.description_input.setMinimumHeight(200)
         form_layout.addRow("Beschreibung:", self.description_input)
 
         if project:
