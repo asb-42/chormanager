@@ -1350,12 +1350,14 @@ class MainWindow(QMainWindow):
         # 5. Pass via environment
         env = os.environ.copy()
         env["CHOR_EVENT_DATA"] = temp_file
+        env["CHOR_PROJECT"] = data.get("project", "")
         
         # 6. Also set legacy env vars for compatibility
         if event:
             env["CHOR_EVENT_DATE"] = event.date[:10]
             env["CHOR_EVENT_NAME"] = event.name
             env["CHOR_EVENT_ID"] = event.id
+            env["CHOR_EVENT_TYPE"] = event.event_type
         
         # 7. Get data directory for ChorAufstellung
         choraufstellung_path = os.path.join(

@@ -209,8 +209,11 @@ class ChorAufstellungTab(QWidget):
             if event_date:
                 event_date = event_date[:10]
             self.table.setItem(row, 3, QTableWidgetItem(event_date))
-            # Typ (event - der Event-Name)
-            self.table.setItem(row, 4, QTableWidgetItem(meta.get("event", "")))
+            # Typ (event_type - z.B. "konzert", "probe", etc.)
+            event_type = meta.get("event_type", "")
+            if not event_type:
+                event_type = meta.get("event", "")  # Fallback to event name
+            self.table.setItem(row, 4, QTableWidgetItem(event_type))
 
             saved = f.get("saved_at", "")
             if saved:

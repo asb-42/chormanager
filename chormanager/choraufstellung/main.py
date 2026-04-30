@@ -1382,7 +1382,8 @@ class MainWindow(QMainWindow):
         metadata = {
             "project": os.environ.get("CHOR_PROJECT", ""),
             "event": os.environ.get("CHOR_EVENT_NAME", ""),
-            "event_date": os.environ.get("CHOR_EVENT_DATE", "")[:10] if os.environ.get("CHOR_EVENT_DATE") else ""
+            "event_date": os.environ.get("CHOR_EVENT_DATE", "")[:10] if os.environ.get("CHOR_EVENT_DATE") else "",
+            "event_type": os.environ.get("CHOR_EVENT_TYPE", "")
         }
         return self._save_file(fp, metadata=metadata)
 
