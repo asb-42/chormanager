@@ -29,7 +29,13 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QDragEnterEvent, QDropEvent
 from PyQt6.QtCore import QDateTime, Qt
 
-from ..domain.repository import SingerRepository, AvailabilityRepository, EventRepository, ProjectRepository, RepertoireRepository
+from ..domain.repository import (
+    SingerRepository,
+    AvailabilityRepository,
+    EventRepository,
+    ProjectRepository,
+    RepertoireRepository,
+)
 from ..config import load_voice_groups
 
 
@@ -415,7 +421,6 @@ class EventAvailabilityDialog(QDialog):
 
         layout = QVBoxLayout(self)
 
-
         # Show Besetzung info if available
         if self.besetzung_name:
             besetzung_info = QLabel(
@@ -430,9 +435,7 @@ class EventAvailabilityDialog(QDialog):
         event_date = ""
         if self.event.date and len(self.event.date) >= 10:
             event_date = self.event.date[:10]
-        event_info = QLabel(
-            f"Termin: <b>{self.event.name}</b> ({event_date})"
-        )
+        event_info = QLabel(f"Termin: <b>{self.event.name}</b> ({event_date})")
         event_info.setStyleSheet(
             "padding: 8px; background-color: palette(window); color: palette(text); border-radius: 4px; margin: 4px 0;"
         )
@@ -452,19 +455,18 @@ class EventAvailabilityDialog(QDialog):
 
         layout.addLayout(toolbar)
 
-
         filter_layout = QHBoxLayout()
 
         self.search_box = QLineEdit()
-        self.search_box.setPlaceholderText('Schnellsuche (Kurzname)...')
+        self.search_box.setPlaceholderText("Schnellsuche (Kurzname)...")
         self.search_box.textChanged.connect(self._load_availability)
         filter_layout.addWidget(self.search_box)
 
         self.voice_filter = QComboBox()
-        self.voice_filter.addItem('Alle Stimmgruppen', None)
+        self.voice_filter.addItem("Alle Stimmgruppen", None)
         voice_groups = load_voice_groups()
         for vg in voice_groups:
-            self.voice_filter.addItem(vg['name'], vg['name'])
+            self.voice_filter.addItem(vg["name"], vg["name"])
         self.voice_filter.currentIndexChanged.connect(self._load_availability)
         filter_layout.addWidget(self.voice_filter)
 
@@ -543,7 +545,7 @@ class EventAvailabilityDialog(QDialog):
                 if voice_filter and singer.voice_group != voice_filter:
                     continue
                 if search_text:
-                    search_fields = [singer.short_name or '', singer.full_name or '']
+                    search_fields = [singer.short_name or "", singer.full_name or ""]
                     if not any(search_text in str(f).lower() for f in search_fields):
                         continue
                 filtered.append(singer)
@@ -554,9 +556,17 @@ class EventAvailabilityDialog(QDialog):
 
         reverse = sort_order == "desc"
         if sort_by == "voice_group":
-            singers = sorted(singers, key=lambda s: (s.voice_group or "", s.short_name or ""), reverse=reverse)
+            singers = sorted(
+                singers,
+                key=lambda s: (s.voice_group or "", s.short_name or ""),
+                reverse=reverse,
+            )
         else:
-            singers = sorted(singers, key=lambda s: s.short_name or s.full_name or "", reverse=reverse)
+            singers = sorted(
+                singers,
+                key=lambda s: s.short_name or s.full_name or "",
+                reverse=reverse,
+            )
 
         self.table.setRowCount(len(singers))
 
@@ -586,9 +596,11 @@ class EventAvailabilityDialog(QDialog):
             idx = status_combo.findData(current_status or "none")
             if idx >= 0:
                 status_combo.setCurrentIndex(idx)
-            
+
             status_combo.currentIndexChanged.connect(
-                lambda index, sid=singer.id, widget=status_combo: self._save_availability_on_change(sid, widget)
+                lambda index, sid=singer.id, widget=status_combo: (
+                    self._save_availability_on_change(sid, widget)
+                )
             )
 
             self.table.setCellWidget(row, 2, status_combo)
@@ -691,23 +703,28 @@ class EventAvailabilityDialog(QDialog):
         from pathlib import Path
 
         singers = self.singer_repo.get_active()
-        
-        event_date = self.event.date[:10] if self.event.date and len(self.event.date) >= 10 else "ohne Datum"
+
+        event_date = (
+            self.event.date[:10]
+            if self.event.date and len(self.event.date) >= 10
+            else "ohne Datum"
+        )
         event_type = self.event.event_type or "ohne Typ"
-        
+
         project_name = ""
         if self.event.project_id:
             from ..domain.repository import ProjectRepository
+
             project_repo = ProjectRepository(self.db)
             project = project_repo.get_by_id(self.event.project_id)
             if project:
                 project_name = project.name
-        
+
         filename_str = f"{event_date}-{event_type}"
         if project_name:
             filename_str += f"-{project_name}"
         filename_str += ".pdf"
-        
+
         export_dir = Path("/media/data/coding/chormanager/workdir")
         export_dir.mkdir(parents=True, exist_ok=True)
         filename = export_dir / filename_str
@@ -720,22 +737,27 @@ class EventAvailabilityDialog(QDialog):
             "CustomTitle", parent=styles["Heading1"], fontSize=14, spaceAfter=10
         )
 
-        event_date = self.event.date[:10] if self.event.date and len(self.event.date) >= 10 else "ohne Datum"
+        event_date = (
+            self.event.date[:10]
+            if self.event.date and len(self.event.date) >= 10
+            else "ohne Datum"
+        )
         event_type = self.event.event_type or "ohne Typ"
-        
+
         project_name = ""
         if self.event.project_id:
             from ..domain.repository import ProjectRepository
+
             project_repo = ProjectRepository(self.db)
             project = project_repo.get_by_id(self.event.project_id)
             if project:
                 project_name = project.name
-        
+
         filename_str = f"{event_date}-{event_type}"
         if project_name:
             filename_str += f"-{project_name}"
         filename_str += ".pdf"
-        
+
         export_dir = Path("/media/data/coding/chormanager/workdir")
         export_dir.mkdir(parents=True, exist_ok=True)
         filename = export_dir / filename_str
@@ -743,7 +765,8 @@ class EventAvailabilityDialog(QDialog):
         elements.append(Paragraph(f"Verfügbarkeit: {self.event.name}", title_style))
         elements.append(
             Paragraph(
-                f"Datum: {event_date} | Typ: {event_type}" + (f" | Projekt: {project_name}" if project_name else ""),
+                f"Datum: {event_date} | Typ: {event_type}"
+                + (f" | Projekt: {project_name}" if project_name else ""),
                 styles["Normal"],
             )
         )
@@ -759,31 +782,42 @@ class EventAvailabilityDialog(QDialog):
             "": "-",
         }
 
-        voice_group_order = ["Sopran 1", "Sopran 2", "Alt 1", "Alt 2", "Tenor 1", "Tenor 2", "Bass 1", "Bass 2"]
-        
+        voice_group_order = [
+            "Sopran 1",
+            "Sopran 2",
+            "Alt 1",
+            "Alt 2",
+            "Tenor 1",
+            "Tenor 2",
+            "Bass 1",
+            "Bass 2",
+        ]
+
         singers_by_group = {}
         for singer in singers:
             vg = singer.voice_group or "Ohne Stimmgruppe"
             if vg not in singers_by_group:
                 singers_by_group[vg] = []
             singers_by_group[vg].append(singer)
-        
+
         for vg in singers_by_group:
-            singers_by_group[vg] = sorted(singers_by_group[vg], key=lambda s: s.short_name or s.full_name or "")
-        
+            singers_by_group[vg] = sorted(
+                singers_by_group[vg], key=lambda s: s.short_name or s.full_name or ""
+            )
+
         def voice_group_sort_key(vg):
             vg = vg or "ZzZ"
             for i, prefix in enumerate(voice_group_order):
                 if vg.startswith(prefix):
                     return (i, vg)
             return (len(voice_group_order), vg)
-        
+
         sorted_groups = sorted(singers_by_group.keys(), key=voice_group_sort_key)
 
         for vg in sorted_groups:
             group_singers = singers_by_group[vg]
             elements.append(Paragraph(f"<b>{vg}</b>", styles["Heading2"]))
-            
+
             table_data = [["Name", "Status"]]
             for singer in group_singers:
                 avail = self.avail_repo.get_by_ids(singer.id, self.event.id)
@@ -824,12 +858,13 @@ class EventAvailabilityDialog(QDialog):
     def _export_availability(self):
         """Export availability to file with field selection."""
         avail_fields = [
-            {'name': 'short_name', 'label': 'Kurzname'},
-            {'name': 'voice_group', 'label': 'Stimmgruppe'},
-            {'name': 'status', 'label': 'Status'},
+            {"name": "short_name", "label": "Kurzname"},
+            {"name": "voice_group", "label": "Stimmgruppe"},
+            {"name": "status", "label": "Status"},
         ]
 
         from ..ui.export_dialog import ExportDialog
+
         dialog = ExportDialog(avail_fields, self)
         if not dialog.exec():
             return
@@ -838,7 +873,7 @@ class EventAvailabilityDialog(QDialog):
         fmt = dialog.get_export_format()
 
         if not selected_fields:
-            QMessageBox.warning(self, 'Warnung', 'Keine Felder ausgewählt.')
+            QMessageBox.warning(self, "Warnung", "Keine Felder ausgewählt.")
             return
 
         from ..core.export_service import ExportService
@@ -851,68 +886,76 @@ class EventAvailabilityDialog(QDialog):
         if self.besetzung_ids is not None:
             singers = [s for s in singers if s.id in self.besetzung_ids]
 
-        VG_ORDER = ['Sopran 1', 'Sopran 2', 'Alt 1', 'Alt 2', 'Tenor 1', 'Tenor 2', 'Bass 1', 'Bass 2']
+        VG_ORDER = [
+            "Sopran 1",
+            "Sopran 2",
+            "Alt 1",
+            "Alt 2",
+            "Tenor 1",
+            "Tenor 2",
+            "Bass 1",
+            "Bass 2",
+        ]
 
         def sort_key(singer):
-            vg = singer.voice_group or ''
+            vg = singer.voice_group or ""
             vg_idx = VG_ORDER.index(vg) if vg in VG_ORDER else 999
-            return (vg_idx, singer.short_name or singer.full_name or '')
+            return (vg_idx, singer.short_name or singer.full_name or "")
 
         singers_sorted = sorted(singers, key=sort_key)
 
         status_labels = {
-            'yes': 'Zusage',
-            'no': 'Absage',
-            'none': 'Offen',
-            'conditional': 'Vorbehalt',
-            'unknown': 'Weiß nicht',
-            'maybe': 'Vielleicht',
+            "yes": "Zusage",
+            "no": "Absage",
+            "none": "Offen",
+            "conditional": "Vorbehalt",
+            "unknown": "Weiß nicht",
+            "maybe": "Vielleicht",
         }
 
         data = []
         for s in singers_sorted:
             row = {}
-            if 'short_name' in selected_fields:
-                row['short_name'] = s.short_name or s.full_name or ''
-            if 'voice_group' in selected_fields:
-                row['voice_group'] = s.voice_group or ''
-            if 'status' in selected_fields:
+            if "short_name" in selected_fields:
+                row["short_name"] = s.short_name or s.full_name or ""
+            if "voice_group" in selected_fields:
+                row["voice_group"] = s.voice_group or ""
+            if "status" in selected_fields:
                 avail = self.avail_repo.get_by_ids(s.id, self.event.id)
-                status_code = avail.status if avail else 'none'
-                row['status'] = status_labels.get(status_code, status_code)
+                status_code = avail.status if avail else "none"
+                row["status"] = status_labels.get(status_code, status_code)
             data.append(row)
 
         service = ExportService()
-        if fmt == 'writer':
+        if fmt == "writer":
             content_out = service.export_to_libreoffice_writer(data, selected_fields)
-            ext_filter = 'LibreOffice Writer (*.odt)'
-        elif fmt == 'calc':
+            ext_filter = "LibreOffice Writer (*.odt)"
+        elif fmt == "calc":
             content_out = service.export_to_libreoffice_calc(data, selected_fields)
-            ext_filter = 'LibreOffice Calc (*.ods)'
+            ext_filter = "LibreOffice Calc (*.ods)"
         else:
             content_out = service.export_to_csv(data, selected_fields)
-            ext_filter = 'CSV (*.csv)'
+            ext_filter = "CSV (*.csv)"
 
-        today = datetime.now().strftime('%Y-%m-%d')
-        safe_event = self.event.name.replace(' ', '-').replace('/', '-')
-        ext_map = {'writer': 'odt', 'calc': 'ods', 'csv': 'csv'}
-        ext = ext_map.get(fmt, 'csv')
-        default_name = f'{today}-verfuegbarkeit-{safe_event}.{ext}'
-        workdir = Path(__file__).parent.parent.parent / 'workdir'
+        today = datetime.now().strftime("%Y-%m-%d")
+        safe_event = self.event.name.replace(" ", "-").replace("/", "-")
+        ext_map = {"writer": "odt", "calc": "ods", "csv": "csv"}
+        ext = ext_map.get(fmt, "csv")
+        default_name = f"{today}-verfuegbarkeit-{safe_event}.{ext}"
+        workdir = Path(__file__).parent.parent.parent / "workdir"
         workdir.mkdir(exist_ok=True)
         default_path = str(workdir / default_name)
 
         filename, _ = QFileDialog.getSaveFileName(
-            self, 'Verfügbarkeit exportieren',
-            default_path, ext_filter
+            self, "Verfügbarkeit exportieren", default_path, ext_filter
         )
         if not filename:
             return
 
-        with open(filename, 'w', encoding='utf-8') as f:
+        with open(filename, "w", encoding="utf-8") as f:
             f.write(content_out)
 
-        QMessageBox.information(self, 'Export', f'Exportiert nach:\n{filename}')
+        QMessageBox.information(self, "Export", f"Exportiert nach:\n{filename}")
 
 
 class ConfigDialog(QDialog):
@@ -1132,7 +1175,7 @@ class SingerSelectionDialog(QDialog):
         self.db = db
         self.pre_selected_ids = pre_selected_ids or []
         self.selected_ids = set(self.pre_selected_ids)
-        self.besetzung_name = besetzung_name or 'besetzung'
+        self.besetzung_name = besetzung_name or "besetzung"
         self._setup_ui()
         self._load_singers()
 
@@ -1151,28 +1194,27 @@ class SingerSelectionDialog(QDialog):
         filter_layout = QHBoxLayout()
 
         self.search_box = QLineEdit()
-        self.search_box.setPlaceholderText('Suchen (Name, Kurzname)...')
+        self.search_box.setPlaceholderText("Suchen (Name, Kurzname)...")
         self.search_box.textChanged.connect(self._load_singers)
         filter_layout.addWidget(self.search_box)
 
         self.voice_filter = QComboBox()
-        self.voice_filter.addItem('Alle Stimmgruppen', None)
+        self.voice_filter.addItem("Alle Stimmgruppen", None)
         voice_groups = load_voice_groups()
         for vg in voice_groups:
-            self.voice_filter.addItem(vg['name'], vg['name'])
+            self.voice_filter.addItem(vg["name"], vg["name"])
         self.voice_filter.currentIndexChanged.connect(self._load_singers)
         filter_layout.addWidget(self.voice_filter)
 
         self.status_filter = QComboBox()
-        self.status_filter.addItem('Alle Mitglieder', 'all')
-        self.status_filter.addItem('Aktive Mitglieder', 'active')
-        self.status_filter.addItem('Minderjährige', 'minor')
-        self.status_filter.addItem('U16', 'u16')
+        self.status_filter.addItem("Alle Mitglieder", "all")
+        self.status_filter.addItem("Aktive Mitglieder", "active")
+        self.status_filter.addItem("Minderjährige", "minor")
+        self.status_filter.addItem("U16", "u16")
         self.status_filter.currentIndexChanged.connect(self._load_singers)
         filter_layout.addWidget(self.status_filter)
 
         layout.addLayout(filter_layout)
-
 
         self.table = QTableWidget()
         self.table.setColumnCount(5)
@@ -1222,26 +1264,25 @@ class SingerSelectionDialog(QDialog):
         for singer in singers:
             if voice_filter and singer.voice_group != voice_filter:
                 continue
-            if status_filter and status_filter != 'all':
-                if status_filter == 'active':
+            if status_filter and status_filter != "all":
+                if status_filter == "active":
                     if singer.left_year or singer.left_month:
                         continue
-                elif status_filter == 'minor':
+                elif status_filter == "minor":
                     age = singer.age()
                     if age is None or age >= 18:
                         continue
-                elif status_filter == 'u16':
+                elif status_filter == "u16":
                     age = singer.age()
                     if age is None or age >= 16:
                         continue
             if search_text:
-                search_fields = [singer.full_name or '', singer.short_name or '']
+                search_fields = [singer.full_name or "", singer.short_name or ""]
                 if not any(search_text in str(f).lower() for f in search_fields):
                     continue
             filtered.append(singer)
 
         singers = filtered
-
 
         self.table.setRowCount(len(singers))
 
@@ -1305,15 +1346,17 @@ class SingerSelectionDialog(QDialog):
         """Export selected singers to file."""
         if not self.selected_ids:
             from PyQt6.QtWidgets import QMessageBox
-            QMessageBox.warning(self, 'Warnung', 'Keine Sänger ausgewählt.')
+
+            QMessageBox.warning(self, "Warnung", "Keine Sänger ausgewählt.")
             return
 
         from ..ui.export_dialog import ExportDialog
+
         singer_fields = [
-            {'name': 'full_name', 'label': 'Name'},
-            {'name': 'short_name', 'label': 'Kurzname'},
-            {'name': 'voice_group', 'label': 'Stimmgruppe'},
-            {'name': 'age', 'label': 'Alter'},
+            {"name": "full_name", "label": "Name"},
+            {"name": "short_name", "label": "Kurzname"},
+            {"name": "voice_group", "label": "Stimmgruppe"},
+            {"name": "age", "label": "Alter"},
         ]
 
         dialog = ExportDialog(singer_fields, self)
@@ -1325,7 +1368,8 @@ class SingerSelectionDialog(QDialog):
 
         if not selected_fields:
             from PyQt6.QtWidgets import QMessageBox
-            QMessageBox.warning(self, 'Warnung', 'Keine Felder ausgewählt.')
+
+            QMessageBox.warning(self, "Warnung", "Keine Felder ausgewählt.")
             return
 
         from ..domain.repository import SingerRepository
@@ -1341,37 +1385,37 @@ class SingerSelectionDialog(QDialog):
         service = ExportService()
         data = service.get_export_data(selected_singers, selected_fields)
 
-        ext_map = {'writer': 'odt', 'calc': 'ods', 'csv': 'csv'}
-        ext = ext_map.get(fmt, 'csv')
-        today = datetime.now().strftime('%Y-%m-%d')
-        safe_name = self.besetzung_name.replace(' ', '-').replace('/', '-')
-        default_name = f'{today}-{safe_name}.{ext}'
-        workdir = Path(__file__).parent.parent.parent / 'workdir'
+        ext_map = {"writer": "odt", "calc": "ods", "csv": "csv"}
+        ext = ext_map.get(fmt, "csv")
+        today = datetime.now().strftime("%Y-%m-%d")
+        safe_name = self.besetzung_name.replace(" ", "-").replace("/", "-")
+        default_name = f"{today}-{safe_name}.{ext}"
+        workdir = Path(__file__).parent.parent.parent / "workdir"
         workdir.mkdir(exist_ok=True)
         default_path = str(workdir / default_name)
 
-        if fmt == 'writer':
+        if fmt == "writer":
             content_out = service.export_to_libreoffice_writer(data, selected_fields)
-            ext_filter = 'LibreOffice Writer (*.odt)'
-        elif fmt == 'calc':
+            ext_filter = "LibreOffice Writer (*.odt)"
+        elif fmt == "calc":
             content_out = service.export_to_libreoffice_calc(data, selected_fields)
-            ext_filter = 'LibreOffice Calc (*.ods)'
+            ext_filter = "LibreOffice Calc (*.ods)"
         else:
             content_out = service.export_to_csv(data, selected_fields)
-            ext_filter = 'CSV (*.csv)'
+            ext_filter = "CSV (*.csv)"
 
         filename, _ = QFileDialog.getSaveFileName(
-            self, 'Sänger exportieren',
-            default_path, ext_filter
+            self, "Sänger exportieren", default_path, ext_filter
         )
         if not filename:
             return
 
-        with open(filename, 'w', encoding='utf-8') as f:
+        with open(filename, "w", encoding="utf-8") as f:
             f.write(content_out)
 
         from PyQt6.QtWidgets import QMessageBox
-        QMessageBox.information(self, 'Export', f'Exportiert nach:\n{filename}')
+
+        QMessageBox.information(self, "Export", f"Exportiert nach:\n{filename}")
 
 
 class DropZone(QFrame):
@@ -1382,9 +1426,9 @@ class DropZone(QFrame):
         self.setMinimumSize(300, 80)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(10, 10, 10, 10)
-        self.label = QLabel('Backup-Datei hierher ziehen\noder klicken zum Auswählen')
+        self.label = QLabel("Backup-Datei hierher ziehen\noder klicken zum Auswählen")
         self.label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.label.setStyleSheet('color: #888; font-size: 13px;')
+        self.label.setStyleSheet("color: #888; font-size: 13px;")
         layout.addWidget(self.label)
         self.file_path = None
 
@@ -1396,29 +1440,30 @@ class DropZone(QFrame):
         if e.mimeData().hasUrls():
             url = e.mimeData().urls()[0]
             self.file_path = url.toLocalFile()
-            self.label.setText(f'Ausgewählt:\n{self.file_path}')
-            self.label.setStyleSheet('color: #333; font-size: 13px;')
+            self.label.setText(f"Ausgewählt:\n{self.file_path}")
+            self.label.setStyleSheet("color: #333; font-size: 13px;")
             self.file_selected.emit(self.file_path)
 
     def mousePressEvent(self, event):
         filename, _ = QFileDialog.getOpenFileName(
-            self, 'Backup-Datei auswählen', '', 'ZIP Dateien (*.zip)'
+            self, "Backup-Datei auswählen", "", "ZIP Dateien (*.zip)"
         )
         if filename:
             self.file_path = filename
-            self.label.setText(f'Ausgewählt:\n{filename}')
-            self.label.setStyleSheet('color: #333; font-size: 13px;')
+            self.label.setText(f"Ausgewählt:\n{filename}")
+            self.label.setStyleSheet("color: #333; font-size: 13px;")
             self.file_selected.emit(filename)
 
 
 from PyQt6.QtCore import pyqtSignal
+
 DropZone.file_selected = pyqtSignal(str)
 
 
 class BackupRestoreDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle('Backup & Restore')
+        self.setWindowTitle("Backup & Restore")
         self.setMinimumSize(550, 450)
         self.service = None
         self.pending_restore_path = None
@@ -1427,36 +1472,36 @@ class BackupRestoreDialog(QDialog):
     def _setup_ui(self):
         layout = QVBoxLayout(self)
 
-        backup_box = QGroupBox('Daten sichern')
+        backup_box = QGroupBox("Daten sichern")
         backup_layout = QVBoxLayout(backup_box)
 
         self.backup_info = QLabel(
-            'Erstellt eine ZIP-Datei mit allen App-Daten:\n'
-            '• Datenbank (chor.db)\n'
-            '• Einstellungen (config/)\n'
-            '• Choraufstellung-JSONs'
+            "Erstellt eine ZIP-Datei mit allen App-Daten:\n"
+            "• Datenbank (chor.db)\n"
+            "• Einstellungen (config/)\n"
+            "• Choraufstellung-JSONs"
         )
         self.backup_info.setWordWrap(True)
 
-        self.backup_btn = QPushButton('Backup erstellen...')
+        self.backup_btn = QPushButton("Backup erstellen...")
         self.backup_btn.clicked.connect(self._on_backup)
 
         backup_layout.addWidget(self.backup_info)
         backup_layout.addWidget(self.backup_btn)
 
-        restore_box = QGroupBox('Daten wiederherstellen')
+        restore_box = QGroupBox("Daten wiederherstellen")
         restore_layout = QVBoxLayout(restore_box)
 
         restore_info = QLabel(
-            'Stellt Daten aus einer Backup-Datei wieder her.\n'
-            'Nur neuere Dateien werden überschrieben.'
+            "Stellt Daten aus einer Backup-Datei wieder her.\n"
+            "Nur neuere Dateien werden überschrieben."
         )
         restore_info.setWordWrap(True)
 
         self.drop_zone = DropZone()
         self.drop_zone.file_selected.connect(self._on_file_dropped)
 
-        self.restore_btn = QPushButton('Backup-Datei laden...')
+        self.restore_btn = QPushButton("Backup-Datei laden...")
         self.restore_btn.clicked.connect(lambda: self.drop_zone.mousePressEvent(None))
 
         restore_layout.addWidget(restore_info)
@@ -1473,70 +1518,73 @@ class BackupRestoreDialog(QDialog):
     def _on_backup(self):
         if self.service is None:
             return
-        default_name = f'chormanager-data-backup-{datetime.now().strftime('%Y-%m-%d')}.zip'
+        default_name = (
+            f"chormanager-data-backup-{datetime.now().strftime('%Y-%m-%d')}.zip"
+        )
         filename, _ = QFileDialog.getSaveFileName(
-            self, 'Backup speichern unter', default_name, 'ZIP Dateien (*.zip)'
+            self, "Backup speichern unter", default_name, "ZIP Dateien (*.zip)"
         )
         if not filename:
             return
         try:
             path = self.service.create_backup(filename)
             mb = QMessageBox(self)
-            mb.setWindowTitle('Backup erstellt')
-            mb.setText(f'Backup erfolgreich gespeichert:\n{path}')
+            mb.setWindowTitle("Backup erstellt")
+            mb.setText(f"Backup erfolgreich gespeichert:\n{path}")
             mb.setIcon(QMessageBox.Icon.Information)
             mb.exec()
         except Exception as e:
-            QMessageBox.critical(self, 'Fehler', f'Backup fehlgeschlagen:\n{e}')
+            QMessageBox.critical(self, "Fehler", f"Backup fehlgeschlagen:\n{e}")
 
     def _on_file_dropped(self, path):
         if self.service is None:
             return
         valid, msg = self.service.validate_backup(path)
         if not valid:
-            QMessageBox.warning(self, 'Ungültige Datei', msg)
+            QMessageBox.warning(self, "Ungültige Datei", msg)
             return
         changes = self.service.analyze_restore(path)
-        total = len(changes['newer']) + len(changes['new']) + len(changes['older'])
+        total = len(changes["newer"]) + len(changes["new"]) + len(changes["older"])
         if total == 0:
-            QMessageBox.information(self, 'Restore', 'Keine Dateien zum Wiederherstellen.')
+            QMessageBox.information(
+                self, "Restore", "Keine Dateien zum Wiederherstellen."
+            )
             return
         self.pending_restore_path = path
         self._show_restore_warning(changes)
 
     def _show_restore_warning(self, changes):
         msg = QMessageBox(self)
-        msg.setWindowTitle('Wiederherstellung bestätigen')
+        msg.setWindowTitle("Wiederherstellung bestätigen")
         msg.setIcon(QMessageBox.Icon.Warning)
 
         lines = []
-        lines.append('Die folgenden Dateien werden überschrieben:\n')
+        lines.append("Die folgenden Dateien werden überschrieben:\n")
 
-        if changes['newer']:
-            lines.append('=== NEUERE Version aus Backup (wird überschrieben) ===')
-            for c in changes['newer']:
-                lines.append(f'  {c['archive_name']}')
-                lines.append(f'    Lokal:      {c['local_mtime_str']}')
-                lines.append(f'    Backup:     {c['archive_mtime_str']}')
-            lines.append('')
+        if changes["newer"]:
+            lines.append("=== NEUERE Version aus Backup (wird überschrieben) ===")
+            for c in changes["newer"]:
+                lines.append(f"  {c['archive_name']}")
+                lines.append(f"    Lokal:      {c['local_mtime_str']}")
+                lines.append(f"    Backup:     {c['archive_mtime_str']}")
+            lines.append("")
 
-        if changes['new']:
-            lines.append('=== NEUE Dateien aus Backup (werden hinzugefügt) ===')
-            for c in changes['new']:
-                lines.append(f'  {c['archive_name']}  (lokal: nicht vorhanden)')
-            lines.append('')
+        if changes["new"]:
+            lines.append("=== NEUE Dateien aus Backup (werden hinzugefügt) ===")
+            for c in changes["new"]:
+                lines.append(f"  {c['archive_name']}  (lokal: nicht vorhanden)")
+            lines.append("")
 
-        if changes['older']:
-            lines.append('=== LOKAL NEUER (keine Änderung) ===')
-            for c in changes['older']:
-                lines.append(f'  {c['archive_name']}')
-                lines.append(f'    Lokal:      {c['local_mtime_str']}')
-                lines.append(f'    Backup:     {c['archive_mtime_str']}')
+        if changes["older"]:
+            lines.append("=== LOKAL NEUER (keine Änderung) ===")
+            for c in changes["older"]:
+                lines.append(f"  {c['archive_name']}")
+                lines.append(f"    Lokal:      {c['local_mtime_str']}")
+                lines.append(f"    Backup:     {c['archive_mtime_str']}")
 
-        msg.setText('\n'.join(lines))
+        msg.setText("\n".join(lines))
         msg.setStandardButtons(
-            QMessageBox.StandardButton.Ok |
-            QMessageBox.StandardButton.Cancel
+            QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel
         )
         msg.setDefaultButton(QMessageBox.StandardButton.Cancel)
 
@@ -1550,15 +1598,16 @@ class BackupRestoreDialog(QDialog):
         try:
             restored = self.service.restore_backup(self.pending_restore_path)
             QMessageBox.information(
-                self, 'Erfolgreich',
-                f'{len(restored)} Dateien wiederhergestellt.'
+                self, "Erfolgreich", f"{len(restored)} Dateien wiederhergestellt."
             )
             self.pending_restore_path = None
-            self.drop_zone.label.setText('Backup-Datei hierher ziehen\noder klicken zum Auswählen')
-            self.drop_zone.label.setStyleSheet('color: #888; font-size: 13px;')
+            self.drop_zone.label.setText(
+                "Backup-Datei hierher ziehen\noder klicken zum Auswählen"
+            )
+            self.drop_zone.label.setStyleSheet("color: #888; font-size: 13px;")
             self.drop_zone.file_path = None
         except Exception as e:
-            QMessageBox.critical(self, 'Fehler', f'Restore fehlgeschlagen:\n{e}')
+            QMessageBox.critical(self, "Fehler", f"Restore fehlgeschlagen:\n{e}")
 
 
 from pathlib import Path
@@ -1566,7 +1615,6 @@ from datetime import datetime
 
 
 class NewFormationDialog(QDialog):
-
     def __init__(self, db, current_project=None, parent=None):
         super().__init__(parent)
         self.db = db
@@ -1609,7 +1657,7 @@ class NewFormationDialog(QDialog):
     def _load_projects(self):
         self.project_combo.clear()
         projects = self.project_repo.get_all()
-        
+
         if self.current_project:
             self.project_combo.addItem(self.current_project.name, self.current_project)
             self.project_combo.setEnabled(False)
@@ -1624,13 +1672,13 @@ class NewFormationDialog(QDialog):
     def _on_project_changed(self, index):
         self.event_combo.clear()
         project = self.project_combo.currentData()
-        
+
         if project:
             all_events = self.event_repo.get_all()
             events = [e for e in all_events if e.project_id == project.id]
         else:
             events = self.event_repo.get_all()
-        
+
         for e in events:
             label = f"{e.date[:10]} - {e.name} ({e.event_type})"
             self.event_combo.addItem(label, e)
@@ -1638,9 +1686,7 @@ class NewFormationDialog(QDialog):
     def _on_accept(self):
         self.selected_event = self.event_combo.currentData()
         if not self.selected_event:
-            QMessageBox.warning(
-                self, "Warnung", "Bitte wählen Sie einen Termin aus."
-            )
+            QMessageBox.warning(self, "Warnung", "Bitte wählen Sie einen Termin aus.")
             return
         self.accept()
 
@@ -1649,7 +1695,6 @@ class NewFormationDialog(QDialog):
 
 
 class RepertoireDialog(QDialog):
-
     def __init__(self, db, parent=None, repertoire=None):
         super().__init__(parent)
         self.db = db
@@ -1658,7 +1703,9 @@ class RepertoireDialog(QDialog):
         self._setup_ui()
 
     def _setup_ui(self):
-        self.setWindowTitle("Repertoire bearbeiten" if self.repertoire else "Neues Repertoire")
+        self.setWindowTitle(
+            "Repertoire bearbeiten" if self.repertoire else "Neues Repertoire"
+        )
         self.setMinimumWidth(400)
         layout = QFormLayout(self)
 
@@ -1690,6 +1737,15 @@ class RepertoireDialog(QDialog):
         self.location_input.setPlaceholderText("Wo sind die Noten?")
         layout.addRow("Standort:", self.location_input)
 
+        self.program_combo = QComboBox()
+        self.program_combo.setPlaceholderText("Programm auswählen")
+        self.program_combo.addItem("", "")
+        project_repo = ProjectRepository(self.db)
+        projects = project_repo.get_all()
+        for project in projects:
+            self.program_combo.addItem(project.name, project.name)
+        layout.addRow("Programm:", self.program_combo)
+
         if self.repertoire:
             self.composer_input.setText(self.repertoire.composer)
             self.title_input.setText(self.repertoire.title)
@@ -1698,6 +1754,10 @@ class RepertoireDialog(QDialog):
             self.publisher_input.setText(self.repertoire.publisher)
             self.arrangement_input.setText(self.repertoire.arrangement)
             self.location_input.setText(self.repertoire.location)
+            if self.repertoire.program:
+                index = self.program_combo.findData(self.repertoire.program)
+                if index >= 0:
+                    self.program_combo.setCurrentIndex(index)
 
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
@@ -1719,6 +1779,7 @@ class RepertoireDialog(QDialog):
         publisher = self.publisher_input.text().strip()
         arrangement = self.arrangement_input.text().strip()
         location = self.location_input.text().strip()
+        program = self.program_combo.currentData() or ""
 
         if self.repertoire:
             self.repertoire_repo.update(
@@ -1729,7 +1790,8 @@ class RepertoireDialog(QDialog):
                 country=country,
                 publisher=publisher,
                 arrangement=arrangement,
-                location=location
+                location=location,
+                program=program,
             )
         else:
             self.repertoire_repo.create(
@@ -1739,7 +1801,8 @@ class RepertoireDialog(QDialog):
                 country=country,
                 publisher=publisher,
                 arrangement=arrangement,
-                location=location
+                location=location,
+                program=program,
             )
 
         self.accept()

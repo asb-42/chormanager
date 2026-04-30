@@ -19,7 +19,6 @@ from ...config import get_last_active_project_id, set_last_active_project_id
 
 
 class RepertoireTab(QWidget):
-
     set_repertoire_filter = pyqtSignal(object)
 
     def __init__(self, db, parent=None):
@@ -43,10 +42,19 @@ class RepertoireTab(QWidget):
         layout.addLayout(search_layout)
 
         self.table = QTableWidget()
-        self.table.setColumnCount(7)
-        self.table.setHorizontalHeaderLabels([
-            "Komponist", "Titel", "Lebensdaten", "Land", "Verlag", "Besetzung", "Standort"
-        ])
+        self.table.setColumnCount(8)
+        self.table.setHorizontalHeaderLabels(
+            [
+                "Komponist",
+                "Titel",
+                "Lebensdaten",
+                "Land",
+                "Verlag",
+                "Besetzung",
+                "Standort",
+                "Programm",
+            ]
+        )
         self.table.verticalHeader().setDefaultSectionSize(36)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
@@ -63,14 +71,18 @@ class RepertoireTab(QWidget):
 
         if search_text:
             all_items = [
-                r for r in all_items
-                if (search_text in (r.composer or "").lower()
+                r
+                for r in all_items
+                if (
+                    search_text in (r.composer or "").lower()
                     or search_text in (r.title or "").lower()
                     or search_text in (r.dates or "").lower()
                     or search_text in (r.country or "").lower()
                     or search_text in (r.publisher or "").lower()
                     or search_text in (r.arrangement or "").lower()
-                    or search_text in (r.location or "").lower())
+                    or search_text in (r.location or "").lower()
+                    or search_text in (r.program or "").lower()
+                )
             ]
 
         self.table.setRowCount(len(all_items))
@@ -83,8 +95,9 @@ class RepertoireTab(QWidget):
             self.table.setItem(row, 4, QTableWidgetItem(rep.publisher or ""))
             self.table.setItem(row, 5, QTableWidgetItem(rep.arrangement or ""))
             self.table.setItem(row, 6, QTableWidgetItem(rep.location or ""))
+            self.table.setItem(row, 7, QTableWidgetItem(rep.program or ""))
 
-        for i in range(7):
+        for i in range(8):
             self.table.resizeColumnToContents(i)
 
     def set_project(self, project):
@@ -108,6 +121,7 @@ class RepertoireTab(QWidget):
 
     def _add_repertoire(self):
         from ...ui.dialogs import RepertoireDialog
+
         dialog = RepertoireDialog(self.db, self)
         if dialog.exec() == dialog.DialogCode.Accepted:
             self._load_repertoire()
@@ -131,6 +145,7 @@ class RepertoireTab(QWidget):
             return
 
         from ...ui.dialogs import RepertoireDialog
+
         dialog = RepertoireDialog(self.db, self, repertoire)
         if dialog.exec() == dialog.DialogCode.Accepted:
             self._load_repertoire()
@@ -158,7 +173,7 @@ class RepertoireTab(QWidget):
             "Löschen bestätigen",
             f"Möchten Sie '{repertoire.title}' von {repertoire.composer} wirklich löschen?",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
+            QMessageBox.StandardButton.No,
         )
 
         if reply == QMessageBox.StandardButton.Yes:
