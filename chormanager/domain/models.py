@@ -15,6 +15,7 @@ class Singer:
     short_name: Optional[str] = None
     birth_date: Optional[str] = None
     voice_group: Optional[str] = None
+    height: Optional[int] = None
     email: Optional[str] = None
     phone: Optional[str] = None
     street: Optional[str] = None

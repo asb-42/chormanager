@@ -34,6 +34,7 @@ class SingerRepository:
         "guardian1_phone",
         "guardian2",
         "guardian2_phone",
+        "height",
     ]
 
     def __init__(self, db: Database):

@@ -84,6 +84,7 @@ class Database:
                 short_name TEXT,
                 birth_date TEXT,
                 voice_group TEXT,
+                height INTEGER,
                 email TEXT,
                 phone TEXT,
                 street TEXT,
@@ -197,6 +198,7 @@ class Database:
             ("guardian2", "TEXT"),
             ("guardian2_phone", "TEXT"),
             ("is_adult", "INTEGER"),
+            ("height", "INTEGER"),
         ]:
             try:
                 conn.execute(f"ALTER TABLE singers ADD COLUMN {col} {typ}")

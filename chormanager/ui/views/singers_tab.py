@@ -77,6 +77,21 @@ class SingersTab(QWidget):
         self.status_filter.currentIndexChanged.connect(self._load_singers)
         toolbar.addWidget(self.status_filter)
 
+        self.sort_field = QComboBox()
+        self.sort_field.addItem("Sortieren nach...", None)
+        self.sort_field.addItem("Vollständiger Name", "full_name")
+        self.sort_field.addItem("Kurzname", "short_name")
+        self.sort_field.addItem("Alter", "birth_date")
+        self.sort_field.addItem("Körpergröße", "height")
+        self.sort_field.currentIndexChanged.connect(self._load_singers)
+        toolbar.addWidget(self.sort_field)
+
+        self.sort_order = QComboBox()
+        self.sort_order.addItem("↑ Aufsteigend", "asc")
+        self.sort_order.addItem("↓ Absteigend", "desc")
+        self.sort_order.currentIndexChanged.connect(self._load_singers)
+        toolbar.addWidget(self.sort_order)
+
         self.besetzung_filter = None
 
         layout.addLayout(toolbar)
@@ -95,6 +110,7 @@ class SingersTab(QWidget):
             "full_name",
             "short_name",
             "voice_group",
+            "height",
             "gender",
             "birth_date",
             "is_adult",
@@ -115,8 +131,6 @@ class SingersTab(QWidget):
         headers = [f["label"] for f in self.visible_fields]
         self.table.setHorizontalHeaderLabels(headers)
         self.table.horizontalHeader().setStretchLastSection(True)
-        self.table.horizontalHeader().setSortIndicatorShown(True)
-        self.table.setSortingEnabled(True)
 
         # Apply custom delegate with padding
         self.table.setItemDelegate(PaddedDelegate())
@@ -198,6 +212,17 @@ class SingersTab(QWidget):
 
                 filtered.append(singer)
             singers = filtered
+
+        sort_field = self.sort_field.currentData()
+        sort_order = self.sort_order.currentData()
+        if sort_field:
+            reverse = sort_order == "desc"
+            if sort_field == "birth_date":
+                singers.sort(key=lambda s: s.age() if s.age() is not None else 999, reverse=reverse)
+            elif sort_field == "height":
+                singers.sort(key=lambda s: s.height if s.height is not None else 0, reverse=reverse)
+            else:
+                singers.sort(key=lambda s: getattr(s, sort_field, "") or "", reverse=reverse)
 
         self.table.setRowCount(len(singers))
 

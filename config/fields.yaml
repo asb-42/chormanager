@@ -31,6 +31,12 @@ fields:
     required: false
     order: 5
 
+  - name: "height"
+    label: "Körpergröße (cm)"
+    type: "integer"
+    required: false
+    order: 5.5
+
   - name: "email"
     label: "E-Mail-Adresse"
     type: "email"

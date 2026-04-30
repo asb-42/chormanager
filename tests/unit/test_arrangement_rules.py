@@ -317,10 +317,10 @@ class TestRuleRegistry:
         """Should return only primary rules."""
         primaries = get_primary_rules()
         assert all(r.is_primary for r in primaries)
-        assert len(primaries) == 3
+        assert len(primaries) == 4
 
     def test_get_refinement_rules(self):
         """Should return only refinement rules."""
         refinements = get_refinement_rules()
         assert all(not r.is_primary for r in refinements)
-        assert len(refinements) == 1
+        assert len(refinements) == 2
