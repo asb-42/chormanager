@@ -1297,6 +1297,7 @@ class MainWindow(QMainWindow):
         import os
         import tempfile
         from datetime import datetime
+        from ..domain.repository import AvailabilityRepository, SingerRepository, ProjectRepository, ProjectRepository
         
         self.content_stack.setCurrentIndex(4)
         
@@ -1305,12 +1306,24 @@ class MainWindow(QMainWindow):
             self.projects_tab.current_project if hasattr(self, "projects_tab") else None
         )
         
-        # 2. Get available singers (status=yes or conditional)
-        singer_repo = self.singer_repo
-        avail_repo = self.availability_repo
+        # 2. Get repositories
+        singer_repo = SingerRepository(self.db)
+        avail_repo = AvailabilityRepository(self.db)
         
+        # 3. Get available singers (status=yes or conditional)
         singers = singer_repo.get_all()
         available_singers = []
+        
+        for singer in singers:
+            avail = avail_repo.get_by_ids(singer.id, event.id)
+            if avail and avail.status in ("yes", "conditional"):
+                available_singers.append({
+                    "singer_id": singer.id,
+                    "name": singer.full_name,
+                    "short_name": singer.short_name or "",
+                    "voice_group": singer.voice_group,
+                    "affinity": singer.affinity_uuid or ""
+                })
         
         for singer in singers:
             avail = avail_repo.get_by_ids(singer.id, event.id)
