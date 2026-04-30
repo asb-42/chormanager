@@ -1610,14 +1610,14 @@ class MainWindow(QMainWindow):
                 if singers_data:
                     self.singers = []
                     for s in singers_data:
+                        name = s.get("short_name") or s.get("name", "")
                         singer = Singer(
-                            singer_id=s.get("singer_id", ""),
-                            name=s.get("name", ""),
-                            short_name=s.get("short_name", ""),
-                            voice_group=s.get("voice_group", "Sopran"),
-                            height=1,
-                            affinity=s.get("affinity", "")
+                            s.get("singer_id", ""),
+                            name,
+                            s.get("voice_group", "Sopran"),
+                            1
                         )
+                        singer.affinity = s.get("affinity", "")
                         self.singers.append(singer)
                     
                     self.pool.singers = self.singers
