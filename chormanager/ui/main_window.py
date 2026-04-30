@@ -1327,17 +1327,6 @@ class MainWindow(QMainWindow):
                     "affinity": singer.affinity_uuid or ""
                 })
         
-        for singer in singers:
-            avail = avail_repo.get_by_ids(singer.id, event.id)
-            if avail and avail.status in ("yes", "conditional"):
-                available_singers.append({
-                    "singer_id": singer.id,
-                    "name": singer.full_name,
-                    "short_name": singer.short_name or "",
-                    "voice_group": singer.voice_group,
-                    "affinity": singer.affinity_uuid or ""
-                })
-        
         # 3. Prepare data
         data = {
             "project": project.name if project else "",
