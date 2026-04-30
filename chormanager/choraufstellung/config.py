@@ -1,6 +1,27 @@
 import json
 import os
-from typing import Dict
+from typing import Dict, Optional
+
+# Theme-aware voice group colors
+_THEME_COLORS = {
+    "light": [
+        {"id": "Sopran 1", "color": "#E5C84B"}, {"id": "Sopran 2", "color": "#B8A23A"},
+        {"id": "Alt 1", "color": "#C75B5B"}, {"id": "Alt 2", "color": "#9B5B6B"},
+        {"id": "Tenor 1", "color": "#6BA888"}, {"id": "Tenor 2", "color": "#5B8A6B"},
+        {"id": "Bass 1", "color": "#6B8AA8"}, {"id": "Bass 2", "color": "#5B6B8A"}
+    ],
+    "dark": [
+        {"id": "Sopran 1", "color": "#8A7A3A"}, {"id": "Sopran 2", "color": "#6B5B2A"},
+        {"id": "Alt 1", "color": "#8A4A3A"}, {"id": "Alt 2", "color": "#6B3A4A"},
+        {"id": "Tenor 1", "color": "#3A6B5A"}, {"id": "Tenor 2", "color": "#2A5B4A"},
+        {"id": "Bass 1", "color": "#3A4A6B"}, {"id": "Bass 2", "color": "#2A3A5B"}
+    ]
+}
+
+# Cache for loaded colors
+_cached_colors: Optional[list] = None
+_current_theme: Optional[str] = None
+
 
 def get_data_dir() -> str:
     """Gibt das Daten-Verzeichnis im Programmordner zurück."""
@@ -50,20 +71,42 @@ def save_settings(settings: Dict[str, str]) -> bool:
 _config_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VOICE_GROUPS_CONFIG_FILE = os.path.join(_config_dir, "config", "voice_groups.json")
 
+
 def load_voice_groups_config() -> list:
-    """Lädt die Stimmgruppen-Konfiguration. Gibt Fallback zurück."""
+    """Lädt die Stimmgruppen-Konfiguration mit Theme-Unterstützung."""
+    global _cached_colors, _current_theme
+    
+    current_theme = load_settings().get("theme", "light")
+    
+    # Reload only if theme changed
+    if _current_theme != current_theme:
+        _current_theme = current_theme
+        _cached_colors = None
+    
+    if _cached_colors is not None:
+        return _cached_colors
+    
     try:
         if os.path.exists(VOICE_GROUPS_CONFIG_FILE):
             with open(VOICE_GROUPS_CONFIG_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f).get("voice_groups", [])
+                data = json.load(f)
+                # New format: {"themes": {"light": {...}, "dark": {...}}}
+                if "themes" in data:
+                    theme_data = data["themes"].get(current_theme, {})
+                    colors = theme_data.get("colors", [])
+                    if colors:
+                        _cached_colors = colors
+                        return colors
+                # Old format: {"voice_groups": [...]} - fallback
+                if "voice_groups" in data:
+                    _cached_colors = data["voice_groups"]
+                    return _cached_colors
     except Exception as e:
         print(f"Config load error: {e}")
-    return [
-        {"id": "Sopran 1", "color": "#F4D03F"}, {"id": "Sopran 2", "color": "#D4AC0D"},
-        {"id": "Alt 1", "color": "#E74C3C"}, {"id": "Alt 2", "color": "#922B21"},
-        {"id": "Tenor 1", "color": "#2ECC71"}, {"id": "Tenor 2", "color": "#1E8449"},
-        {"id": "Bass 1", "color": "#3498DB"}, {"id": "Bass 2", "color": "#1F618D"}
-    ]
+    
+    # Use built-in theme colors
+    _cached_colors = _THEME_COLORS.get(current_theme, _THEME_COLORS["light"])
+    return _cached_colors
 
 
 def get_valid_voice_groups() -> list:
@@ -72,8 +115,15 @@ def get_valid_voice_groups() -> list:
 
 
 def get_voice_group_color(vid: str) -> str:
-    """Gibt Hex-Farbcode für Stimmgruppe zurück."""
+    """Gibt Hex-Farbcode für Stimmgruppe zurück (theme-aware)."""
     for vg in load_voice_groups_config():
         if vg["id"] == vid:
             return vg["color"]
     return "#cccccc"
+
+
+def clear_color_cache():
+    """Clear cached colors - call when theme changes."""
+    global _cached_colors, _current_theme
+    _cached_colors = None
+    _current_theme = None

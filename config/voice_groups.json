@@ -1,12 +1,30 @@
 {
-  "voice_groups": [
-    {"id": "Sopran 1", "color": "#F4D03F"},
-    {"id": "Sopran 2", "color": "#D4AC0D"},
-    {"id": "Alt 1", "color": "#E74C3C"},
-    {"id": "Alt 2", "color": "#922B21"},
-    {"id": "Tenor 1", "color": "#2ECC71"},
-    {"id": "Tenor 2", "color": "#1E8449"},
-    {"id": "Bass 1", "color": "#3498DB"},
-    {"id": "Bass 2", "color": "#1F618D"}
-  ]
+  "themes": {
+    "light": {
+      "text": "#1A1A1A",
+      "colors": [
+        {"id": "Sopran 1", "color": "#E5C84B"},
+        {"id": "Sopran 2", "color": "#B8A23A"},
+        {"id": "Alt 1", "color": "#C75B5B"},
+        {"id": "Alt 2", "color": "#9B5B6B"},
+        {"id": "Tenor 1", "color": "#6BA888"},
+        {"id": "Tenor 2", "color": "#5B8A6B"},
+        {"id": "Bass 1", "color": "#6B8AA8"},
+        {"id": "Bass 2", "color": "#5B6B8A"}
+      ]
+    },
+    "dark": {
+      "text": "#F0F0F0",
+      "colors": [
+        {"id": "Sopran 1", "color": "#8A7A3A"},
+        {"id": "Sopran 2", "color": "#6B5B2A"},
+        {"id": "Alt 1", "color": "#8A4A3A"},
+        {"id": "Alt 2", "color": "#6B3A4A"},
+        {"id": "Tenor 1", "color": "#3A6B5A"},
+        {"id": "Tenor 2", "color": "#2A5B4A"},
+        {"id": "Bass 1", "color": "#3A4A6B"},
+        {"id": "Bass 2", "color": "#2A3A5B"}
+      ]
+    }
+  }
 }

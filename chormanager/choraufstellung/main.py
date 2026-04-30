@@ -58,7 +58,7 @@ except ImportError:
     from PyQt5.QtGui import QDrag, QColor, QPalette, QFont, QAction, QActionGroup
 
 try:
-    from config import load_settings, save_settings, load_voice_groups_config, get_valid_voice_groups, get_voice_group_color, get_data_dir
+    from config import load_settings, save_settings, load_voice_groups_config, get_valid_voice_groups, get_voice_group_color, get_data_dir, clear_color_cache
 except ImportError:
     def load_settings(): return {"theme": "standard"}
     def save_settings(s): return True
@@ -66,6 +66,7 @@ except ImportError:
     def get_valid_voice_groups(): return []
     def get_voice_group_color(v): return "#cccccc"
     def get_data_dir(): return "."
+    def clear_color_cache(): pass
 
 try:
     from PyQt6.QtWidgets import QDialog
@@ -1663,6 +1664,11 @@ class MainWindow(QMainWindow):
             """)
         else:
             self.setStyleSheet("")
+        
+        # Clear color cache and refresh grid to apply new theme colors
+        clear_color_cache()
+        self.grid.refresh_grid()
+        self.pool.update_singers(self.singers, self.pool.placed_singer_ids)
 
     def add_singer_via_menu(self):
         s = self.pool.add_dialog()
