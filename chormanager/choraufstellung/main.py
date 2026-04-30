@@ -1384,6 +1384,19 @@ class MainWindow(QMainWindow):
     def update_swap_action(self):
         self.swap_action.setEnabled(len(self.grid.selected_ids) == 2)
 
+    def reset_formation(self):
+        """Reset all placed singers back to pool."""
+        r = QMessageBox.question(self, "Zurücksetzen", "Aufstellung zurücksetzen?", 
+                           QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No)
+        if r != QMessageBox.StandardButton.Yes:
+            return
+        for s in self.singers:
+            s.row = -1
+            s.col = -1
+        self.grid.refresh_grid()
+        self.is_modified = True
+        self.update_grid_count()
+
     def new_f(self):
         if self.is_modified:
             r = QMessageBox.question(self, "Ungespeichert", "Änderungen speichern?", QMessageBox.StandardButton.Save|QMessageBox.StandardButton.Discard|QMessageBox.StandardButton.Cancel)
