@@ -161,24 +161,28 @@ class SBTARule(ArrangementRule):
 
 
 class AffinityCostFunction:
-    def __init__(self, staggered: bool = False, same_row_weight: float = 10.0):
+    def __init__(self, staggered: bool = False, same_row_weight: float = 100.0):
         self.staggered = staggered
         self.same_row_weight = same_row_weight
 
     def compute_distance(self, pos1: Tuple[int, int], pos2: Tuple[int, int],
                         row1_parity: int = 0, row2_parity: int = 0) -> float:
-        x1 = pos1[1]
-        y1 = pos1[0]
-        x2 = pos2[1]
-        y2 = pos2[0]
-
-        if self.staggered:
-            if row1_parity == 1:
-                x1 += 0.5
-            if row2_parity == 1:
-                x2 += 0.5
-
-        return ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
+        r1, c1 = pos1
+        r2, c2 = pos2
+        
+        # NUR Positionen in gleicher Reihe zählen als "Nähe"
+        same_row = (r1 == r2)
+        col_diff = abs(c1 - c2)
+        
+        if same_row and col_diff == 1:
+            # Perfekt: nebeneinander in gleicher Reihe
+            return 0.0
+        elif same_row:
+            # Gleiche Reihe, aber nicht direkt nebeneinander
+            return float(col_diff) * 0.5
+        else:
+            # Verschiedene Reihen - sollte vermieden werden
+            return self.same_row_weight + col_diff
 
     def compute_cost(self, pairs: List[Tuple[SingerRef, SingerRef]]) -> float:
         total = 0.0
