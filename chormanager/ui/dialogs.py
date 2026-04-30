@@ -1743,7 +1743,7 @@ class RepertoireDialog(QDialog):
         project_repo = ProjectRepository(self.db)
         projects = project_repo.get_all()
         for project in projects:
-            self.program_combo.addItem(project.name, project.name)
+            self.program_combo.addItem(project.name, project.id)
         layout.addRow("Programm:", self.program_combo)
 
         if self.repertoire:
@@ -1754,8 +1754,8 @@ class RepertoireDialog(QDialog):
             self.publisher_input.setText(self.repertoire.publisher)
             self.arrangement_input.setText(self.repertoire.arrangement)
             self.location_input.setText(self.repertoire.location)
-            if self.repertoire.program:
-                index = self.program_combo.findData(self.repertoire.program)
+            if self.repertoire.project_id:
+                index = self.program_combo.findData(self.repertoire.project_id)
                 if index >= 0:
                     self.program_combo.setCurrentIndex(index)
 
@@ -1779,7 +1779,7 @@ class RepertoireDialog(QDialog):
         publisher = self.publisher_input.text().strip()
         arrangement = self.arrangement_input.text().strip()
         location = self.location_input.text().strip()
-        program = self.program_combo.currentData() or ""
+        project_id = self.program_combo.currentData() or ""
 
         if self.repertoire:
             self.repertoire_repo.update(
@@ -1791,7 +1791,7 @@ class RepertoireDialog(QDialog):
                 publisher=publisher,
                 arrangement=arrangement,
                 location=location,
-                program=program,
+                project_id=project_id,
             )
         else:
             self.repertoire_repo.create(
@@ -1802,7 +1802,7 @@ class RepertoireDialog(QDialog):
                 publisher=publisher,
                 arrangement=arrangement,
                 location=location,
-                program=program,
+                project_id=project_id,
             )
 
         self.accept()

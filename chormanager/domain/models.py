@@ -296,7 +296,6 @@ class Besetzung:
 
 @dataclass
 class Repertoire:
-
     id: str = ""
     composer: str = ""
     title: str = ""
@@ -305,7 +304,7 @@ class Repertoire:
     publisher: str = ""
     arrangement: str = ""
     location: str = ""
-    program: str = ""
+    project_id: str = ""
     created_at: str = ""
     updated_at: str = ""
 

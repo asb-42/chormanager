@@ -561,7 +561,7 @@ class RepertoireRepository:
         "publisher",
         "arrangement",
         "location",
-        "program",
+        "project_id",
         "created_at",
         "updated_at",
     ]
@@ -581,28 +581,13 @@ class RepertoireRepository:
         publisher: str = "",
         arrangement: str = "",
         location: str = "",
-        program: str = "",
+        project_id: str = "",
     ) -> Repertoire:
-        """Create a new repertoire entry.
-
-        Args:
-            composer: Composer name.
-            title: Piece title.
-            dates: Composer life dates.
-            country: Composer country.
-            publisher: Publisher name.
-            arrangement: Arrangement type.
-            location: Sheet music location.
-            program: Associated program name.
-
-        Returns:
-            Repertoire: Created repertoire entry.
-        """
         repertoire_id = self.db.generate_id()
         now = datetime.now().isoformat()
 
         self.db.execute(
-            "INSERT INTO repertoire (id, composer, title, dates, country, publisher, arrangement, location, program, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO repertoire (id, composer, title, dates, country, publisher, arrangement, location, project_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 repertoire_id,
                 composer,
@@ -612,7 +597,7 @@ class RepertoireRepository:
                 publisher,
                 arrangement,
                 location,
-                program,
+                project_id,
                 now,
                 now,
             ),
@@ -634,9 +619,17 @@ class RepertoireRepository:
         return Repertoire(**dict(row))
 
     def get_all(self) -> List[Repertoire]:
+        """Get all repertoire entries."""
         cols = self._cols(self._REPERTOIRE_COLS)
         result = self.db.execute(f"SELECT {cols} FROM repertoire ORDER BY title ASC")
+        return [Repertoire(**dict(row)) for row in result.fetchall()]
 
+    def get_by_project_id(self, project_id: str) -> List[Repertoire]:
+        cols = self._cols(self._REPERTOIRE_COLS)
+        result = self.db.execute(
+            f"SELECT {cols} FROM repertoire WHERE project_id = ? ORDER BY composer, title",
+            (project_id,),
+        )
         return [Repertoire(**dict(row)) for row in result.fetchall()]
 
     def update(self, repertoire_id: str, **kwargs) -> Optional[Repertoire]:

@@ -25,6 +25,7 @@ from ...data.database import Database
 from ...domain.repository import ProjectRepository, EventRepository
 from ...config import get_last_active_project_id, set_last_active_project_id
 
+
 class PaddedDelegate(QStyledItemDelegate):
     """Custom delegate with padding for better text display."""
 
@@ -36,33 +37,28 @@ class PaddedDelegate(QStyledItemDelegate):
         option.rect = option.rect.adjusted(0, 5, 0, -5)
         super().paint(painter, option, index)
 
-class ProjectDialog:
-    """Dialog for adding/editing projects."""
 
-    def __init__(self, project=None, parent=None):
-        """Initialize dialog."""
+class ProjectDialog:
+    def __init__(self, db, project=None, parent=None):
         self.dialog = QDialog(parent)
         self.project = project
+        self.db = db
 
-        layout = QFormLayout(self.dialog)
+        layout = QVBoxLayout(self.dialog)
 
-        self.name_input = QLineEditW()
-        layout.addRow("Name:", self.name_input)
+        form_layout = QFormLayout()
+        layout.addLayout(form_layout)
+
+        self.name_input = QLineEdit()
+        form_layout.addRow("Name:", self.name_input)
 
         self.spielzeit_input = QLineEdit()
         self.spielzeit_input.setMaxLength(25)
-        layout.addRow("Spielzeit:", self.spielzeit_input)
+        form_layout.addRow("Spielzeit:", self.spielzeit_input)
 
         self.description_input = QTextEdit()
         self.description_input.setMaximumHeight(80)
-        layout.addRow("Beschreibung:", self.description_input)
-
-        button_box = QDialogButtonBox(
-            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
-        )
-        button_box.accepted.connect(self.dialog.accept)
-        button_box.rejected.connect(self.dialog.reject)
-        layout.addRow(button_box)
+        form_layout.addRow("Beschreibung:", self.description_input)
 
         if project:
             self.name_input.setText(project.name)
@@ -75,6 +71,52 @@ class ProjectDialog:
         else:
             self.dialog.setWindowTitle("Neues Projekt")
 
+        if project and project.id:
+            repertoire_label = QLabel("Stücke in diesem Programm:")
+            repertoire_label.setStyleSheet("font-weight: bold; margin-top: 10px;")
+            layout.addWidget(repertoire_label)
+
+            self.repertoire_table = QTableWidget()
+            self.repertoire_table.setColumnCount(3)
+            self.repertoire_table.setHorizontalHeaderLabels(
+                ["Komponist", "Titel", "Besetzung"]
+            )
+            self.repertoire_table.verticalHeader().setDefaultSectionSize(32)
+            self.repertoire_table.setEditTriggers(
+                QTableWidget.EditTrigger.NoEditTriggers
+            )
+            self.repertoire_table.horizontalHeader().setStretchLastSection(True)
+            layout.addWidget(self.repertoire_table)
+
+            self._load_repertoire(project.id)
+
+        button_box = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+        )
+        button_box.accepted.connect(self.dialog.accept)
+        button_box.rejected.connect(self.dialog.reject)
+        layout.addWidget(button_box)
+
+    def _load_repertoire(self, project_id):
+        from ...domain.repository import RepertoireRepository
+
+        repo = RepertoireRepository(self.db)
+        pieces = repo.get_by_project_id(project_id)
+
+        self.repertoire_table.setRowCount(len(pieces))
+
+        for row, piece in enumerate(pieces):
+            self.repertoire_table.setItem(
+                row, 0, QTableWidgetItem(piece.composer or "")
+            )
+            self.repertoire_table.setItem(row, 1, QTableWidgetItem(piece.title or ""))
+            self.repertoire_table.setItem(
+                row, 2, QTableWidgetItem(piece.arrangement or "")
+            )
+
+        for i in range(3):
+            self.repertoire_table.resizeColumnToContents(i)
+
     def exec(self):
         """Show dialog and return result."""
         return self.dialog.exec()
@@ -86,6 +128,7 @@ class ProjectDialog:
             "description": self.description_input.toPlainText().strip(),
             "spielzeit": self.spielzeit_input.text().strip(),
         }
+
 
 class ProjectsTab(QWidget):
     """Tab widget for project management."""
@@ -192,13 +235,12 @@ class ProjectsTab(QWidget):
         reverse_sort = sort_order == Qt.SortOrder.DescendingOrder
 
         def get_sort_key(p):
-            if sort_field == 'spielzeit':
-                return (p.spielzeit or '').lower()
+            if sort_field == "spielzeit":
+                return (p.spielzeit or "").lower()
             else:
-                return (p.name or '').lower()
+                return (p.name or "").lower()
 
         projects = sorted(projects, key=get_sort_key, reverse=reverse_sort)
-
 
         last_active_id = get_last_active_project_id()
 
@@ -236,7 +278,7 @@ class ProjectsTab(QWidget):
 
     def _add_project(self):
         """Add new project."""
-        dialog = ProjectDialog(parent=self)
+        dialog = ProjectDialog(self.db, parent=self)
 
         if dialog.exec():
             data = dialog.get_data()
@@ -264,7 +306,7 @@ class ProjectsTab(QWidget):
         if not project:
             return
 
-        dialog = ProjectDialog(project=project, parent=self)
+        dialog = ProjectDialog(self.db, project=project, parent=self)
 
         if dialog.exec():
             data = dialog.get_data()
@@ -298,7 +340,6 @@ class ProjectsTab(QWidget):
 
         project = self.project_repo.get_by_id(project_id)
 
-
         if not project:
             return
 
@@ -309,7 +350,7 @@ class ProjectsTab(QWidget):
             is_active=False,
         )
 
-        dialog = ProjectDialog(project=new_project, parent=self)
+        dialog = ProjectDialog(self.db, project=new_project, parent=self)
         dialog.exec()
         self._load_projects()
 
@@ -326,7 +367,6 @@ class ProjectsTab(QWidget):
         project_id = item.data(Qt.ItemDataRole.UserRole)
 
         project = self.project_repo.get_by_id(project_id)
-
 
         if not project:
             return

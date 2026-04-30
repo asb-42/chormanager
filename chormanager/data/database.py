@@ -174,17 +174,17 @@ class Database:
                 publisher TEXT,
                 arrangement TEXT,
                 location TEXT,
-                program TEXT,
+                project_id TEXT,
                 created_at TEXT NOT NULL,
-                updated_at TEXT NOT NULL
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE SET NULL
             )
         """)
 
-        for col, typ in [("program", "TEXT")]:
-            try:
-                conn.execute(f"ALTER TABLE repertoire ADD COLUMN {col} {typ}")
-            except sqlite3.OperationalError:
-                pass
+        try:
+            conn.execute("ALTER TABLE repertoire RENAME COLUMN program TO project_id")
+        except sqlite3.OperationalError:
+            pass
 
         conn.commit()
 

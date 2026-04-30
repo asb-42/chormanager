@@ -11,10 +11,11 @@ from PyQt6.QtWidgets import (
     QTableWidgetItem,
     QLineEdit,
     QMenu,
+    QComboBox,
 )
 from PyQt6.QtCore import pyqtSignal, Qt
 
-from ...domain.repository import RepertoireRepository
+from ...domain.repository import RepertoireRepository, ProjectRepository
 from ...config import get_last_active_project_id, set_last_active_project_id
 
 
@@ -32,14 +33,31 @@ class RepertoireTab(QWidget):
     def _setup_ui(self):
         layout = QVBoxLayout(self)
 
-        search_layout = QHBoxLayout()
-        search_layout.addStretch()
+        toolbar = QHBoxLayout()
+
+        self.sort_field = QComboBox()
+        self.sort_field.addItem("Sortieren nach Komponist", "composer")
+        self.sort_field.addItem("Sortieren nach Land", "country")
+        self.sort_field.addItem("Sortieren nach Standort", "location")
+        self.sort_field.setCurrentIndex(0)
+        self.sort_field.currentIndexChanged.connect(self._load_repertoire)
+        toolbar.addWidget(self.sort_field)
+
+        self.sort_order = QComboBox()
+        self.sort_order.addItem("Aufsteigend", Qt.SortOrder.AscendingOrder)
+        self.sort_order.addItem("Absteigend", Qt.SortOrder.DescendingOrder)
+        self.sort_order.setCurrentIndex(0)
+        self.sort_order.currentIndexChanged.connect(self._load_repertoire)
+        toolbar.addWidget(self.sort_order)
+
+        toolbar.addStretch()
+
         self.search_box = QLineEdit()
         self.search_box.setPlaceholderText("Suchen...")
         self.search_box.setMaximumWidth(200)
         self.search_box.textChanged.connect(self._load_repertoire)
-        search_layout.addWidget(self.search_box)
-        layout.addLayout(search_layout)
+        toolbar.addWidget(self.search_box)
+        layout.addLayout(toolbar)
 
         self.table = QTableWidget()
         self.table.setColumnCount(8)
@@ -66,6 +84,8 @@ class RepertoireTab(QWidget):
 
     def _load_repertoire(self):
         all_items = self.repertoire_repo.get_all()
+        project_repo = ProjectRepository(self.db)
+        projects = {p.id: p.name for p in project_repo.get_all()}
 
         search_text = self.search_box.text().lower() if self.search_box.text() else ""
 
@@ -81,9 +101,24 @@ class RepertoireTab(QWidget):
                     or search_text in (r.publisher or "").lower()
                     or search_text in (r.arrangement or "").lower()
                     or search_text in (r.location or "").lower()
-                    or search_text in (r.program or "").lower()
+                    or search_text in (projects.get(r.project_id, "") or "").lower()
                 )
             ]
+
+        sort_field = self.sort_field.currentData()
+        sort_order = self.sort_order.currentData()
+        reverse_sort = sort_order == Qt.SortOrder.DescendingOrder
+
+        def get_sort_key(item):
+            if sort_field == "composer":
+                return (item.composer or "").lower()
+            elif sort_field == "country":
+                return (item.country or "").lower()
+            elif sort_field == "location":
+                return (item.location or "").lower()
+            return (item.composer or "").lower()
+
+        all_items = sorted(all_items, key=get_sort_key, reverse=reverse_sort)
 
         self.table.setRowCount(len(all_items))
 
@@ -95,7 +130,8 @@ class RepertoireTab(QWidget):
             self.table.setItem(row, 4, QTableWidgetItem(rep.publisher or ""))
             self.table.setItem(row, 5, QTableWidgetItem(rep.arrangement or ""))
             self.table.setItem(row, 6, QTableWidgetItem(rep.location or ""))
-            self.table.setItem(row, 7, QTableWidgetItem(rep.program or ""))
+            project_name = projects.get(rep.project_id, "") if rep.project_id else ""
+            self.table.setItem(row, 7, QTableWidgetItem(project_name))
 
         for i in range(8):
             self.table.resizeColumnToContents(i)
