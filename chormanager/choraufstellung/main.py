@@ -1315,16 +1315,26 @@ class MainWindow(QMainWindow):
                f"{excess} überzählige Sänger müssen in den Sängerpool zurückgesetzt werden, "
                f"oder das Aufstellungsraster muss angepasst werden.")
         
+        # Create custom message box
         msg_box = QMessageBox(self)
         msg_box.setWindowTitle("Raster zu klein")
         msg_box.setText(msg)
-        msg_box.setStandardButtons(QMessageBox.StandardButton.No | QMessageBox.StandardButton.Yes)
-        msg_box.setButtonText(QMessageBox.StandardButton.Yes, "In Pool zurücksetzen")
-        msg_box.setButtonText(QMessageBox.StandardButton.No, "Raster anpassen")
-        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+        msg_box.setIcon(QMessageBox.Icon.Warning)
+        
+        # Create custom buttons
+        btn_pool = QPushButton("In Pool zurücksetzen")
+        btn_raster = QPushButton("Raster anpassen")
+        msg_box.addButton(btn_pool, QMessageBox.ButtonRole.ActionRole)
+        msg_box.addButton(btn_raster, QMessageBox.ButtonRole.ActionRole)
+        msg_box.setDefaultButton(btn_raster)
+        
+        # Connect and exec
+        msg_box.buttonClicked.connect(lambda: None)  # placeholder
         reply = msg_box.exec()
         
-        if reply == QMessageBox.StandardButton.Yes:
+        # Check which button was clicked
+        clicked = msg_box.clickedButton()
+        if clicked == btn_pool:
             self._reset_excess_to_pool(excess)
             return True
         return False
@@ -1439,11 +1449,30 @@ class MainWindow(QMainWindow):
         grid_cells = self.grid.rows * self.grid.cols
         placed = len(self.grid.singers)
         if placed > grid_cells:
-            QMessageBox.warning(self, "Zu viele Sänger",
-                             f"Die Aufstellung hat {placed} Sänger im Raster, "
-                             f"aber nur {grid_cells} Plätze.\n\n"
-                             f"Bitte vergrößern Sie das Raster oder setzen Sie "
-                             f"überzählige Sänger in den Sängerpool zurück.")
+            excess = placed - grid_cells
+            msg_box = QMessageBox(self)
+            msg_box.setWindowTitle("Zu viele Sänger")
+            msg_box.setText(f"Die Aufstellung hat {placed} Sänger im Raster, aber nur {grid_cells} Plätze.")
+            msg_box.setIcon(QMessageBox.Icon.Warning)
+            
+            btn_resize = QPushButton("Raster vergrößern")
+            btn_pool = QPushButton("In Pool zurücksetzen")
+            msg_box.addButton(btn_resize, QMessageBox.ButtonRole.ActionRole)
+            msg_box.addButton(btn_pool, QMessageBox.ButtonRole.ActionRole)
+            
+            reply = msg_box.exec()
+            if reply == btn_pool:
+                # Reset excess to pool
+                self._reset_excess_to_pool(excess)
+                # Then save
+                metadata = {
+                    "project": os.environ.get("CHOR_PROJECT", "") or self.project_name or "",
+                    "event": os.environ.get("CHOR_EVENT_NAME", "") or self.event_name or "",
+                    "event_date": os.environ.get("CHOR_EVENT_DATE", "") or self.event_date or "",
+                    "event_type": os.environ.get("CHOR_EVENT_TYPE", "") or self.event_type or ""
+                }
+                return self._save_file(self.file, metadata=metadata)
+            # If user clicked resize, return False to let them adjust
             return False
         
         if not self.file:
@@ -1473,12 +1502,22 @@ class MainWindow(QMainWindow):
         grid_cells = self.grid.rows * self.grid.cols
         placed = len(self.grid.singers)
         if placed > grid_cells:
-            QMessageBox.warning(self, "Zu viele Sänger",
-                             f"Die Aufstellung hat {placed} Sänger im Raster, "
-                             f"aber nur {grid_cells} Plätze.\n\n"
-                             f"Bitte vergrößern Sie das Raster oder setzen Sie "
-                             f"überzählige Sänger in den Sängerpool zurück.")
-            return False
+            excess = placed - grid_cells
+            msg_box = QMessageBox(self)
+            msg_box.setWindowTitle("Zu viele Sänger")
+            msg_box.setText(f"Die Aufstellung hat {placed} Sänger im Raster, aber nur {grid_cells} Plätze.")
+            msg_box.setIcon(QMessageBox.Icon.Warning)
+            
+            btn_resize = QPushButton("Raster vergrößern")
+            btn_pool = QPushButton("In Pool zurücksetzen")
+            msg_box.addButton(btn_resize, QMessageBox.ButtonRole.ActionRole)
+            msg_box.addButton(btn_pool, QMessageBox.ButtonRole.ActionRole)
+            
+            reply = msg_box.exec()
+            if reply == btn_pool:
+                self._reset_excess_to_pool(excess)
+            else:
+                return False
         
         metadata = {
             "project": os.environ.get("CHOR_PROJECT", ""),
@@ -1530,25 +1569,26 @@ class MainWindow(QMainWindow):
         self.storage.save_autosave(data)
 
     def _check_recovery(self):
+        """Check for autosave and offer recovery if newer than last manual save."""
         latest = self.storage.get_latest_autosave_path()
-        if latest and self.storage.get_latest_autosave_mtime() > self.last_manual_save_mtime:
-            r = QMessageBox.question(self, "Wiederherstellen", "Letzte Sitzung wiederherstellen?", 
-                                QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No)
-            if r == QMessageBox.StandardButton.Yes:
-                # ... recovery code
-                pass
-            else:
-                return
-            r = QMessageBox.question(self, "Zurücksetzen", "Aufstellung zurücksetzen?", 
-                                QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No)
-            if r != QMessageBox.StandardButton.Yes:
-                return
-            for s in self.singers:
-                s.row = -1
-                s.col = -1
-            self.grid.refresh_grid()
-        self.is_modified = True
-        self.update_grid_count()
+        if not latest:
+            return
+        if self.storage.get_latest_autosave_mtime() <= self.last_manual_save_mtime:
+            return
+        
+        r = QMessageBox.question(self, "Wiederherstellen", 
+                           "Eine automatisch gespeicherte Aufstellung ist newer als die letzte manuelle Speicherung.\n\n"
+                           "Möchten Sie diese wiederherstellen?",
+                           QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No)
+        if r != QMessageBox.StandardButton.Yes:
+            return
+        
+        # Try to recover from autosave
+        data = self.storage.load_formation(latest)
+        if data:
+            self._load_formation_data(data)
+            self.file = latest
+            self.is_modified = True
 
     def show_print_preview(self):
         from PyQt6.QtPrintSupport import QPrinter, QPrintPreviewDialog
