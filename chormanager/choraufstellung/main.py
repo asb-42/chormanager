@@ -1315,12 +1315,16 @@ class MainWindow(QMainWindow):
                f"{excess} überzählige Sänger müssen in den Sängerpool zurückgesetzt werden, "
                f"oder das Aufstellungsraster muss angepasst werden.")
         
-        buttons = QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-        reply = QMessageBox.warning(self, "Raster zu klein", msg, buttons,
-                              QMessageBox.StandardButton.No)
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("Raster zu klein")
+        msg_box.setText(msg)
+        msg_box.setStandardButtons(QMessageBox.StandardButton.No | QMessageBox.StandardButton.Yes)
+        msg_box.setButtonText(QMessageBox.StandardButton.Yes, "In Pool zurücksetzen")
+        msg_box.setButtonText(QMessageBox.StandardButton.No, "Raster anpassen")
+        msg_box.setDefaultButton(QMessageBox.StandardButton.No)
+        reply = msg_box.exec()
         
         if reply == QMessageBox.StandardButton.Yes:
-            # Reset excess singers to pool
             self._reset_excess_to_pool(excess)
             return True
         return False
