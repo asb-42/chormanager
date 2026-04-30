@@ -114,6 +114,7 @@ class OptimizerDialog(QDialog):
             "Nach Größe": "height",
             "SBTA (Stimmgruppe)": "sbta",
             "Nähe (Singpartner)": "affinity",
+            "Stimmgruppe zusammenhalten": "voice_group_cohesion",
         }
         return mapping.get(name, "")
 

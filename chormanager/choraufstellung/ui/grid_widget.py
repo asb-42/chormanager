@@ -20,19 +20,19 @@ from singer_model import voice_group_color
 
 
 def get_text_color() -> str:
-    """Get current theme text color - always fresh."""
+    """Get current theme text color."""
     try:
         from config import load_settings
-        return load_settings().get("theme", "light") == "dark" and "#F0F0F0" or "#1A1A1A"
+        return "#F0F0F0" if load_settings().get("theme") == "dark" else "#1A1A1A"
     except:
         return "#1A1A1A"
 
 
 def get_secondary_text_color() -> str:
-    """Get current theme secondary text color - always fresh."""
+    """Get current theme secondary text color."""
     try:
         from config import load_settings
-        return load_settings().get("theme", "light") == "dark" and "#CCCCCC" or "#555555"
+        return "#CCCCCC" if load_settings().get("theme") == "dark" else "#555555"
     except:
         return "#555555"
 

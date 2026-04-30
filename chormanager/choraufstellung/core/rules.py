@@ -349,11 +349,98 @@ class AffinityRule(ArrangementRule):
         return (-1, -1)
 
 
+# OPTIMIZER: Voice Group Cohesion Rule - keeps same voice groups together
+class VoiceGroupCohesionRule(ArrangementRule):
+    """Refinement rule to keep singers of same voice group adjacent."""
+    
+    def __init__(self, max_swaps: int = 50):
+        super().__init__("Stimmgruppe zusammenhalten", is_primary=False)
+        self.max_swaps = max_swaps
+    
+    def _get_voice_group(self, singer):
+        """Get voice group identifier."""
+        vg = singer.voice_group
+        if hasattr(vg, 'value'):
+            return vg.value
+        return str(vg)
+    
+    def _compute_distance(self, s1, s2):
+        """Compute distance - same row is preferred."""
+        if s1.row < 0 or s1.col < 0 or s2.row < 0 or s2.col < 0:
+            return float('inf')
+        
+        if s1.row == s2.row and s1.col == s2.col:
+            return 0.0
+        
+        if s1.row == s2.row:
+            return float(abs(s1.col - s2.col)) * 0.5
+        
+        return 50.0 + abs(s1.col - s2.col)
+    
+    def apply(self, singers: List[SingerRef], rows: int, cols: int,
+              staggered: bool = False,
+              get_singer_at_fn: Optional[Callable] = None,
+              is_occupied_fn: Optional[Callable] = None) -> ArrangementResult:
+        
+        vg_groups = {}
+        for s in singers:
+            if s.row < 0:
+                continue
+            vg = self._get_voice_group(s)
+            if vg not in vg_groups:
+                vg_groups[vg] = []
+            vg_groups[vg].append(s)
+        
+        swapped = 0
+        for vg, group in vg_groups.items():
+            if len(group) < 2:
+                continue
+            
+            for i in range(len(group)):
+                for j in range(i + 1, len(group)):
+                    if swapped >= self.max_swaps:
+                        break
+                    
+                    s1, s2 = group[i], group[j]
+                    current = self._compute_distance(s1, s2)
+                    if current < 0.1:
+                        continue
+                    
+                    best = None
+                    best_dist = current
+                    
+                    for other in singers:
+                        if other.row < 0:
+                            continue
+                        if other.singer_id in (s1.singer_id, s2.singer_id):
+                            continue
+                        
+                        or1, oc1 = s2.row, s2.col
+                        or2, oc2 = other.row, other.col
+                        s2.row, other.row = other.row, s2.row
+                        s2.col, other.col = other.col, s2.col
+                        
+                        new_dist = self._compute_distance(s1, s2)
+                        if new_dist < best_dist:
+                            best_dist = new_dist
+                            best = (other, or1, oc1, or2, oc2)
+                        else:
+                            s2.row, other.row = or1, or2
+                            s2.col, other.col = oc1, oc2
+                    
+                    if best:
+                        other, _, _, _, _ = best
+                        swapped += 1
+        
+        return ArrangementResult(success=True, singers=singers, message="Stimmgruppen zusammengehalten")
+
+
 RULE_REGISTRY = {
     "height": HeightRule(),
     "satb": SATBRule(),
     "sbta": SBTARule(),
     "affinity": AffinityRule(),
+    "voice_group_cohesion": VoiceGroupCohesionRule(),
 }
 
 

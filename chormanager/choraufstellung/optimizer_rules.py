@@ -304,9 +304,111 @@ class AffinityRule(FormationRule):
         print(f"AffinityRule: {swapped} Swaps durchgeführt.")
 
 
+# OPTIMIZER: Voice Group Cohesion Rule - keeps same voice groups together
+class VoiceGroupCohesionRule(FormationRule):
+    """Refinement rule to keep singers of same voice group adjacent."""
+    
+    @property
+    def name(self) -> str:
+        return "Stimmgruppe zusammenhalten"
+    
+    @property
+    def is_primary(self) -> bool:
+        return False
+    
+    def _get_voice_group(self, singer):
+        """Get voice group identifier (e.g., 'Sopran 1', 'Alt 2')."""
+        vg = singer.voice_group
+        if hasattr(vg, 'value'):
+            return vg.value
+        return str(vg)
+    
+    def _compute_distance(self, s1, s2, grid):
+        """Compute horizontal/vertical distance - only same row/col matters."""
+        if s1.row < 0 or s1.col < 0 or s2.row < 0 or s2.col < 0:
+            return float('inf')
+        
+        # Same position = perfect
+        if s1.row == s2.row and s1.col == s2.col:
+            return 0.0
+        
+        # Same row = good (horizontal neighbors)
+        if s1.row == s2.row:
+            return float(abs(s1.col - s2.col)) * 0.5
+        
+        # Different row = bad (should be minimized)
+        return 50.0 + abs(s1.col - s2.col)
+    
+    def apply(self, grid, singers) -> None:
+        """Group same voice groups together."""
+        # Build groups by voice group
+        vg_groups = {}
+        for s in singers:
+            if s.row < 0:
+                continue
+            vg = self._get_voice_group(s)
+            if vg not in vg_groups:
+                vg_groups[vg] = []
+            vg_groups[vg].append(s)
+        
+        # For each voice group with multiple singers, minimize distance
+        swapped = 0
+        max_swaps = 50
+        
+        for vg, group_singers in vg_groups.items():
+            if len(group_singers) < 2:
+                continue
+            
+            # Try to make them adjacent in same row
+            for i in range(len(group_singers)):
+                for j in range(i + 1, len(group_singers)):
+                    if swapped >= max_swaps:
+                        break
+                    
+                    s1 = group_singers[i]
+                    s2 = group_singers[j]
+                    
+                    current_dist = self._compute_distance(s1, s2, grid)
+                    if current_dist < 0.1:
+                        continue
+                    
+                    # Try to swap s2 with a neighbor to get closer to s1
+                    best_swap = None
+                    best_dist = current_dist
+                    
+                    # Find candidates to swap with
+                    for other in singers:
+                        if other.singer_id == s1.singer_id or other.singer_id == s2.singer_id:
+                            continue
+                        if other.row < 0:
+                            continue
+                        
+                        # Swap s2 with other temporarily
+                        old_row1, old_col1 = s2.row, s2.col
+                        old_row2, old_col2 = other.row, other.col
+                        
+                        s2.row, other.row = other.row, s2.row
+                        s2.col, other.col = other.col, s2.col
+                        
+                        new_dist = self._compute_distance(s1, s2, grid)
+                        
+                        if new_dist < best_dist:
+                            best_dist = new_dist
+                            best_swap = (other, old_row1, old_col1, old_row2, old_col2)
+                        else:
+                            # Revert
+                            s2.row, other.row = old_row1, old_row2
+                            s2.col, other.col = old_col1, old_col2
+                    
+                    if best_swap:
+                        other, or1, oc1, or2, oc2 = best_swap
+                        swapped += 1
+
+
 # OPTIMIZER: Registry of all available rules
 RULE_REGISTRY = {
     "satb": SATBRule(),
     "height": HeightRule(),
     "affinity": AffinityRule(),
+    "voice_group_cohesion": VoiceGroupCohesionRule(),
 }
