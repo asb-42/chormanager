@@ -1612,10 +1612,10 @@ class MainWindow(QMainWindow):
                     for s in singers_data:
                         name = s.get("short_name") or s.get("name", "")
                         singer = Singer(
-                            s.get("singer_id", ""),
                             name,
                             s.get("voice_group", "Sopran"),
-                            1
+                            1,
+                            s.get("singer_id", "")
                         )
                         singer.affinity = s.get("affinity", "")
                         self.singers.append(singer)
