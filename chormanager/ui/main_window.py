@@ -710,6 +710,14 @@ class MainWindow(QMainWindow):
         self.nav_formations.clicked.connect(lambda: self._switch_view(4))
         sidebar_layout.addWidget(self.nav_formations)
 
+        self.nav_repertoire = QPushButton("Repertoire")
+        self.nav_repertoire.setIcon(
+            get_icon("view-list", QStyle.StandardPixmap.SP_FileIcon)
+        )
+        self.nav_repertoire.setCheckable(True)
+        self.nav_repertoire.clicked.connect(lambda: self._switch_view(5))
+        sidebar_layout.addWidget(self.nav_repertoire)
+
         sidebar_layout.addStretch()
 
         splitter.addWidget(sidebar)
@@ -753,15 +761,16 @@ class MainWindow(QMainWindow):
         self.events_tab.event_selected.connect(self._on_event_selected)
         self.events_tab._restore_active_event()
 
-        from .views.choraufstellung_tab import ChorAufstellungTab
-
-        self.choraufstellung_tab = ChorAufstellungTab(self.db)
-
         from .views.besetzung_tab import BesetzungTab
-
         self.besetzung_tab = BesetzungTab(self.db)
         self.besetzung_tab.active_besetzung_changed.connect(self._on_besetzung_changed)
         self.besetzung_tab._restore_active_besetzung()
+
+        from .views.choraufstellung_tab import ChorAufstellungTab
+        self.choraufstellung_tab = ChorAufstellungTab(self.db)
+
+        from .views.repertoire_tab import RepertoireTab
+        self.repertoire_tab = RepertoireTab(self.db)
 
         # Stacked widget für Content
         self.content_stack = QStackedWidget()
@@ -770,6 +779,7 @@ class MainWindow(QMainWindow):
         self.content_stack.addWidget(self.besetzung_tab)
         self.content_stack.addWidget(self.events_tab)
         self.content_stack.addWidget(self.choraufstellung_tab)
+        self.content_stack.addWidget(self.repertoire_tab)
 
         content_layout.addWidget(self.content_stack)
 
@@ -804,6 +814,7 @@ class MainWindow(QMainWindow):
             "Besetzungen",
             "Terminverwaltung",
             "Choraufstellung",
+            "Repertoire",
         ]
         self.page_title_label.setText(titles[index])
         self.content_stack.setCurrentIndex(index)
@@ -812,6 +823,7 @@ class MainWindow(QMainWindow):
         self.nav_besetzung.setChecked(index == 2)
         self.nav_events.setChecked(index == 3)
         self.nav_formations.setChecked(index == 4)
+        self.nav_repertoire.setChecked(index == 5)
         self._emit_selection(index)
 
     def _emit_selection(self, tab_index):
