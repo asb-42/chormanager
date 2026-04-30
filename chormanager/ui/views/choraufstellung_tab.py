@@ -331,4 +331,6 @@ class ChorAufstellungTab(QWidget):
 
     def load_for_event(self, event):
         """Load formation data for a specific event."""
-        self._load_from_chormanager()
+        main_window = self.window()
+        if hasattr(main_window, "_open_choraufstellung_for_event"):
+            main_window._open_choraufstellung_for_event(event)
