@@ -174,10 +174,17 @@ class Database:
                 publisher TEXT,
                 arrangement TEXT,
                 location TEXT,
+                program TEXT,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL
             )
         """)
+
+        for col, typ in [("program", "TEXT")]:
+            try:
+                conn.execute(f"ALTER TABLE repertoire ADD COLUMN {col} {typ}")
+            except sqlite3.OperationalError:
+                pass
 
         conn.commit()
 

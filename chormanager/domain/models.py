@@ -305,6 +305,7 @@ class Repertoire:
     publisher: str = ""
     arrangement: str = ""
     location: str = ""
+    program: str = ""
     created_at: str = ""
     updated_at: str = ""
 

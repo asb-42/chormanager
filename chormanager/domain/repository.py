@@ -562,7 +562,7 @@ class RepertoireRepository:
     
     _REPERTOIRE_COLS = [
         'id', 'composer', 'title', 'dates', 'country', 'publisher', 
-        'arrangement', 'location', 'created_at', 'updated_at'
+        'arrangement', 'location', 'program', 'created_at', 'updated_at'
     ]
     
     def __init__(self, db: Database):

@@ -1,0 +1,257 @@
+# ChorManager - Benutzerhandbuch
+
+## Inhalt
+1. [Installation](#1-installation)
+2. [Oberfläche](#2-oberfläche)
+3. [Projekte verwalten](#3-projekte-verwalten)
+4. [Sänger verwalten](#4-sänger-verwalten)
+5. [Besetzungen](#5-besetzungen)
+6. [Termine und Verfügbarkeit](#6-termine-und-verfügbarkeit)
+7. [Choraufstellung](#7-choraufstellung)
+8. [Repertoire](#8-repertoire)
+9. [Daten exportieren](#9-daten-exportieren)
+10. [Einstellungen](#10-einstellungen)
+
+---
+
+## 1. Installation
+
+ChorManager läuft unter Linux (Ubuntu/Mint).
+
+```bash
+./run.sh
+```
+
+Beim ersten Start wird automatisch:
+- ein Virtual Environment erstellt
+- die Datenbank angelegt (`~/.local/share/chormanager/chor.db`)
+- ein Backup erstellt
+
+### Portabler Modus
+
+Sie möchten die Daten auf einem USB-Stick speichern?
+
+1. Menü: **Extras → Einstellungen**
+2. Datenpfad auf Ihren USB-Stick ändern
+3. Fertig - alle Daten werden dort gespeichert
+
+---
+
+## 2. Oberfläche
+
+### Seitenleiste (links)
+Klicken Sie auf einen Menüpunkt, um den Tab zu wechseln:
+- **Projekte** - Projektverwaltung
+- **Sänger** - Sängerdaten
+- **Besetzungen** - Sänger-Lineups
+- **Termine** - Proben und Auftritte
+- **Aufstellung** - Choraufstellung-Planung
+- **Repertoire** - Notenverwaltung
+
+### Context-Toolbar (oben)
+Je nach Tab werden verschiedene Aktionen angeboten:
+- **Hinzufügen** - Neuen Eintrag erstellen
+- **Aktualisieren** - Daten neu laden
+- **Bearbeiten** - Eintrag ändern
+- **Löschen** - Eintrag löschen
+
+### Schnellsuche
+Oben rechts in jedem Tab: Suchfeld für schnelle Filterung.
+
+---
+
+## 3. Projekte verwalten
+
+Ein Projekt fasst alles zusammen, was zu einer Produktion gehört.
+
+### Neues Projekt erstellen
+1. Tab **Projekte** öffnen
+2. Toolbar: **Hinzufügen** klicken
+3. Name eingeben (z.B. "Hoffmann OKO 2026")
+4. **Speichern**
+
+### Aktives Projekt setzen
+Ein Projekt als "aktiv" markieren:
+1. Projekt in der Liste auswählen
+2. Toolbar: **Als aktives Projekt setzen**
+
+Das aktive Projekt filtert automatisch:
+- Termine im Tab **Termine**
+- Sänger im Tab **Sänger**
+- Verfügbarkeit
+
+---
+
+## 4. Sänger verwalten
+
+### Sänger hinzufügen
+1. Tab **Sänger** öffnen
+2. Toolbar: **Hinzufügen** klicken
+3. Felder ausfüllen:
+   - **Name** (Pflichtfeld)
+   - **Kurzname** (z.B. "M. Müller")
+   - **Stimmgruppe**: Sopran, Alt, Tenor, Bass
+   - Kontaktdaten optional
+
+### Sänger bearbeiten
+1. Sänger in der Liste auswählen
+2. Toolbar: **Bearbeiten**
+3. Änderungen vornehmen
+4. **Speichern**
+
+### Filterung nach Stimmgruppe
+Oben im Tab: Stimmgruppen-Filter auswählen.
+
+---
+
+## 5. Besetzungen
+
+Eine Besetzung ist eine feste Liste von Sängern für ein Projekt.
+
+### Neue Besetzung erstellen
+1. Tab **Besetzungen** öffnen
+2. Toolbar: **Hinzufügen** klicken
+3. Namen eingeben (z.B. "Konzertbesetzung")
+4. Sänger auswählen (Checkbox-Liste)
+5. **Speichern**
+
+### Als aktiv setzen
+Die aktive Besetzung wird an anderen Stellen verwendet:
+- Toolbar: **Als aktiv setzen**
+
+---
+
+## 6. Termine und Verfügbarkeit
+
+### Termin erstellen
+1. Tab **Termine** öffnen
+2. Toolbar: **Hinzufügen** klicken
+3. Felder ausfüllen:
+   - **Name** (z.B. "1. Generalprobe")
+   - **Typ**: Generalprobe, Orchesterprobe, Auftritt, Konzert
+   - **Datum/Zeit**
+   - **Ort**
+4. **Speichern**
+
+### Verfügbarkeit erfassen
+Für jeden Termin können Sie angeben, wer kommt:
+
+1. Termin auswählen
+2. Toolbar: **Verfügbarkeit erfassen**
+3. Für jeden Sänger Status wählen:
+   - ✓ Verfügbar / Zusage
+   - ✗ Nicht verfügbar / Absage
+   - ○ Keine Rückmeldung
+   - ✓? Zusage unter Vorbehalt
+
+Die Änderungen werden automatisch gespeichert.
+
+---
+
+## 7. Choraufstellung
+
+Die Choraufstellung ist ein separates Plugin zur Planung der Sängerpositionen.
+
+### Neue Aufstellung erstellen
+1. Tab **Aufstellung** öffnen
+2. Toolbar: **Neue Aufstellung** klicken
+3. Termin auswählen (automatisch nach aktivem Projekt gefiltert)
+4. Die Choraufstellung-App öffnet sich mit den Sängern, die zugesagt haben
+
+### Aufstellung bearbeiten
+1. Datei in der Liste auswählen
+2. Toolbar: **Bearbeiten** klicken
+
+---
+
+## 8. Repertoire
+
+Verwalten Sie Ihr Notenarchiv.
+
+### Stück hinzufügen
+1. Tab **Repertoire** öffnen
+2. Toolbar: **Hinzufügen** klicken
+3. Felder ausfüllen:
+   - **Komponist**: Name des Komponisten
+   - **Titel**: Titel des Stücks
+   - **Lebensdaten**: Geburts- und Sterbejahr
+   - **Land**: Nationalität
+   - **Verlag**: Notenverlag
+   - **Besetzung**: z.B. "Gemischter Chor"
+   - **Standort**: Wo sind die Noten?
+   - **Programm**: Verweis auf ein Konzertprogramm
+
+### Programm verknüpfen
+Das Feld **Programm** enthält eine Dropdown-Liste aller Konzertprogramme.
+
+### Stück bearbeiten
+1. Stück in der Tabelle auswählen
+2. Toolbar: **Bearbeiten**
+
+---
+
+## 9. Daten exportieren
+
+### CSV-Export
+1. Menü: **Projekt → Export → CSV exportieren**
+2. Datei wählen und speichern
+
+### PDF-Export
+Für Termine und Verfügbarkeit:
+1. Menü: **Termine → Export → PDF exportieren**
+2. Programm wählen
+3. PDF wird erstellt
+
+### Daten-Backup
+1. Menü: **Extras → Backup erstellen**
+2. Backup-Datei wird erstellt
+
+---
+
+## 10. Einstellungen
+
+### Theme ändern
+1. Menü: **Extras → Einstellungen**
+2. **Theme**: Hell oder Dunkel wählen
+
+### Datenpfad ändern
+1. Menü: **Extras → Einstellungen**
+2. **Datenpfad**: Neuen Ordner wählen
+
+### Sprache
+Deutsche Benutzeroberfläche (Standard).
+
+---
+
+## Tastenkombinationen
+
+| Taste | Funktion |
+|-------|---------|
+| `Strg+N` | Neuer Eintrag |
+| `Strg+S` | Speichern |
+| `Strg+Z` | Rückgängig |
+| `Strg+Y` | Wiederholen |
+| `F5` | Aktualisieren |
+
+---
+
+## Problemlösung
+
+### App startet nicht
+```bash
+./run.sh
+```
+Falls Fehler: Python 3.8+ und PyQt6 erforderlich.
+
+### Datenbank fehlt
+Beim ersten Start wird automatisch eine neue Datenbank erstellt.
+
+### Backup wiederherstellen
+1. Menü: **Extras → Backup wiederherstellen**
+2. Backup-Datei auswählen
+
+---
+
+## Kontakt
+
+Bei Fragen oder Problemen: GitHub Issue erstellen.
