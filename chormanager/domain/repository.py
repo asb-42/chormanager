@@ -577,8 +577,8 @@ class RepertoireRepository:
         now = datetime.now().isoformat()
         
         self.db.execute(
-            "INSERT INTO repertoire (id, composer, title, dates, country, publisher, arrangement, location, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-            (repertoire_id, composer, title, dates, country, publisher, arrangement, location, now, now)
+"INSERT INTO repertoire (id, composer, title, dates, country, publisher, arrangement, location, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+             (repertoire_id, composer, title, dates, country, publisher, arrangement, location, now, now)
         )
         self.db.commit()
         
