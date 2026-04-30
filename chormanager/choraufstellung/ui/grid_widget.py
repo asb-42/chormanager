@@ -24,8 +24,11 @@ def get_text_color() -> str:
     try:
         from config import load_settings
         theme = load_settings().get("theme", "light")
-        return "#F0F0F0" if theme == "dark" else "#1A1A1A"
-    except Exception:
+        color = "#F0F0F0" if theme == "dark" else "#1A1A1A"
+        print(f"DEBUG get_text_color: theme={theme}, color={color}")
+        return color
+    except Exception as e:
+        print(f"get_text_color error: {e}")
         return "#1A1A1A"
 
 
