@@ -595,6 +595,25 @@ class MainWindow(QMainWindow):
         export_csv_aufstellung.triggered.connect(self._export_aufstellung)
         aufstellung_export_menu.addAction(export_csv_aufstellung)
 
+        repertoire_menu = menubar.addMenu("Repertoire")
+
+        add_rep_action = QAction("Hinzufügen...", self)
+        add_rep_action.setIcon(get_icon("list-add", QStyle.StandardPixmap.SP_FileIcon))
+        add_rep_action.triggered.connect(lambda: self.repertoire_tab._add_repertoire() if hasattr(self, "repertoire_tab") else None)
+        repertoire_menu.addAction(add_rep_action)
+
+        edit_rep_action = QAction("Bearbeiten...", self)
+        edit_rep_action.setIcon(
+            get_icon("document-edit", QStyle.StandardPixmap.SP_FileDialogDetailedView)
+        )
+        edit_rep_action.triggered.connect(lambda: self.repertoire_tab._edit_repertoire() if hasattr(self, "repertoire_tab") else None)
+        repertoire_menu.addAction(edit_rep_action)
+
+        delete_rep_action = QAction("Löschen", self)
+        delete_rep_action.setIcon(get_icon("edit-delete", QStyle.StandardPixmap.SP_TrashIcon))
+        delete_rep_action.triggered.connect(lambda: self.repertoire_tab._delete_repertoire() if hasattr(self, "repertoire_tab") else None)
+        repertoire_menu.addAction(delete_rep_action)
+
         view_menu = menubar.addMenu("&Ansicht")
 
         light_theme_action = QAction("Hell", self)
@@ -1131,11 +1150,14 @@ class MainWindow(QMainWindow):
                 self.context_toolbar.addAction(delete_action)
 
         elif tab_index == 5:  # Repertoire
+            if not hasattr(self, "repertoire_tab"):
+                return
             add_action = QAction("Hinzufügen", self)
             add_action.setIcon(get_icon("list-add", QStyle.StandardPixmap.SP_FileIcon))
             add_action.triggered.connect(self.repertoire_tab._add_repertoire)
             self.context_toolbar.addAction(add_action)
 
+            selection = self.repertoire_tab.table.currentRow() >= 0
             if selection:
                 edit_action = QAction("Bearbeiten", self)
                 edit_action.setIcon(
