@@ -24,12 +24,19 @@ def get_text_color() -> str:
     try:
         from config import load_settings
         theme = load_settings().get("theme", "light")
-        color = "#F0F0F0" if theme == "dark" else "#1A1A1A"
-        print(f"DEBUG get_text_color: theme={theme}, color={color}")
-        return color
-    except Exception as e:
-        print(f"get_text_color error: {e}")
+        return "#F0F0F0" if theme == "dark" else "#1A1A1A"
+    except Exception:
         return "#1A1A1A"
+
+
+def get_secondary_text_color() -> str:
+    """Get current theme secondary text color."""
+    try:
+        from config import load_settings
+        theme = load_settings().get("theme", "light")
+        return "#CCCCCC" if theme == "dark" else "#555555"
+    except Exception:
+        return "#555555"
 
 
 def get_secondary_text_color() -> str:
