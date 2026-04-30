@@ -1594,8 +1594,40 @@ class MainWindow(QMainWindow):
             e.accept()
 
     def _load_from_chormanager(self):
-        """Load singers from ChorManager DB based on CHOR_EVENT_ID or CHOR_EVENT_DATE env var."""
+        """Load singers from ChorManager DB or temp JSON file."""
         import os
+        import json
+        
+        # Check for temp JSON file first (preferred method)
+        event_data_file = os.environ.get("CHOR_EVENT_DATA", "")
+        
+        if event_data_file and os.path.exists(event_data_file):
+            try:
+                with open(event_data_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                
+                singers_data = data.get("singers", [])
+                if singers_data:
+                    self.singers = []
+                    for s in singers_data:
+                        singer = Singer(
+                            singer_id=s.get("singer_id", ""),
+                            name=s.get("name", ""),
+                            short_name=s.get("short_name", ""),
+                            voice_group=s.get("voice_group", "Sopran"),
+                            height=1,
+                            affinity=s.get("affinity", "")
+                        )
+                        self.singers.append(singer)
+                    
+                    self.pool.singers = self.singers
+                    self.pool.update_singers(self.singers, set())
+                    self.is_modified = False
+                    return
+            except Exception as e:
+                print(f"Error reading event data file: {e}")
+        
+        # Fallback: Load from DB
         import sqlite3
         
         db_path = os.environ.get("CHOR_DB_PATH", os.path.expanduser("~/.local/share/chormanager/chor.db"))

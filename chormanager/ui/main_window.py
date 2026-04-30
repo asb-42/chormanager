@@ -1292,9 +1292,90 @@ class MainWindow(QMainWindow):
         self.events_tab._manage_availability()
 
     def _open_choraufstellung_for_event(self, event):
+        """Open ChorAufstellung with event data via temp file."""
+        import json
+        import os
+        import tempfile
+        from datetime import datetime
+        
         self.content_stack.setCurrentIndex(4)
-        self.choraufstellung_tab._pending_event = event
-        QTimer.singleShot(100, lambda: self.choraufstellung_tab._load_from_chormanager(None))
+        
+        # 1. Get project
+        project = getattr(self, "current_project", None) or (
+            self.projects_tab.current_project if hasattr(self, "projects_tab") else None
+        )
+        
+        # 2. Get available singers (status=yes or conditional)
+        singer_repo = self.singer_repo
+        avail_repo = self.availability_repo
+        
+        singers = singer_repo.get_all()
+        available_singers = []
+        
+        for singer in singers:
+            avail = avail_repo.get_by_ids(singer.id, event.id)
+            if avail and avail.status in ("yes", "conditional"):
+                available_singers.append({
+                    "singer_id": singer.id,
+                    "name": singer.full_name,
+                    "short_name": singer.short_name or "",
+                    "voice_group": singer.voice_group,
+                    "affinity": singer.affinity_uuid or ""
+                })
+        
+        # 3. Prepare data
+        data = {
+            "project": project.name if project else "",
+            "event": {
+                "id": event.id,
+                "name": event.name,
+                "date": event.date,
+                "event_type": event.event_type
+            },
+            "singers": available_singers,
+            "created_at": datetime.now().isoformat()
+        }
+        
+        # 4. Write to temp JSON file
+        temp_dir = tempfile.gettempdir()
+        temp_file = os.path.join(temp_dir, "choraufstellung_event.json")
+        
+        with open(temp_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        
+        # 5. Pass via environment
+        env = os.environ.copy()
+        env["CHOR_EVENT_DATA"] = temp_file
+        
+        # 6. Also set legacy env vars for compatibility
+        if event:
+            env["CHOR_EVENT_DATE"] = event.date[:10]
+            env["CHOR_EVENT_NAME"] = event.name
+            env["CHOR_EVENT_ID"] = event.id
+        
+        # 7. Get data directory for ChorAufstellung
+        choraufstellung_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "..", "choraufstellung"
+        )
+        
+        # 8. Start ChorAufstellung
+        try:
+            main_py = os.path.join(choraufstellung_path, "__main__.py")
+            if os.path.exists(main_py):
+                subprocess.run(
+                    [sys.executable, main_py],
+                    cwd=choraufstellung_path,
+                    env=env
+                )
+                self.choraufstellung_tab._load_formations()
+        except Exception as e:
+            from PyQt6.QtWidgets import QMessageBox
+            QMessageBox.warning(
+                self,
+                "Fehler",
+                f"Choraufstellung konnte nicht gestartet werden:\n{str(e)}"
+            )
 
     def _edit_formation(self):
         self.choraufstellung_tab._edit_formation()
