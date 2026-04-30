@@ -1611,13 +1611,19 @@ class MainWindow(QMainWindow):
                     self.singers = []
                     for s in singers_data:
                         name = s.get("short_name") or s.get("name", "")
+                        vg_str = s.get("voice_group", "Sopran")
+                        # Convert string to VoiceGroup enum
+                        vg = next((v for v in VoiceGroup if hasattr(v,'value') and v.value == vg_str), None)
+                        if not vg:
+                            vg = VoiceGroup.SOPRAN_1  # Default
                         singer = Singer(
                             name,
-                            s.get("voice_group", "Sopran"),
+                            vg,
                             1,
                             s.get("singer_id", "")
                         )
                         singer.affinity = s.get("affinity", "")
+                        singer.affinity_uuid = s.get("affinity_uuid", "")
                         self.singers.append(singer)
                     
                     self.pool.singers = self.singers

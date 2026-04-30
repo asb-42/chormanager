@@ -28,9 +28,15 @@ class Singer:
     affinity_uuid: str = ""
     
     def to_dict(self):
+        # Handle both string and enum voice_group
+        vg = self.voice_group
+        if hasattr(vg, 'value'):
+            vg_str = vg.value
+        else:
+            vg_str = str(vg) if vg else ""
         return {
             "name": self.name,
-            "voice_group": self.voice_group.value,
+            "voice_group": vg_str,
             "height": self.height,
             "singer_id": self.singer_id,
             "row": self.row,
