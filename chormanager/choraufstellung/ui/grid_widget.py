@@ -19,6 +19,26 @@ from qt_compat import exec_qt
 from singer_model import voice_group_color
 
 
+def get_text_color() -> str:
+    """Get current theme text color."""
+    try:
+        from config import load_settings
+        theme = load_settings().get("theme", "light")
+        return "#F0F0F0" if theme == "dark" else "#1A1A1A"
+    except Exception:
+        return "#1A1A1A"
+
+
+def get_secondary_text_color() -> str:
+    """Get current theme secondary text color."""
+    try:
+        from config import load_settings
+        theme = load_settings().get("theme", "light")
+        return "#CCCCCC" if theme == "dark" else "#555555"
+    except Exception:
+        return "#555555"
+
+
 class SingerTile(QFrame):
     """Tile widget displaying a single singer in the formation grid."""
     removed = pyqtSignal(object)
@@ -46,23 +66,26 @@ class SingerTile(QFrame):
         lay.setContentsMargins(4, 2, 4, 2)
         lay.setSpacing(0)
         
+        txt_color = get_text_color()
+        sec_color = get_secondary_text_color()
+        
         name_with_affinity = f"{self.singer.name} 👥" if self.singer.affinity else self.singer.name
         n = QLabel(f"<b>{name_with_affinity}</b>")
         n.setAlignment(Qt.AlignCenter)
         n.setWordWrap(True)
-        n.setStyleSheet("background: transparent; color: #000; font-size: 9pt;")
+        n.setStyleSheet(f"background: transparent; color: {txt_color}; font-size: 9pt;")
         lay.addWidget(n)
         
         vg = self.singer.voice_group.value if hasattr(self.singer.voice_group, 'value') else str(self.singer.voice_group)
         v = QLabel(vg)
         v.setAlignment(Qt.AlignCenter)
-        v.setStyleSheet("background: transparent; color: #333; font-size: 8pt;")
+        v.setStyleSheet(f"background: transparent; color: {sec_color}; font-size: 8pt;")
         lay.addWidget(v)
         
         if self.singer.height > 0:
             h = QLabel(f"{self.singer.height} cm")
             h.setAlignment(Qt.AlignCenter)
-            h.setStyleSheet("background: transparent; color: #555; font-size: 7pt;")
+            h.setStyleSheet(f"background: transparent; color: {sec_color}; font-size: 7pt;")
             lay.addWidget(h)
         
         btn = QPushButton("×")
