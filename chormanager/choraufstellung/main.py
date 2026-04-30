@@ -1519,19 +1519,21 @@ class MainWindow(QMainWindow):
     def _check_recovery(self):
         latest = self.storage.get_latest_autosave_path()
         if latest and self.storage.get_latest_autosave_mtime() > self.last_manual_save_mtime:
-            r = QMessageBox.question(self, "Wiederherstellen", "Letzte Sitzung wiederherstellen?", QMessageBox.Yes|QMessageBox.No)
-            if r == QMessageBox.Yes:
-                self._open_file(latest)
-
-    def reset_formation(self):
-        if self.is_modified:
-            r = QMessageBox.question(self, "Zurücksetzen", "Aufstellung zurücksetzen?", QMessageBox.Yes|QMessageBox.No)
-            if r != QMessageBox.Yes:
+            r = QMessageBox.question(self, "Wiederherstellen", "Letzte Sitzung wiederherstellen?", 
+                                QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No)
+            if r == QMessageBox.StandardButton.Yes:
+                # ... recovery code
+                pass
+            else:
                 return
-        for s in self.singers:
-            s.row = -1
-            s.col = -1
-        self.grid.refresh_grid()
+            r = QMessageBox.question(self, "Zurücksetzen", "Aufstellung zurücksetzen?", 
+                                QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No)
+            if r != QMessageBox.StandardButton.Yes:
+                return
+            for s in self.singers:
+                s.row = -1
+                s.col = -1
+            self.grid.refresh_grid()
         self.is_modified = True
         self.update_grid_count()
 
