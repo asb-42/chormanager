@@ -114,22 +114,31 @@ class AffinityRule(FormationRule):
         return False
 
     def _compute_distance(self, s1, s2, grid):
-        """Berechnet die euklidische Distanz zwischen zwei Sängern unter Berücksichtigung von staggered."""
+        """Berechnet die Distanz - nur gleiche Reihe zählt als 'Nähe'.
+        
+        Regeln:
+        - gleiche Reihe &相邻 = 0 (ideal)
+        - gleiche Reihe & nicht相邻 = small cost
+        - verschiedene Reihen = high cost (sollte vermieden werden)
+        """
         if s1.row < 0 or s1.col < 0 or s2.row < 0 or s2.col < 0:
             return float('inf')
-
-        x1 = s1.col
-        y1 = s1.row
-        x2 = s2.col
-        y2 = s2.row
-
-        if grid.staggered:
-            if s1.row % 2 == 1:
-                x1 += 0.5
-            if s2.row % 2 == 1:
-                x2 += 0.5
-
-        return ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
+        
+        # Gleiche Reihe?
+        same_row = (s1.row == s2.row)
+        col_diff = abs(s1.col - s2.col)
+        
+        if same_row and col_diff == 1:
+            # Perfekt: nebeneinander in gleicher Reihe
+            return 0.0
+        elif same_row:
+            # Gleiche Reihe, aber nicht direkt nebeneinander
+            # Kleinere Distanz ist besser
+            return float(col_diff) * 0.5
+        else:
+            # Verschiedene Reihen - sollte vermieden werden
+            # Gibt hohe Kosten zurück, um vertikale Platzierung zu bestrafen
+            return 100.0 + col_diff
 
     def _swap_positions(self, s1, s2):
         """Tauscht die Positionen von zwei Sängern."""
