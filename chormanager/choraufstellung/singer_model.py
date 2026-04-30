@@ -70,15 +70,15 @@ class Singer:
 
 
 def voice_group_color(voice_group: VoiceGroup) -> str:
-    """Return hex color code for voice group – synchron mit voice_groups.json"""
+    """Return hex color code for voice group."""
     colors = {
-        VoiceGroup.SOPRAN_1: "#f8a8a8",
-        VoiceGroup.SOPRAN_2: "#f66",
-        VoiceGroup.ALT_1: "#a8d0f8",
-        VoiceGroup.ALT_2: "#4a9cff",
-        VoiceGroup.TENOR_1: "#a8f8a8",
-        VoiceGroup.TENOR_2: "#4acc4a",
-        VoiceGroup.BASS_1: "#f8f1c8",
-        VoiceGroup.BASS_2: "#e6c84d",
+        VoiceGroup.SOPRAN_1: "#FFD700",  # Gelb
+        VoiceGroup.SOPRAN_2: "#FFD700",
+        VoiceGroup.ALT_1: "#FF4444",   # Rot
+        VoiceGroup.ALT_2: "#FF4444",
+        VoiceGroup.TENOR_1: "#44BB44", # Grün
+        VoiceGroup.TENOR_2: "#44BB44",
+        VoiceGroup.BASS_1: "#4466FF",    # Blau
+        VoiceGroup.BASS_2: "#4466FF",
     }
-    return colors.get(voice_group, "#cccccc")  # Default gray
+    return colors.get(voice_group, "#cccccc")

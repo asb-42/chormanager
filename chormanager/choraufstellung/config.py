@@ -58,10 +58,10 @@ def load_voice_groups_config() -> list:
     except Exception as e:
         print(f"Config load error: {e}")
     return [
-        {"id": "Sopran 1", "color": "#ff9999"}, {"id": "Sopran 2", "color": "#ff6666"},
-        {"id": "Alt 1", "color": "#99ccff"}, {"id": "Alt 2", "color": "#6699ff"},
-        {"id": "Tenor 1", "color": "#99ff99"}, {"id": "Tenor 2", "color": "#66cc66"},
-        {"id": "Bass 1", "color": "#ffff99"}, {"id": "Bass 2", "color": "#ffff66"}
+        {"id": "Sopran 1", "color": "#FFD700"}, {"id": "Sopran 2", "color": "#FFD700"},
+        {"id": "Alt 1", "color": "#FF4444"}, {"id": "Alt 2", "color": "#FF4444"},
+        {"id": "Tenor 1", "color": "#44BB44"}, {"id": "Tenor 2", "color": "#44BB44"},
+        {"id": "Bass 1", "color": "#4466FF"}, {"id": "Bass 2", "color": "#4466FF"}
     ]
 
 
