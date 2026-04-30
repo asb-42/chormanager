@@ -160,6 +160,54 @@ class SBTARule(ArrangementRule):
         return ArrangementResult(success=True, singers=singers, message=f"{idx} Sänger platziert")
 
 
+class S1S2B2B1T2T1A2A1Rule(ArrangementRule):
+    def __init__(self):
+        super().__init__("S1 S2 B2 B1 T2 T1 A2 A1", is_primary=True)
+
+    def apply(self, singers: List[SingerRef], rows: int, cols: int, staggered: bool = False) -> ArrangementResult:
+        vg_getter = get_voice_group_value
+        
+        s1 = [s for s in singers if vg_getter(s.voice_group) == "Sopran 1"]
+        s2 = [s for s in singers if vg_getter(s.voice_group) == "Sopran 2"]
+        b2 = [s for s in singers if vg_getter(s.voice_group) == "Bass 2"]
+        b1 = [s for s in singers if vg_getter(s.voice_group) == "Bass 1"]
+        t2 = [s for s in singers if vg_getter(s.voice_group) == "Tenor 2"]
+        t1 = [s for s in singers if vg_getter(s.voice_group) == "Tenor 1"]
+        a2 = [s for s in singers if vg_getter(s.voice_group) == "Alt 2"]
+        a1 = [s for s in singers if vg_getter(s.voice_group) == "Alt 1"]
+
+        s1.sort(key=lambda s: s.name)
+        s2.sort(key=lambda s: s.name)
+        b2.sort(key=lambda s: s.name)
+        b1.sort(key=lambda s: s.name)
+        t2.sort(key=lambda s: s.name)
+        t1.sort(key=lambda s: s.name)
+        a2.sort(key=lambda s: s.name)
+        a1.sort(key=lambda s: s.name)
+
+        ordered = s1 + s2 + b2 + b1 + t2 + t1 + a2 + a1
+
+        placed_ids = set()
+        idx = 0
+        for col in range(cols):
+            for row in range(rows):
+                if idx < len(ordered):
+                    s = ordered[idx]
+                    s.row = row
+                    s.col = col
+                    placed_ids.add(s.singer_id)
+                    idx += 1
+                else:
+                    break
+
+        for s in singers:
+            if s.singer_id not in placed_ids:
+                s.row = -1
+                s.col = -1
+
+        return ArrangementResult(success=True, singers=singers, message=f"{idx} Sänger platziert")
+
+
 class AffinityCostFunction:
     def __init__(self, staggered: bool = False, same_row_weight: float = 100.0):
         self.staggered = staggered
@@ -463,6 +511,7 @@ RULE_REGISTRY = {
     "sbta": SBTARule(),
     "affinity": AffinityRule(),
     "voice_group_cohesion": VoiceGroupCohesionRule(),
+    "s1s2b2b1t2t1a2a1": S1S2B2B1T2T1A2A1Rule(),
 }
 
 
