@@ -840,6 +840,46 @@ class FormationGrid(QWidget):
 
         self.refresh_grid()
 
+    def auto_arrange_s1s2b2b1t2t1a2a1(self):
+        if not self.singers:
+            return
+        def get_vg(vg):
+            return vg.value if hasattr(vg, 'value') else str(vg)
+        s1 = [s for s in self.singers if get_vg(s.voice_group) == "Sopran 1"]
+        s2 = [s for s in self.singers if get_vg(s.voice_group) == "Sopran 2"]
+        b2 = [s for s in self.singers if get_vg(s.voice_group) == "Bass 2"]
+        b1 = [s for s in self.singers if get_vg(s.voice_group) == "Bass 1"]
+        t2 = [s for s in self.singers if get_vg(s.voice_group) == "Tenor 2"]
+        t1 = [s for s in self.singers if get_vg(s.voice_group) == "Tenor 1"]
+        a2 = [s for s in self.singers if get_vg(s.voice_group) == "Alt 2"]
+        a1 = [s for s in self.singers if get_vg(s.voice_group) == "Alt 1"]
+        s1.sort(key=lambda s: s.name)
+        s2.sort(key=lambda s: s.name)
+        b2.sort(key=lambda s: s.name)
+        b1.sort(key=lambda s: s.name)
+        t2.sort(key=lambda s: s.name)
+        t1.sort(key=lambda s: s.name)
+        a2.sort(key=lambda s: s.name)
+        a1.sort(key=lambda s: s.name)
+        ordered = s1 + s2 + b2 + b1 + t2 + t1 + a2 + a1
+        placed_ids = set()
+        idx = 0
+        for col in range(self.cols):
+            for row in range(self.rows):
+                if idx < len(ordered):
+                    s = ordered[idx]
+                    s.row = row
+                    s.col = col
+                    placed_ids.add(s.singer_id)
+                    idx += 1
+                else:
+                    break
+        for s in self.singers:
+            if s.singer_id not in placed_ids:
+                s.row = -1
+                s.col = -1
+        self.refresh_grid()
+
 class SingerPool(QWidget):
     singer_selected = pyqtSignal(object); singer_added = pyqtSignal(object)
     singer_edit_requested = pyqtSignal(object)
