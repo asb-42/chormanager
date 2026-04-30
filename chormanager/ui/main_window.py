@@ -1293,7 +1293,8 @@ class MainWindow(QMainWindow):
 
     def _open_choraufstellung_for_event(self, event):
         self.content_stack.setCurrentIndex(4)
-        QTimer.singleShot(100, lambda: self.choraufstellung_tab.load_for_event(event))
+        self.choraufstellung_tab._pending_event = event
+        QTimer.singleShot(100, lambda: self.choraufstellung_tab._load_from_chormanager(None))
 
     def _edit_formation(self):
         self.choraufstellung_tab._edit_formation()

@@ -116,9 +116,17 @@ class ChorAufstellungTab(QWidget):
                 self, "Fehler", "Funktion zum Öffnen der Choraufstellung nicht verfügbar."
             )
 
-    def _load_from_chormanager(self):
+    def _load_from_chormanager(self, event=None):
         try:
             main_window = self.window()
+            
+            #Check for pending event from NewFormationDialog
+            event = event or getattr(self, "_pending_event", None)
+            if event:
+                self._pending_event = None
+                main_window._open_choraufstellung_for_event(event)
+                return
+            
             if not hasattr(main_window, "_open_choraufstellung"):
                 QMessageBox.information(
                     self,
@@ -331,6 +339,4 @@ class ChorAufstellungTab(QWidget):
 
     def load_for_event(self, event):
         """Load formation data for a specific event."""
-        main_window = self.window()
-        if hasattr(main_window, "_open_choraufstellung_for_event"):
-            main_window._open_choraufstellung_for_event(event)
+        self._load_from_chormanager()
