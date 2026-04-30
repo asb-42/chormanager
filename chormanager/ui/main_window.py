@@ -863,6 +863,11 @@ class MainWindow(QMainWindow):
             if row >= 0:
                 filename = self.choraufstellung_tab.table.item(row, 0).text()
                 selection = filename
+        elif tab_index == 5:  # Repertoire
+            row = self.repertoire_tab.table.currentRow()
+            if row >= 0:
+                title = self.repertoire_tab.table.item(row, 1).text()
+                selection = title
 
         self._on_selection_changed(tab_index, selection)
 
@@ -1123,6 +1128,29 @@ class MainWindow(QMainWindow):
                     get_icon("edit-delete", QStyle.StandardPixmap.SP_TrashIcon)
                 )
                 delete_action.triggered.connect(self._delete_formation)
+                self.context_toolbar.addAction(delete_action)
+
+        elif tab_index == 5:  # Repertoire
+            add_action = QAction("Hinzufügen", self)
+            add_action.setIcon(get_icon("list-add", QStyle.StandardPixmap.SP_FileIcon))
+            add_action.triggered.connect(self.repertoire_tab._add_repertoire)
+            self.context_toolbar.addAction(add_action)
+
+            if selection:
+                edit_action = QAction("Bearbeiten", self)
+                edit_action.setIcon(
+                    get_icon(
+                        "document-edit", QStyle.StandardPixmap.SP_FileDialogDetailedView
+                    )
+                )
+                edit_action.triggered.connect(self.repertoire_tab._edit_repertoire)
+                self.context_toolbar.addAction(edit_action)
+
+                delete_action = QAction("Löschen", self)
+                delete_action.setIcon(
+                    get_icon("edit-delete", QStyle.StandardPixmap.SP_TrashIcon)
+                )
+                delete_action.triggered.connect(self.repertoire_tab._delete_repertoire)
                 self.context_toolbar.addAction(delete_action)
 
     def _on_selection_changed(self, tab_index, selection):
