@@ -1295,9 +1295,11 @@ class MainWindow(QMainWindow):
         """Open ChorAufstellung with event data via temp file."""
         import json
         import os
+        import subprocess
         import tempfile
         from datetime import datetime
-        from ..domain.repository import AvailabilityRepository, SingerRepository, ProjectRepository, ProjectRepository
+        from ..domain.repository import AvailabilityRepository, SingerRepository
+        from ..domain.repository import ProjectRepository
         
         self.content_stack.setCurrentIndex(4)
         
