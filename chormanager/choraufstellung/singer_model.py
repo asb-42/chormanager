@@ -70,15 +70,10 @@ class Singer:
 
 
 def voice_group_color(voice_group: VoiceGroup) -> str:
-    """Return hex color code for voice group."""
-    colors = {
-        VoiceGroup.SOPRAN_1: "#FFD700",  # Gelb
-        VoiceGroup.SOPRAN_2: "#FFD700",
-        VoiceGroup.ALT_1: "#FF4444",   # Rot
-        VoiceGroup.ALT_2: "#FF4444",
-        VoiceGroup.TENOR_1: "#44BB44", # Grün
-        VoiceGroup.TENOR_2: "#44BB44",
-        VoiceGroup.BASS_1: "#4466FF",    # Blau
-        VoiceGroup.BASS_2: "#4466FF",
-    }
-    return colors.get(voice_group, "#cccccc")
+    """Return hex color for voice group - loads from central config."""
+    try:
+        from config import get_voice_group_color
+        vg_id = voice_group.value if hasattr(voice_group, 'value') else str(voice_group)
+        return get_voice_group_color(vg_id)
+    except Exception:
+        return "#cccccc"
