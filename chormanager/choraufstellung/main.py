@@ -1989,7 +1989,7 @@ class MainWindow(QMainWindow):
             
             if event_id:
                 cursor.execute("""
-                    SELECT s.id, s.full_name, s.short_name, s.voice_group, s.affinity_uuid
+                    SELECT s.id, s.full_name, s.short_name, s.voice_group, s.affinity_uuid, s.height
                     FROM singers s
                     JOIN availability a ON s.id = a.singer_id
                     WHERE a.event_id = ? AND a.status IN ('yes', 'conditional')
@@ -1997,7 +1997,7 @@ class MainWindow(QMainWindow):
                 """, (event_id,))
             else:
                 cursor.execute("""
-                    SELECT s.id, s.full_name, s.short_name, s.voice_group, s.affinity_uuid
+                    SELECT s.id, s.full_name, s.short_name, s.voice_group, s.affinity_uuid, s.height
                     FROM singers s
                     ORDER BY s.full_name
                 """)
@@ -2027,7 +2027,7 @@ class MainWindow(QMainWindow):
                 vg = find_voice_group(vg_str)
                 
                 name = row["short_name"] or row["full_name"]
-                height = 0
+                height = row["height"] or 0
                 affinity = row["affinity_uuid"] or ""
                 
                 s = Singer(name, vg, height, singer_id)
