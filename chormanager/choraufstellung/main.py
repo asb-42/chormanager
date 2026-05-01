@@ -1942,6 +1942,15 @@ class MainWindow(QMainWindow):
                 with open(event_data_file, "r", encoding="utf-8") as f:
                     data = json.load(f)
                 
+                event_info = data.get("event", {})
+                if event_info:
+                    self._loaded_metadata = {
+                        "project": data.get("project", ""),
+                        "event": event_info.get("name", ""),
+                        "event_date": event_info.get("date", "")[:10] if event_info.get("date") else "",
+                        "event_type": event_info.get("event_type", "")
+                    }
+                
                 singers_data = data.get("singers", [])
                 if singers_data:
                     self.singers = []
