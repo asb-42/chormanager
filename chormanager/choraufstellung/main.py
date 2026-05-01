@@ -1287,10 +1287,11 @@ class MainWindow(QMainWindow):
         
         self.setup_ui()
         self.resize(1100, 750)
-        self._check_recovery()
         
         if self.chormanager_mode:
             self._load_from_chormanager()
+        else:
+            self._check_recovery()
         
         settings = load_settings()
         current_theme = settings.get("theme", "light")
