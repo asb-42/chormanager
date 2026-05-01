@@ -1450,6 +1450,10 @@ class MainWindow(QMainWindow):
         s1s2b1b2_action.triggered.connect(self.grid.auto_arrange_s1s2b1b2t1t2a1a2)
         a.addAction(s1s2b1b2_action)
         a.addSeparator()
+        affinity_action = QAction("Nähe (Singpartner)", self)
+        affinity_action.triggered.connect(self.apply_all_affinity_proximity)
+        a.addAction(affinity_action)
+        a.addSeparator()
         reset_action = QAction("Aufstellung zurücksetzen", self)
         reset_action.triggered.connect(self.reset_formation)
         a.addAction(reset_action)
@@ -1613,6 +1617,33 @@ class MainWindow(QMainWindow):
         self.grid.refresh_grid()
         self.is_modified = True
         self.update_grid_count()
+
+    def apply_all_affinity_proximity(self):
+        processed = set()
+        moved = 0
+        for singer in self.singers:
+            if singer.row < 0 or not singer.affinity:
+                continue
+            if singer.singer_id in processed:
+                continue
+            partner = next((s for s in self.singers if s.singer_id == singer.affinity), None)
+            if not partner or partner.row < 0:
+                continue
+            if singer.row != partner.row:
+                continue
+            if abs(singer.col - partner.col) == 1:
+                processed.add(singer.singer_id)
+                processed.add(partner.singer_id)
+                continue
+            if self.grid.apply_affinity_proximity(singer):
+                moved += 1
+            processed.add(singer.singer_id)
+            processed.add(partner.singer_id)
+        if moved > 0:
+            self.statusBar().showMessage(f"{moved} Singpartner nebeneinander platziert", 3000)
+            self.is_modified = True
+        else:
+            QMessageBox.information(self, "Nähe", "Alle Singpartner sind bereits nebeneinander oder nicht in der gleichen Reihe.")
 
     def new_f(self):
         if self.is_modified:
