@@ -1686,6 +1686,8 @@ class MainWindow(QMainWindow):
         if self.storage.save_formation(singers, rows, cols, fp, placed, staggered, metadata=metadata):
             self.file = fp
             self.is_modified = False
+            import time
+            self.last_manual_save_mtime = time.time()
             return True
         return False
     
@@ -1726,13 +1728,13 @@ class MainWindow(QMainWindow):
             return
         
         r = QMessageBox.question(self, "Wiederherstellen", 
-                           "Eine automatisch gespeicherte Aufstellung ist newer als die letzte manuelle Speicherung.\n\n"
-                           "Möchten Sie diese wiederherstellen?",
+                           "Es wurde eine automatisch gespeicherte Aufstellung gefunden, die neuer ist als Ihre letzte manuelle Speicherung.\n\n"
+                           "Möchten Sie die automatisch gespeicherte Version wiederherstellen?\n"
+                           "(Ihre manuell gespeicherte Version bleibt erhalten.)",
                            QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No)
         if r != QMessageBox.StandardButton.Yes:
             return
         
-        # Try to recover from autosave
         data = self.storage.load_formation(latest)
         if data:
             self._load_formation_data(data)
