@@ -1281,7 +1281,12 @@ class MainWindow(QMainWindow):
         
         self.is_modified = False
         self.last_manual_save_mtime = 0
-        self._loaded_metadata = None
+        self._loaded_metadata = {
+            "project": project_name or "",
+            "event": event_name or "",
+            "event_date": event_date or "",
+            "event_type": event_type or ""
+        }
         self.autosave_timer = QTimer(self)
         self.autosave_timer.timeout.connect(self._autosave_check)
         self.autosave_timer.start(120000)
@@ -1614,38 +1619,20 @@ class MainWindow(QMainWindow):
             reply = msg_box.exec()
             if reply == btn_pool:
                 self._reset_excess_to_pool(excess)
-                if hasattr(self, '_loaded_metadata') and self._loaded_metadata:
-                    metadata = self._loaded_metadata
-                else:
-                    metadata = {
-                        "project": os.environ.get("CHOR_PROJECT", "") or self.project_name or "",
-                        "event": os.environ.get("CHOR_EVENT_NAME", "") or self.event_name or "",
-                        "event_date": os.environ.get("CHOR_EVENT_DATE", "") or self.event_date or "",
-                        "event_type": os.environ.get("CHOR_EVENT_TYPE", "") or self.event_type or ""
-                    }
-                return self._save_file(self.file, metadata=metadata)
+                return self._save_file(self.file, metadata=self._loaded_metadata)
             return False
         
         if not self.file:
             return self.save_as_f()
         
-        if hasattr(self, '_loaded_metadata') and self._loaded_metadata:
-            metadata = self._loaded_metadata
-        else:
-            metadata = {
-                "project": os.environ.get("CHOR_PROJECT", "") or self.project_name or "",
-                "event": os.environ.get("CHOR_EVENT_NAME", "") or self.event_name or "",
-                "event_date": os.environ.get("CHOR_EVENT_DATE", "") or self.event_date or "",
-                "event_type": os.environ.get("CHOR_EVENT_TYPE", "") or self.event_type or ""
-            }
-        return self._save_file(self.file, metadata=metadata)
+        return self._save_file(self.file, metadata=self._loaded_metadata)
 
     def save_as_f(self):
         from config import get_data_dir
         data_dir = get_data_dir()
         auto_name = self.generate_filename(
-            os.environ.get("CHOR_EVENT_DATE", ""),
-            os.environ.get("CHOR_EVENT_NAME", "")
+            self._loaded_metadata.get("event_date", ""),
+            self._loaded_metadata.get("event", "")
         )
         fp, _ = QFileDialog.getSaveFileName(self, "Speichern", os.path.join(data_dir, auto_name), "JSON (*.json)")
         if not fp:
@@ -1653,7 +1640,6 @@ class MainWindow(QMainWindow):
         if not fp.endswith(".json"):
             fp += ".json"
         
-        # Check grid capacity before saving
         grid_cells = self.grid.rows * self.grid.cols
         placed = len(self.grid.singers)
         if placed > grid_cells:
@@ -1674,13 +1660,7 @@ class MainWindow(QMainWindow):
             else:
                 return False
         
-        metadata = {
-            "project": os.environ.get("CHOR_PROJECT", ""),
-            "event": os.environ.get("CHOR_EVENT_NAME", ""),
-            "event_date": os.environ.get("CHOR_EVENT_DATE", "")[:10] if os.environ.get("CHOR_EVENT_DATE") else "",
-            "event_type": os.environ.get("CHOR_EVENT_TYPE", "")
-        }
-        return self._save_file(fp, metadata=metadata)
+        return self._save_file(fp, metadata=self._loaded_metadata)
 
     def _save_file(self, fp, metadata: dict = None):
         placed = self.grid.get_placed_singers()
