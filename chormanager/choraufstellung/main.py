@@ -1740,20 +1740,68 @@ class MainWindow(QMainWindow):
             self.is_modified = True
 
     def export_pdf(self):
-        from PyQt6.QtWidgets import QFileDialog
-        fp, _ = QFileDialog.getSaveFileName(
-            self, "PDF exportieren", "", "PDF (*.pdf)"
+        from pdf_export_dialog import PDFExportDialog
+        from config import get_data_dir
+        
+        event_date = os.environ.get("CHOR_EVENT_DATE", "") or self.event_date or ""
+        event_name = os.environ.get("CHOR_EVENT_NAME", "") or self.event_name or ""
+        project_name = os.environ.get("CHOR_PROJECT", "") or self.project_name or ""
+        
+        if event_date:
+            event_date = event_date[:10]
+        
+        from datetime import datetime
+        today = datetime.now().strftime("%Y-%m-%d")
+        date_part = event_date if event_date else today
+        default_filename = f"choraufstellung-{date_part}-version-{today}.pdf"
+        
+        event_info = ""
+        if event_name:
+            event_info = event_name
+        if event_date:
+            event_info += f" ({event_date})"
+        if project_name:
+            event_info = f"{project_name}: {event_info}" if event_info else project_name
+        
+        data_dir = get_data_dir()
+        workdir = os.path.join(os.path.dirname(data_dir), "workdir")
+        os.makedirs(workdir, exist_ok=True)
+        
+        dlg = PDFExportDialog(self, default_filename=default_filename, event_info=event_info)
+        if dlg.exec() != QDialog.DialogCode.Accepted:
+            return
+        
+        settings = dlg.get_settings()
+        
+        fp = os.path.join(workdir, settings["filename"])
+        if not fp.endswith(".pdf"):
+            fp += ".pdf"
+        
+        title = "Choraufstellung"
+        subtitle = ""
+        if event_name:
+            subtitle = event_name
+        if event_date:
+            subtitle += f" - {event_date}"
+        if project_name:
+            subtitle = f"{project_name}: {subtitle}" if subtitle else project_name
+        
+        success = self.pdf.export_formation(
+            self.singers,
+            self.grid.rows,
+            self.grid.cols,
+            fp,
+            title=title,
+            subtitle=subtitle,
+            staggered=self.grid.staggered,
+            orientation=settings["orientation"],
+            color_mode=settings["color_mode"]
         )
-        if fp:
-            if not fp.endswith(".pdf"):
-                fp += ".pdf"
-            self.pdf.export_formation(
-                self.singers,
-                self.grid.rows,
-                self.grid.cols,
-                fp,
-                staggered=self.grid.staggered
-            )
+        
+        if success:
+            QMessageBox.information(self, "PDF Export", f"PDF exportiert nach:\n{fp}")
+        else:
+            QMessageBox.warning(self, "Fehler", "PDF-Export fehlgeschlagen.")
 
     def run_optimizer(self):
         d = OptimizerDialog(self)
