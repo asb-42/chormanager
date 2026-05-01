@@ -506,7 +506,17 @@ class MainWindow(QMainWindow):
         )
         open_projekt_action.triggered.connect(self._open_projekt)
         projekt_menu.addAction(open_projekt_action)
-
+        
+        edit_projekt_action = QAction("Bearbeiten...", self)
+        edit_projekt_action.setIcon(get_icon("document-edit", QStyle.StandardPixmap.SP_FileDialogDetailedView))
+        edit_projekt_action.triggered.connect(self._edit_project)
+        projekt_menu.addAction(edit_projekt_action)
+        
+        delete_projekt_action = QAction("Löschen", self)
+        delete_projekt_action.setIcon(get_icon("edit-delete", QStyle.StandardPixmap.SP_TrashIcon))
+        delete_projekt_action.triggered.connect(self._delete_project)
+        projekt_menu.addAction(delete_projekt_action)
+        
         projekt_menu.addSeparator()
 
         export_menu = projekt_menu.addMenu("Export")
@@ -526,6 +536,24 @@ class MainWindow(QMainWindow):
         export_menu.addAction(export_csv_action)
 
         saenger_menu = menubar.addMenu("Sänger")
+        
+        add_singer_action = QAction("Hinzufügen...", self)
+        add_singer_action.setIcon(get_icon("list-add", QStyle.StandardPixmap.SP_FileIcon))
+        add_singer_action.triggered.connect(lambda: self.singers_tab._add_singer() if hasattr(self, "singers_tab") else None)
+        saenger_menu.addAction(add_singer_action)
+        
+        edit_singer_action = QAction("Bearbeiten...", self)
+        edit_singer_action.setIcon(get_icon("document-edit", QStyle.StandardPixmap.SP_FileDialogDetailedView))
+        edit_singer_action.triggered.connect(lambda: self.singers_tab._edit_singer() if hasattr(self, "singers_tab") else None)
+        saenger_menu.addAction(edit_singer_action)
+        
+        delete_singer_action = QAction("Löschen", self)
+        delete_singer_action.setIcon(get_icon("edit-delete", QStyle.StandardPixmap.SP_TrashIcon))
+        delete_singer_action.triggered.connect(lambda: self.singers_tab._delete_singer() if hasattr(self, "singers_tab") else None)
+        saenger_menu.addAction(delete_singer_action)
+        
+        saenger_menu.addSeparator()
+        
         saenger_export_menu = saenger_menu.addMenu("Export")
         export_lo_saenger = QAction("LibreOffice exportieren...", self)
         export_lo_saenger.triggered.connect(lambda: self._export_tab(1))
@@ -535,6 +563,24 @@ class MainWindow(QMainWindow):
         saenger_export_menu.addAction(export_csv_saenger)
 
         besetzung_menu = menubar.addMenu("Besetzung")
+        
+        add_besetzung_action = QAction("Hinzufügen...", self)
+        add_besetzung_action.setIcon(get_icon("list-add", QStyle.StandardPixmap.SP_FileIcon))
+        add_besetzung_action.triggered.connect(lambda: self.besetzung_tab._new_besetzung() if hasattr(self, "besetzung_tab") else None)
+        besetzung_menu.addAction(add_besetzung_action)
+        
+        edit_besetzung_action = QAction("Bearbeiten...", self)
+        edit_besetzung_action.setIcon(get_icon("document-edit", QStyle.StandardPixmap.SP_FileDialogDetailedView))
+        edit_besetzung_action.triggered.connect(lambda: self.besetzung_tab._edit_besetzung() if hasattr(self, "besetzung_tab") else None)
+        besetzung_menu.addAction(edit_besetzung_action)
+        
+        delete_besetzung_action = QAction("Löschen", self)
+        delete_besetzung_action.setIcon(get_icon("edit-delete", QStyle.StandardPixmap.SP_TrashIcon))
+        delete_besetzung_action.triggered.connect(lambda: self.besetzung_tab._delete_besetzung() if hasattr(self, "besetzung_tab") else None)
+        besetzung_menu.addAction(delete_besetzung_action)
+        
+        besetzung_menu.addSeparator()
+        
         besetzung_export_menu = besetzung_menu.addMenu("Export")
         export_lo_besetzung = QAction("LibreOffice exportieren...", self)
         export_lo_besetzung.triggered.connect(self._export_besetzung)
@@ -551,6 +597,18 @@ class MainWindow(QMainWindow):
         )
         new_event_action.triggered.connect(self._new_event)
         termin_menu.addAction(new_event_action)
+        
+        edit_event_action = QAction("Bearbeiten...", self)
+        edit_event_action.setIcon(get_icon("document-edit", QStyle.StandardPixmap.SP_FileDialogDetailedView))
+        edit_event_action.triggered.connect(self._edit_event)
+        termin_menu.addAction(edit_event_action)
+        
+        delete_event_action = QAction("Löschen", self)
+        delete_event_action.setIcon(get_icon("edit-delete", QStyle.StandardPixmap.SP_TrashIcon))
+        delete_event_action.triggered.connect(self._delete_event)
+        termin_menu.addAction(delete_event_action)
+        
+        termin_menu.addSeparator()
 
         manage_availability_action = QAction("Verfügbarkeit verwalten...", self)
         manage_availability_action.setIcon(
