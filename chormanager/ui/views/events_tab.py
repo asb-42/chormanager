@@ -77,6 +77,14 @@ class EventsTab(QWidget):
         toolbar = QHBoxLayout()
         toolbar.addStretch()
 
+        self.sort_combo = QComboBox()
+        self.sort_combo.addItem("Datum ↓ (neueste zuerst)", "date_desc")
+        self.sort_combo.addItem("Datum ↑ (älteste zuerst)", "date_asc")
+        self.sort_combo.addItem("Name ↑", "name_asc")
+        self.sort_combo.addItem("Name ↓", "name_desc")
+        self.sort_combo.currentIndexChanged.connect(self._load_events)
+        toolbar.addWidget(self.sort_combo)
+
         self.search_box = QLineEdit()
         self.search_box.setPlaceholderText("Suchen...")
         self.search_box.setMaximumWidth(200)
@@ -145,13 +153,23 @@ class EventsTab(QWidget):
         """Load events into table with filters."""
         search_text = self.search_box.text().lower() if self.search_box.text() else ""
         type_filter = self.type_filter.currentData()
+        sort_key = self.sort_combo.currentData() if hasattr(self, "sort_combo") else "date_desc"
 
         events = self.event_repo.get_all()
 
         if self.project_filter:
             events = [e for e in events if e.project_id == self.project_filter.id]
 
-        events = sorted(events, key=lambda e: e.date or "")
+        if sort_key == "date_desc":
+            events = sorted(events, key=lambda e: e.date or "", reverse=True)
+        elif sort_key == "date_asc":
+            events = sorted(events, key=lambda e: e.date or "", reverse=False)
+        elif sort_key == "name_asc":
+            events = sorted(events, key=lambda e: e.name or "", reverse=False)
+        elif sort_key == "name_desc":
+            events = sorted(events, key=lambda e: e.name or "", reverse=True)
+        else:
+            events = sorted(events, key=lambda e: e.date or "", reverse=True)
 
         if search_text or type_filter:
             filtered = []
