@@ -141,22 +141,20 @@ class PDFExporter:
         return display_data, style_commands, col_widths, row_heights
     
     def _create_staggered_grid(self, singers, rows, cols, page_width, page_height, color_mode):
-        stagger_col_width = page_width / (cols + 1)
+        half_col_width = page_width / (2 * cols + 1)
         row_height = min(page_height / rows, 40 * mm)
         
-        font_size = min(8, stagger_col_width / 5)
+        font_size = min(8, half_col_width / 3)
         
         display_data = []
         style_commands = []
         
         color_map = self.VOICE_COLORS if color_mode == "color" else self.VOICE_COLORS_BW
         
+        total_cols = 2 * cols + 1
+        
         for r in range(rows):
-            row_data = []
-            
-            if r % 2 == 1:
-                row_data.append("")
-                style_commands.append(('BACKGROUND', (0, r), (0, r), colors.Color(0.95, 0.95, 0.95)))
+            row_data = [''] * total_cols
             
             for c in range(cols):
                 singer = self._get_singer_at(singers, r, c)
@@ -165,24 +163,24 @@ class PDFExporter:
                     vg = singer.voice_group.value if hasattr(singer.voice_group, 'value') else str(singer.voice_group)
                     vg_short = vg.split()[0] if vg else ""
                     cell_text = f"{name}\n{vg}"
-                    row_data.append(cell_text)
                     
-                    col_idx = c + 1 if r % 2 == 1 else c
+                    if r % 2 == 0:
+                        col_idx = 2 * c
+                    else:
+                        col_idx = 2 * c + 1
+                    
+                    row_data[col_idx] = cell_text
+                    
                     bg_color = color_map.get(vg_short, colors.white)
                     style_commands.append(('BACKGROUND', (col_idx, r), (col_idx, r), bg_color))
-                else:
-                    row_data.append("")
+                    
+                    style_commands.append(('SPAN', (col_idx, r), (col_idx + 1, r)))
             
             display_data.append(row_data)
         
         style_commands.append(('FONTSIZE', (0, 0), (-1, -1), font_size))
         
-        if rows % 2 == 1:
-            num_cols = cols + 1
-        else:
-            num_cols = cols + 1
-        
-        col_widths = [stagger_col_width] * num_cols
+        col_widths = [half_col_width] * total_cols
         row_heights = [row_height] * rows
         
         return display_data, style_commands, col_widths, row_heights
