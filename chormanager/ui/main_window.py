@@ -1324,6 +1324,7 @@ class MainWindow(QMainWindow):
                     "name": singer.full_name,
                     "short_name": singer.short_name or "",
                     "voice_group": singer.voice_group,
+                    "height": singer.height or 0,
                     "affinity": singer.affinity_uuid or ""
                 })
         
