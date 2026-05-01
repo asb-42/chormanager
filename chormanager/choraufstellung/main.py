@@ -366,6 +366,26 @@ class FormationGrid(QWidget):
         self.setAcceptDrops(True)
         self.setMinimumSize(self.cols * self.CELL_WIDTH + self.MARGIN_LEFT + 50, 
                            self.rows * self.CELL_HEIGHT + self.MARGIN_TOP + 50)
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.show_grid_context_menu)
+    
+    def show_grid_context_menu(self, pos):
+        menu = QMenu(self)
+        
+        if len(self.selected_ids) == 2:
+            swap_action = menu.addAction("Positionen tauschen")
+            swap_action.triggered.connect(self.swap_selected_singers)
+            menu.addSeparator()
+        
+        undo_action = menu.addAction("Rückgängig")
+        undo_action.setEnabled(self.undo_stack.canUndo())
+        undo_action.triggered.connect(self.undo_stack.undo)
+        
+        redo_action = menu.addAction("Wiederholen")
+        redo_action.setEnabled(self.undo_stack.canRedo())
+        redo_action.triggered.connect(self.undo_stack.redo)
+        
+        menu.exec(self.mapToGlobal(pos))
     
     def set_dimensions(self, rows, cols):
         self.rows = rows
