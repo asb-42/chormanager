@@ -880,9 +880,90 @@ class FormationGrid(QWidget):
                 s.col = -1
         self.refresh_grid()
 
+    def auto_arrange_s1s2a1a2t1t2b1b2(self):
+        if not self.singers:
+            return
+        def get_vg(vg):
+            return vg.value if hasattr(vg, 'value') else str(vg)
+        s1 = [s for s in self.singers if get_vg(s.voice_group) == "Sopran 1"]
+        s2 = [s for s in self.singers if get_vg(s.voice_group) == "Sopran 2"]
+        a1 = [s for s in self.singers if get_vg(s.voice_group) == "Alt 1"]
+        a2 = [s for s in self.singers if get_vg(s.voice_group) == "Alt 2"]
+        t1 = [s for s in self.singers if get_vg(s.voice_group) == "Tenor 1"]
+        t2 = [s for s in self.singers if get_vg(s.voice_group) == "Tenor 2"]
+        b1 = [s for s in self.singers if get_vg(s.voice_group) == "Bass 1"]
+        b2 = [s for s in self.singers if get_vg(s.voice_group) == "Bass 2"]
+        s1.sort(key=lambda s: s.name)
+        s2.sort(key=lambda s: s.name)
+        a1.sort(key=lambda s: s.name)
+        a2.sort(key=lambda s: s.name)
+        t1.sort(key=lambda s: s.name)
+        t2.sort(key=lambda s: s.name)
+        b1.sort(key=lambda s: s.name)
+        b2.sort(key=lambda s: s.name)
+        ordered = s1 + s2 + a1 + a2 + t1 + t2 + b1 + b2
+        placed_ids = set()
+        idx = 0
+        for col in range(self.cols):
+            for row in range(self.rows):
+                if idx < len(ordered):
+                    s = ordered[idx]
+                    s.row = row
+                    s.col = col
+                    placed_ids.add(s.singer_id)
+                    idx += 1
+                else:
+                    break
+        for s in self.singers:
+            if s.singer_id not in placed_ids:
+                s.row = -1
+                s.col = -1
+        self.refresh_grid()
+
+    def auto_arrange_s1s2b1b2t1t2a1a2(self):
+        if not self.singers:
+            return
+        def get_vg(vg):
+            return vg.value if hasattr(vg, 'value') else str(vg)
+        s1 = [s for s in self.singers if get_vg(s.voice_group) == "Sopran 1"]
+        s2 = [s for s in self.singers if get_vg(s.voice_group) == "Sopran 2"]
+        b1 = [s for s in self.singers if get_vg(s.voice_group) == "Bass 1"]
+        b2 = [s for s in self.singers if get_vg(s.voice_group) == "Bass 2"]
+        t1 = [s for s in self.singers if get_vg(s.voice_group) == "Tenor 1"]
+        t2 = [s for s in self.singers if get_vg(s.voice_group) == "Tenor 2"]
+        a1 = [s for s in self.singers if get_vg(s.voice_group) == "Alt 1"]
+        a2 = [s for s in self.singers if get_vg(s.voice_group) == "Alt 2"]
+        s1.sort(key=lambda s: s.name)
+        s2.sort(key=lambda s: s.name)
+        b1.sort(key=lambda s: s.name)
+        b2.sort(key=lambda s: s.name)
+        t1.sort(key=lambda s: s.name)
+        t2.sort(key=lambda s: s.name)
+        a1.sort(key=lambda s: s.name)
+        a2.sort(key=lambda s: s.name)
+        ordered = s1 + s2 + b1 + b2 + t1 + t2 + a1 + a2
+        placed_ids = set()
+        idx = 0
+        for col in range(self.cols):
+            for row in range(self.rows):
+                if idx < len(ordered):
+                    s = ordered[idx]
+                    s.row = row
+                    s.col = col
+                    placed_ids.add(s.singer_id)
+                    idx += 1
+                else:
+                    break
+        for s in self.singers:
+            if s.singer_id not in placed_ids:
+                s.row = -1
+                s.col = -1
+        self.refresh_grid()
+
 class SingerPool(QWidget):
     singer_selected = pyqtSignal(object); singer_added = pyqtSignal(object)
     singer_edit_requested = pyqtSignal(object)
+    place_all_requested = pyqtSignal()
     def __init__(self, parent=None):
         super().__init__(parent); self.singers=[]
         lay = QVBoxLayout(self)
@@ -905,6 +986,12 @@ class SingerPool(QWidget):
         self.table.cellClicked.connect(self.on_cell_clicked)
         lay.addWidget(self.table)
         self.placed_singer_ids = set()
+        
+        btn_lay = QVBoxLayout()
+        btn_lay.addWidget(QPushButton("Alle Sänger platzieren", clicked=self.place_all_requested.emit))
+        btn_lay.addWidget(QPushButton("Einzelner Sänger", clicked=self.add_dialog))
+        btn_lay.addWidget(QPushButton("Ausgewählten entfernen", clicked=self.remove_sel))
+        lay.addLayout(btn_lay)
     
     def on_cell_clicked(self, row, col):
         singer = self.table.item(row, 0).data(Qt.ItemDataRole.UserRole)
@@ -1221,13 +1308,16 @@ class MainWindow(QMainWindow):
         lp=QWidget(); ll=QVBoxLayout(lp); self.pool=SingerPool()
         self.pool.singer_selected.connect(self.add_to_grid); self.pool.singer_added.connect(self.add_to_grid)
         self.pool.singer_edit_requested.connect(self.edit_singer)
+        self.pool.place_all_requested.connect(self.place_all_singers)
         ll.addWidget(self.pool); sp.addWidget(lp)
         rp=QWidget(); rl=QVBoxLayout(rp); gh=QHBoxLayout(); gh.addWidget(QLabel("<b>Aufstellung</b>"))
         gc=QHBoxLayout(); gc.addWidget(QLabel("Reihen:")); self.rs=QComboBox()
         for i in range(1,10): self.rs.addItem(str(i)); self.rs.setCurrentText("4")
+        self.rs.setMinimumWidth(50)
         self.rs.currentTextChanged.connect(self.upd_grid); gc.addWidget(self.rs)
         gc.addWidget(QLabel("Spalten:")); self.cs=QComboBox()
-        for i in range(1,21): self.cs.addItem(str(i)); self.cs.setCurrentText("5")
+        for i in range(1,31): self.cs.addItem(str(i)); self.cs.setCurrentText("5")
+        self.cs.setMinimumWidth(50)
         self.cs.currentTextChanged.connect(self.upd_grid); gc.addWidget(self.cs)
         self.grid_count_label = QLabel("0 Sänger")
         self.grid_count_label.setStyleSheet("color: #666; font-size: 9pt; margin-left: 10px;")
@@ -1300,6 +1390,12 @@ class MainWindow(QMainWindow):
         s1s2_action = QAction("S1 S2 B2 B1 T2 T1 A2 A1", self)
         s1s2_action.triggered.connect(self.grid.auto_arrange_s1s2b2b1t2t1a2a1)
         a.addAction(s1s2_action)
+        s1s2a1a2_action = QAction("S1 S2 A1 A2 T1 T2 B1 B2", self)
+        s1s2a1a2_action.triggered.connect(self.grid.auto_arrange_s1s2a1a2t1t2b1b2)
+        a.addAction(s1s2a1a2_action)
+        s1s2b1b2_action = QAction("S1 S2 B1 B2 T1 T2 A1 A2", self)
+        s1s2b1b2_action.triggered.connect(self.grid.auto_arrange_s1s2b1b2t1t2a1a2)
+        a.addAction(s1s2b1b2_action)
         a.addSeparator()
         reset_action = QAction("Aufstellung zurücksetzen", self)
         reset_action.triggered.connect(self.reset_formation)
@@ -1338,6 +1434,20 @@ class MainWindow(QMainWindow):
         if not self.grid.place_singer(singer):
             QMessageBox.warning(self, "Fehler", "Keine freie Position im Raster verfügbar.")
         self.update_grid_count()
+
+    def place_all_singers(self):
+        placed = 0
+        for singer in self.singers:
+            if str(singer.singer_id) not in self.grid.get_placed_singer_ids():
+                if self.grid.place_singer(singer):
+                    placed += 1
+                else:
+                    break
+        self.update_grid_count()
+        if placed > 0:
+            self.statusBar().showMessage(f"{placed} Sänger platziert", 3000)
+        else:
+            QMessageBox.information(self, "Info", "Alle Sänger sind bereits platziert oder das Raster ist voll.")
 
     def update_grid_count(self):
         placed = len(self.grid.get_placed_singer_ids())

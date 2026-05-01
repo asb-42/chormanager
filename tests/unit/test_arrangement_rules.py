@@ -87,7 +87,6 @@ class TestSATBRule:
         assert rule.is_primary is True
 
     def test_satb_rule_ordering(self):
-        """Should order by Sopran -> Alt -> Tenor -> Bass, fill column-wise."""
         from core.rules import SingerRef
         
         singers = [
@@ -98,7 +97,7 @@ class TestSATBRule:
         ]
         
         rule = SATBRule()
-        result = rule.apply(singers, 2, 2, staggered=False)
+        result = rule.apply(singers, 2, 4, staggered=False)
         
         sopran = next(s for s in singers if "Sopran" in s.voice_group)
         alt = next(s for s in singers if "Alt" in s.voice_group)
@@ -106,12 +105,11 @@ class TestSATBRule:
         bass = next(s for s in singers if "Bass" in s.voice_group)
         
         assert sopran.col == 0 and sopran.row == 0
-        assert alt.col == 0 and alt.row == 1
-        assert tenor.col == 1 and tenor.row == 0
-        assert bass.col == 1 and bass.row == 1
+        assert alt.col == 1 and alt.row == 0
+        assert tenor.col == 2 and tenor.row == 0
+        assert bass.col == 3 and bass.row == 0
 
     def test_satb_rule_column_wise_fill(self):
-        """Should fill grid column by column (col 0 first, then col 1)."""
         from core.rules import SingerRef
         
         singers = [
@@ -122,7 +120,7 @@ class TestSATBRule:
         ]
         
         rule = SATBRule()
-        result = rule.apply(singers, 2, 2, staggered=False)
+        result = rule.apply(singers, 2, 4, staggered=False)
         
         s1 = next(s for s in singers if s.singer_id == "s1")
         a1 = next(s for s in singers if s.singer_id == "s2")
@@ -130,9 +128,9 @@ class TestSATBRule:
         b1 = next(s for s in singers if s.singer_id == "s4")
         
         assert s1.col == 0 and s1.row == 0
-        assert a1.col == 0 and a1.row == 1
-        assert t1.col == 1 and t1.row == 0
-        assert b1.col == 1 and b1.row == 1
+        assert a1.col == 1 and a1.row == 0
+        assert t1.col == 2 and t1.row == 0
+        assert b1.col == 3 and b1.row == 0
 
     def test_satb_rule_sorted_by_name_within_group(self):
         """Should sort by name within each voice group."""
@@ -192,10 +190,17 @@ class TestSBTARule:
 
 class TestAffinityCostFunction:
     def test_cost_function_simple_distance(self):
-        """Should compute simple Euclidean distance."""
+        """Should compute distance with same-row preference."""
         cost_fn = AffinityCostFunction(staggered=False)
-        dist = cost_fn.compute_distance((0, 0), (1, 1), 0, 0)
-        assert dist == pytest.approx((2 ** 0.5), rel=1e-5)
+        
+        dist_same_row_adjacent = cost_fn.compute_distance((0, 0), (0, 1), 0, 0)
+        assert dist_same_row_adjacent == 0.0
+        
+        dist_same_row_gap = cost_fn.compute_distance((0, 0), (0, 2), 0, 0)
+        assert dist_same_row_gap == 1.0
+        
+        dist_diff_row = cost_fn.compute_distance((0, 0), (1, 1), 0, 0)
+        assert dist_diff_row > 100.0
 
     def test_cost_function_no_stagger_ignores_parity(self):
         """Non-staggered mode should ignore row parity."""
@@ -314,10 +319,9 @@ class TestRuleRegistry:
         assert rule is None
 
     def test_get_primary_rules(self):
-        """Should return only primary rules."""
         primaries = get_primary_rules()
         assert all(r.is_primary for r in primaries)
-        assert len(primaries) == 4
+        assert len(primaries) == 6
 
     def test_get_refinement_rules(self):
         """Should return only refinement rules."""

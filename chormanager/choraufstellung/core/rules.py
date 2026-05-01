@@ -90,37 +90,51 @@ class SATBRule(ArrangementRule):
 
     def apply(self, singers: List[SingerRef], rows: int, cols: int, staggered: bool = False) -> ArrangementResult:
         vg_getter = get_voice_group_value
-        sopran = [s for s in singers if "Sopran" in vg_getter(s.voice_group)]
-        alt = [s for s in singers if "Alt" in vg_getter(s.voice_group)]
-        tenor = [s for s in singers if "Tenor" in vg_getter(s.voice_group)]
-        bass = [s for s in singers if "Bass" in vg_getter(s.voice_group)]
+        sopran1 = [s for s in singers if vg_getter(s.voice_group) == "Sopran 1"]
+        sopran2 = [s for s in singers if vg_getter(s.voice_group) == "Sopran 2"]
+        alt1 = [s for s in singers if vg_getter(s.voice_group) == "Alt 1"]
+        alt2 = [s for s in singers if vg_getter(s.voice_group) == "Alt 2"]
+        tenor1 = [s for s in singers if vg_getter(s.voice_group) == "Tenor 1"]
+        tenor2 = [s for s in singers if vg_getter(s.voice_group) == "Tenor 2"]
+        bass1 = [s for s in singers if vg_getter(s.voice_group) == "Bass 1"]
+        bass2 = [s for s in singers if vg_getter(s.voice_group) == "Bass 2"]
 
-        sopran.sort(key=lambda s: s.name)
-        alt.sort(key=lambda s: s.name)
-        tenor.sort(key=lambda s: s.name)
-        bass.sort(key=lambda s: s.name)
+        sopran1.sort(key=lambda s: s.name)
+        sopran2.sort(key=lambda s: s.name)
+        alt1.sort(key=lambda s: s.name)
+        alt2.sort(key=lambda s: s.name)
+        tenor1.sort(key=lambda s: s.name)
+        tenor2.sort(key=lambda s: s.name)
+        bass1.sort(key=lambda s: s.name)
+        bass2.sort(key=lambda s: s.name)
 
-        ordered = sopran + alt + tenor + bass
+        groups = [
+            sopran1, sopran2, alt1, alt2, tenor1, tenor2, bass1, bass2
+        ]
+        
+        import math
         placed_ids = set()
-
-        idx = 0
-        for col in range(cols):
-            for row in range(rows):
-                if idx < len(ordered):
-                    s = ordered[idx]
-                    s.row = row
-                    s.col = col
-                    placed_ids.add(s.singer_id)
-                    idx += 1
-                else:
-                    break
+        col = 0
+        for group in groups:
+            if not group:
+                continue
+            
+            cols_needed = math.ceil(len(group) / rows)
+            
+            for i, s in enumerate(group):
+                row = i % rows
+                s.row = row
+                s.col = col + (i // rows)
+                placed_ids.add(s.singer_id)
+            
+            col += cols_needed
 
         for s in singers:
             if s.singer_id not in placed_ids:
                 s.row = -1
                 s.col = -1
 
-        return ArrangementResult(success=True, singers=singers, message=f"{idx} Sänger platziert")
+        return ArrangementResult(success=True, singers=singers, message=f"{len(placed_ids)} Sänger platziert")
 
 
 class SBTARule(ArrangementRule):
@@ -186,6 +200,90 @@ class S1S2B2B1T2T1A2A1Rule(ArrangementRule):
         a1.sort(key=lambda s: s.name)
 
         ordered = s1 + s2 + b2 + b1 + t2 + t1 + a2 + a1
+
+        placed_ids = set()
+        idx = 0
+        for col in range(cols):
+            for row in range(rows):
+                if idx < len(ordered):
+                    s = ordered[idx]
+                    s.row = row
+                    s.col = col
+                    placed_ids.add(s.singer_id)
+                    idx += 1
+                else:
+                    break
+
+        for s in singers:
+            if s.singer_id not in placed_ids:
+                s.row = -1
+                s.col = -1
+
+        return ArrangementResult(success=True, singers=singers, message=f"{idx} Sänger platziert")
+
+
+class S1S2A1A2T1T2B1B2Rule(ArrangementRule):
+    def __init__(self):
+        super().__init__("S1 S2 A1 A2 T1 T2 B1 B2", is_primary=True)
+
+    def apply(self, singers: List[SingerRef], rows: int, cols: int, staggered: bool = False) -> ArrangementResult:
+        vg_getter = get_voice_group_value
+        
+        s1 = [s for s in singers if vg_getter(s.voice_group) == "Sopran 1"]
+        s2 = [s for s in singers if vg_getter(s.voice_group) == "Sopran 2"]
+        a1 = [s for s in singers if vg_getter(s.voice_group) == "Alt 1"]
+        a2 = [s for s in singers if vg_getter(s.voice_group) == "Alt 2"]
+        t1 = [s for s in singers if vg_getter(s.voice_group) == "Tenor 1"]
+        t2 = [s for s in singers if vg_getter(s.voice_group) == "Tenor 2"]
+        b1 = [s for s in singers if vg_getter(s.voice_group) == "Bass 1"]
+        b2 = [s for s in singers if vg_getter(s.voice_group) == "Bass 2"]
+
+        for group in [s1, s2, a1, a2, t1, t2, b1, b2]:
+            group.sort(key=lambda s: s.name)
+
+        ordered = s1 + s2 + a1 + a2 + t1 + t2 + b1 + b2
+
+        placed_ids = set()
+        idx = 0
+        for col in range(cols):
+            for row in range(rows):
+                if idx < len(ordered):
+                    s = ordered[idx]
+                    s.row = row
+                    s.col = col
+                    placed_ids.add(s.singer_id)
+                    idx += 1
+                else:
+                    break
+
+        for s in singers:
+            if s.singer_id not in placed_ids:
+                s.row = -1
+                s.col = -1
+
+        return ArrangementResult(success=True, singers=singers, message=f"{idx} Sänger platziert")
+
+
+class S1S2B1B2T1T2A1A2Rule(ArrangementRule):
+    def __init__(self):
+        super().__init__("S1 S2 B1 B2 T1 T2 A1 A2", is_primary=True)
+
+    def apply(self, singers: List[SingerRef], rows: int, cols: int, staggered: bool = False) -> ArrangementResult:
+        vg_getter = get_voice_group_value
+        
+        s1 = [s for s in singers if vg_getter(s.voice_group) == "Sopran 1"]
+        s2 = [s for s in singers if vg_getter(s.voice_group) == "Sopran 2"]
+        b1 = [s for s in singers if vg_getter(s.voice_group) == "Bass 1"]
+        b2 = [s for s in singers if vg_getter(s.voice_group) == "Bass 2"]
+        t1 = [s for s in singers if vg_getter(s.voice_group) == "Tenor 1"]
+        t2 = [s for s in singers if vg_getter(s.voice_group) == "Tenor 2"]
+        a1 = [s for s in singers if vg_getter(s.voice_group) == "Alt 1"]
+        a2 = [s for s in singers if vg_getter(s.voice_group) == "Alt 2"]
+
+        for group in [s1, s2, b1, b2, t1, t2, a1, a2]:
+            group.sort(key=lambda s: s.name)
+
+        ordered = s1 + s2 + b1 + b2 + t1 + t2 + a1 + a2
 
         placed_ids = set()
         idx = 0
@@ -399,108 +497,150 @@ class AffinityRule(ArrangementRule):
 
 # OPTIMIZER: Voice Group Cohesion Rule - keeps same voice groups together
 class VoiceGroupCohesionRule(ArrangementRule):
-    """Refinement rule to keep singers of same voice group adjacent."""
-    
-    def __init__(self, max_swaps: int = 200, max_iterations: int = 5):
+    def __init__(self, max_swaps: int = 200, max_iterations: int = 10):
         super().__init__("Stimmgruppe zusammenhalten", is_primary=False)
         self.max_swaps = max_swaps
         self.max_iterations = max_iterations
     
     def _get_voice_group(self, singer):
-        """Get voice group identifier."""
         vg = singer.voice_group
         if hasattr(vg, 'value'):
             return vg.value
         return str(vg)
     
-    def _compute_distance(self, s1, s2):
-        """Compute distance - vertical same column is best, then horizontal."""
+    def _compute_cohesion_cost(self, s1, s2):
         if s1.row < 0 or s1.col < 0 or s2.row < 0 or s2.col < 0:
             return float('inf')
+        
+        vg1 = self._get_voice_group(s1)
+        vg2 = self._get_voice_group(s2)
+        
+        if vg1 != vg2:
+            if s1.row == s2.row and abs(s1.col - s2.col) == 1:
+                return 1000.0
+            elif s1.row == s2.row:
+                return 500.0 + abs(s1.col - s2.col) * 10.0
+            else:
+                return 200.0 + abs(s1.col - s2.col)
         
         if s1.row == s2.row and s1.col == s2.col:
             return 0.0
         
-        # Same column, different row = perfect (vertical alignment)
-        if s1.col == s2.col and s1.row != s2.row:
-            return 1.0
-        
-        # Same row = good (horizontal neighbors)
         if s1.row == s2.row:
-            return 10.0 + float(abs(s1.col - s2.col))
+            return float(abs(s1.col - s2.col)) * 0.5
         
-        # Different row and column = bad
-        return 100.0 + abs(s1.col - s2.col)
+        return 50.0 + abs(s1.col - s2.col)
+    
+    def _compute_group_cohesion(self, group):
+        if len(group) < 2:
+            return 0.0
+        
+        total_cost = 0.0
+        for i in range(len(group)):
+            for j in range(i + 1, len(group)):
+                total_cost += self._compute_cohesion_cost(group[i], group[j])
+        
+        return total_cost
+    
+    def _compute_total_cost(self, vg_groups):
+        total = 0.0
+        for vg, group in vg_groups.items():
+            total += self._compute_group_cohesion(group)
+        return total
     
     def apply(self, singers: List[SingerRef], rows: int, cols: int,
               staggered: bool = False,
               get_singer_at_fn: Optional[Callable] = None,
               is_occupied_fn: Optional[Callable] = None) -> ArrangementResult:
         
-        for iteration in range(self.max_iterations):
-            any_swapped = False
-            total_swapped = 0
+        vg_groups = {}
+        for s in singers:
+            if s.row < 0:
+                continue
+            vg = self._get_voice_group(s)
+            if vg not in vg_groups:
+                vg_groups[vg] = []
+            vg_groups[vg].append(s)
+        
+        swapped = 0
+        cost_improved = True
+        iteration = 0
+        
+        while cost_improved and iteration < self.max_iterations and swapped < self.max_swaps:
+            cost_improved = False
+            iteration += 1
             
-            # Build groups by voice group
-            vg_groups = {}
-            for s in singers:
-                if s.row < 0:
-                    continue
-                vg = self._get_voice_group(s)
-                if vg not in vg_groups:
-                    vg_groups[vg] = []
-                vg_groups[vg].append(s)
+            current_total_cost = self._compute_total_cost(vg_groups)
             
-            # For each voice group with multiple singers
             for vg, group in vg_groups.items():
                 if len(group) < 2:
                     continue
                 
-                # Sort by column to process left-to-right
-                group.sort(key=lambda s: (s.col, s.row))
-                
-                for idx in range(len(group)):
-                    for j in range(idx + 1, len(group)):
-                        if total_swapped >= self.max_swaps:
+                for i in range(len(group)):
+                    for j in range(i + 1, len(group)):
+                        if swapped >= self.max_swaps:
                             break
                         
-                        s1, s2 = group[idx], group[j]
-                        current = self._compute_distance(s1, s2)
-                        if current < 0.1:
-                            continue
+                        s1 = group[i]
+                        s2 = group[j]
                         
-                        best = None
-                        best_dist = current
+                        occupied = set()
+                        for s in singers:
+                            if s.row >= 0 and s.col >= 0:
+                                occupied.add((s.row, s.col))
                         
-                        # Find candidate to swap with
+                        empty_positions = []
+                        for r in range(rows):
+                            for c in range(cols):
+                                if (r, c) not in occupied:
+                                    empty_positions.append((r, c))
+                        
+                        for empty_r, empty_c in empty_positions:
+                            old_row, old_col = s2.row, s2.col
+                            s2.row, s2.col = empty_r, empty_c
+                            
+                            new_total_cost = self._compute_total_cost(vg_groups)
+                            
+                            if new_total_cost < current_total_cost:
+                                current_total_cost = new_total_cost
+                                swapped += 1
+                                cost_improved = True
+                                break
+                            else:
+                                s2.row, s2.col = old_row, old_col
+                        
+                        if cost_improved:
+                            break
+                        
                         for other in singers:
                             if other.row < 0:
                                 continue
                             if other.singer_id in (s1.singer_id, s2.singer_id):
                                 continue
                             
-                            # Apply swap temporarily
-                            or1, oc1 = s2.row, s2.col
-                            or2, oc2 = other.row, other.col
+                            old_row2, old_col2 = s2.row, s2.col
+                            old_other_row, old_other_col = other.row, other.col
+                            
                             s2.row, other.row = other.row, s2.row
                             s2.col, other.col = other.col, s2.col
                             
-                            new_dist = self._compute_distance(s1, s2)
-                            if new_dist < best_dist:
-                                best_dist = new_dist
-                                best = (other, or1, oc1, or2, oc2)
+                            new_total_cost = self._compute_total_cost(vg_groups)
+                            
+                            if new_total_cost < current_total_cost:
+                                current_total_cost = new_total_cost
+                                swapped += 1
+                                cost_improved = True
+                                break
                             else:
-                                # Revert
-                                s2.row, other.row = or1, or2
-                                s2.col, other.col = oc1, oc2
+                                s2.row, s2.col = old_row2, old_col2
+                                other.row, other.col = old_other_row, old_other_col
                         
-                        if best:
-                            other, _, _, _, _ = best
-                            total_swapped += 1
-                            any_swapped = True
-            
-            if not any_swapped:
-                break
+                        if cost_improved:
+                            break
+                    if cost_improved:
+                        break
+                if cost_improved:
+                    break
         
         return ArrangementResult(success=True, singers=singers, message="Stimmgruppen zusammengehalten")
 
@@ -509,6 +649,8 @@ RULE_REGISTRY = {
     "height": HeightRule(),
     "satb": SATBRule(),
     "sbta": SBTARule(),
+    "s1s2a1a2t1t2b1b2": S1S2A1A2T1T2B1B2Rule(),
+    "s1s2b1b2t1t2a1a2": S1S2B1B2T1T2A1A2Rule(),
     "affinity": AffinityRule(),
     "voice_group_cohesion": VoiceGroupCohesionRule(),
     "s1s2b2b1t2t1a2a1": S1S2B2B1T2T1A2A1Rule(),

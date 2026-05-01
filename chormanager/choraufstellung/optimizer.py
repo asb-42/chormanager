@@ -34,6 +34,10 @@ class OptimizeFormationCommand(QUndoCommand):
 
             rule.apply(self.grid, self.grid.singers)
 
+        voice_group_cohesion = RULE_REGISTRY.get("voice_group_cohesion")
+        if voice_group_cohesion:
+            voice_group_cohesion.apply(self.grid, self.grid.singers)
+
         self.elapsed_ms = int((time.time() - start) * 1000)
 
         for s in self.grid.singers:
