@@ -640,10 +640,16 @@ class FormationGrid(QWidget):
         return {s.singer_id for s in self.singers if s.row >= 0}
     
     def auto_arrange_by_height(self):
-        if not self.singers:
+        main_window = self.parent()
+        while main_window and not hasattr(main_window, 'singers'):
+            main_window = main_window.parent()
+        
+        if not main_window or not main_window.singers:
             return
+        
+        all_singers = main_window.singers
         sorted_singers = sorted(
-            self.singers,
+            all_singers,
             key=lambda s: (-s.height, (s.voice_group.value if hasattr(s.voice_group, 'value') else str(s.voice_group)), s.name)
         )
         idx = 0
@@ -656,11 +662,15 @@ class FormationGrid(QWidget):
                     idx += 1
                 else:
                     break
-        for s in self.singers:
+        for s in all_singers:
             if s not in sorted_singers[:idx]:
                 s.row = -1
                 s.col = -1
         self.refresh_grid()
+        if hasattr(main_window, 'update_grid_count'):
+            main_window.update_grid_count()
+        if hasattr(main_window, 'pool'):
+            main_window.pool.update_singers(all_singers, self.get_placed_singer_ids())
     
     def auto_arrange_men_outer(self):
         if not self.singers:
