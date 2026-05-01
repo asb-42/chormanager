@@ -1281,6 +1281,7 @@ class MainWindow(QMainWindow):
         
         self.is_modified = False
         self.last_manual_save_mtime = 0
+        self._loaded_metadata = None
         self.autosave_timer = QTimer(self)
         self.autosave_timer.timeout.connect(self._autosave_check)
         self.autosave_timer.start(120000)
@@ -1593,9 +1594,9 @@ class MainWindow(QMainWindow):
         self.file = fp
         self.is_modified = False
         self.update_grid_count()
+        self._loaded_metadata = data.get("metadata", {})
 
     def save_f(self):
-        # Check grid capacity before saving
         grid_cells = self.grid.rows * self.grid.cols
         placed = len(self.grid.singers)
         if placed > grid_cells:
@@ -1612,27 +1613,31 @@ class MainWindow(QMainWindow):
             
             reply = msg_box.exec()
             if reply == btn_pool:
-                # Reset excess to pool
                 self._reset_excess_to_pool(excess)
-                # Then save
-                metadata = {
-                    "project": os.environ.get("CHOR_PROJECT", "") or self.project_name or "",
-                    "event": os.environ.get("CHOR_EVENT_NAME", "") or self.event_name or "",
-                    "event_date": os.environ.get("CHOR_EVENT_DATE", "") or self.event_date or "",
-                    "event_type": os.environ.get("CHOR_EVENT_TYPE", "") or self.event_type or ""
-                }
+                if hasattr(self, '_loaded_metadata') and self._loaded_metadata:
+                    metadata = self._loaded_metadata
+                else:
+                    metadata = {
+                        "project": os.environ.get("CHOR_PROJECT", "") or self.project_name or "",
+                        "event": os.environ.get("CHOR_EVENT_NAME", "") or self.event_name or "",
+                        "event_date": os.environ.get("CHOR_EVENT_DATE", "") or self.event_date or "",
+                        "event_type": os.environ.get("CHOR_EVENT_TYPE", "") or self.event_type or ""
+                    }
                 return self._save_file(self.file, metadata=metadata)
-            # If user clicked resize, return False to let them adjust
             return False
         
         if not self.file:
             return self.save_as_f()
-        metadata = {
-            "project": os.environ.get("CHOR_PROJECT", "") or self.project_name or "",
-            "event": os.environ.get("CHOR_EVENT_NAME", "") or self.event_name or "",
-            "event_date": os.environ.get("CHOR_EVENT_DATE", "") or self.event_date or "",
-            "event_type": os.environ.get("CHOR_EVENT_TYPE", "") or self.event_type or ""
-        }
+        
+        if hasattr(self, '_loaded_metadata') and self._loaded_metadata:
+            metadata = self._loaded_metadata
+        else:
+            metadata = {
+                "project": os.environ.get("CHOR_PROJECT", "") or self.project_name or "",
+                "event": os.environ.get("CHOR_EVENT_NAME", "") or self.event_name or "",
+                "event_date": os.environ.get("CHOR_EVENT_DATE", "") or self.event_date or "",
+                "event_type": os.environ.get("CHOR_EVENT_TYPE", "") or self.event_type or ""
+            }
         return self._save_file(self.file, metadata=metadata)
 
     def save_as_f(self):
