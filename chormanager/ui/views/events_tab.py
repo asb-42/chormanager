@@ -75,6 +75,11 @@ class EventsTab(QWidget):
         """Set up the UI."""
         layout = QVBoxLayout(self)
         toolbar = QHBoxLayout()
+        
+        self.availability_btn = QPushButton("Verfügbarkeit erfassen")
+        self.availability_btn.clicked.connect(self._manage_availability)
+        toolbar.addWidget(self.availability_btn)
+        
         toolbar.addStretch()
 
         self.sort_combo = QComboBox()

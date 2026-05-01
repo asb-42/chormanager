@@ -474,8 +474,8 @@ class EventAvailabilityDialog(QDialog):
         filter_layout.addWidget(sort_label)
 
         self.sort_by_combo = QComboBox()
-        self.sort_by_combo.addItem("Kurzname", "short_name")
         self.sort_by_combo.addItem("Stimmgruppe", "voice_group")
+        self.sort_by_combo.addItem("Kurzname", "short_name")
         self.sort_by_combo.currentIndexChanged.connect(self._load_availability)
         filter_layout.addWidget(self.sort_by_combo)
 
@@ -554,11 +554,25 @@ class EventAvailabilityDialog(QDialog):
         sort_by = self.sort_by_combo.currentData()
         sort_order = self.sort_order_combo.currentData()
 
+        voice_group_order = {
+            "Sopran 1": 0,
+            "Sopran 2": 1,
+            "Alt 1": 2,
+            "Alt 2": 3,
+            "Tenor 1": 4,
+            "Tenor 2": 5,
+            "Bass 1": 6,
+            "Bass 2": 7,
+        }
+
         reverse = sort_order == "desc"
         if sort_by == "voice_group":
             singers = sorted(
                 singers,
-                key=lambda s: (s.voice_group or "", s.short_name or ""),
+                key=lambda s: (
+                    voice_group_order.get(s.voice_group, 99),
+                    s.short_name or s.full_name or ""
+                ),
                 reverse=reverse,
             )
         else:
