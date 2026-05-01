@@ -15,6 +15,7 @@ from PyQt6.QtWidgets import (
     QInputDialog,
     QLineEdit,
     QDialog,
+    QComboBox,
 )
 from PyQt6.QtCore import pyqtSignal, Qt
 
@@ -52,9 +53,19 @@ class ChorAufstellungTab(QWidget):
 
         layout.addLayout(header)
 
-        # Search box for formations
         search_layout = QHBoxLayout()
         search_layout.addStretch()
+        
+        self.sort_combo = QComboBox()
+        self.sort_combo.addItem("Termin ↓ (neueste zuerst)", "event_date_desc")
+        self.sort_combo.addItem("Termin ↑ (älteste zuerst)", "event_date_asc")
+        self.sort_combo.addItem("Dateiname ↑", "filename_asc")
+        self.sort_combo.addItem("Dateiname ↓", "filename_desc")
+        self.sort_combo.addItem("Gespeichert ↓ (neueste zuerst)", "modified_desc")
+        self.sort_combo.addItem("Gespeichert ↑ (älteste zuerst)", "modified_asc")
+        self.sort_combo.currentIndexChanged.connect(self._load_formations)
+        search_layout.addWidget(self.sort_combo)
+        
         self.search_box = QLineEdit()
         self.search_box.setPlaceholderText("Suchen...")
         self.search_box.setMaximumWidth(200)
@@ -154,6 +165,8 @@ class ChorAufstellungTab(QWidget):
             else ""
         )
 
+        sort_key = self.sort_combo.currentData() if hasattr(self, "sort_combo") else "event_date_desc"
+
         files = []
         for f in os.listdir(self._data_dir):
             if f.endswith(".json"):
@@ -177,9 +190,21 @@ class ChorAufstellungTab(QWidget):
 
                 files.append(data)
 
-        files.sort(key=lambda x: x["modified"], reverse=True)
+        if sort_key == "event_date_desc":
+            files.sort(key=lambda x: x.get("metadata", {}).get("event_date", ""), reverse=True)
+        elif sort_key == "event_date_asc":
+            files.sort(key=lambda x: x.get("metadata", {}).get("event_date", ""), reverse=False)
+        elif sort_key == "filename_asc":
+            files.sort(key=lambda x: x["filename"], reverse=False)
+        elif sort_key == "filename_desc":
+            files.sort(key=lambda x: x["filename"], reverse=True)
+        elif sort_key == "modified_desc":
+            files.sort(key=lambda x: x["modified"], reverse=True)
+        elif sort_key == "modified_asc":
+            files.sort(key=lambda x: x["modified"], reverse=False)
+        else:
+            files.sort(key=lambda x: x.get("metadata", {}).get("event_date", ""), reverse=True)
 
-        # Apply search filter
         if search_text:
             filtered_files = []
             for f in files:
@@ -199,20 +224,17 @@ class ChorAufstellungTab(QWidget):
             meta = f.get("metadata", {})
 
             self.table.setItem(row, 0, QTableWidgetItem(f["filename"]))
-            # Dateigröße
             size = f.get("size", 0)
             size_str = f"{size // 1024} KB" if size >= 1024 else f"{size} B"
             self.table.setItem(row, 1, QTableWidgetItem(size_str))
             self.table.setItem(row, 2, QTableWidgetItem(meta.get("project", "")))
-            # Termin (event_date)
             event_date = meta.get("event_date", "")
             if event_date:
                 event_date = event_date[:10]
             self.table.setItem(row, 3, QTableWidgetItem(event_date))
-            # Typ (event_type - z.B. "konzert", "probe", etc.)
             event_type = meta.get("event_type", "")
             if not event_type:
-                event_type = meta.get("event", "")  # Fallback to event name
+                event_type = meta.get("event", "")
             self.table.setItem(row, 4, QTableWidgetItem(event_type))
 
             saved = f.get("saved_at", "")
