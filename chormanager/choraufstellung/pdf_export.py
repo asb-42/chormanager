@@ -141,7 +141,7 @@ class PDFExporter:
         return display_data, style_commands, col_widths, row_heights
     
     def _create_staggered_grid(self, singers, rows, cols, page_width, page_height, color_mode):
-        half_col_width = page_width / (2 * cols + 1)
+        half_col_width = page_width / (2 * cols)
         row_height = min(page_height / rows, 40 * mm)
         
         font_size = min(8, half_col_width / 3)
@@ -151,7 +151,7 @@ class PDFExporter:
         
         color_map = self.VOICE_COLORS if color_mode == "color" else self.VOICE_COLORS_BW
         
-        total_cols = 2 * cols + 1
+        total_cols = 2 * cols
         
         for r in range(rows):
             row_data = [''] * total_cols
@@ -169,12 +169,15 @@ class PDFExporter:
                     else:
                         col_idx = 2 * c + 1
                     
-                    row_data[col_idx] = cell_text
-                    
-                    bg_color = color_map.get(vg_short, colors.white)
-                    style_commands.append(('BACKGROUND', (col_idx, r), (col_idx, r), bg_color))
-                    
-                    style_commands.append(('SPAN', (col_idx, r), (col_idx + 1, r)))
+                    if col_idx + 1 < total_cols:
+                        row_data[col_idx] = cell_text
+                        bg_color = color_map.get(vg_short, colors.white)
+                        style_commands.append(('BACKGROUND', (col_idx, r), (col_idx, r), bg_color))
+                        style_commands.append(('SPAN', (col_idx, r), (col_idx + 1, r)))
+                    else:
+                        row_data[col_idx] = cell_text
+                        bg_color = color_map.get(vg_short, colors.white)
+                        style_commands.append(('BACKGROUND', (col_idx, r), (col_idx, r), bg_color))
             
             display_data.append(row_data)
         
