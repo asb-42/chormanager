@@ -366,6 +366,10 @@ class SingersTab(QWidget):
         singer_dict.pop("created_at", None)
         singer_dict.pop("updated_at", None)
         singer_dict["full_name"] = f"{singer.full_name} (Kopie)"
+        
+        # Map _is_adult to is_adult for database compatibility
+        if "_is_adult" in singer_dict:
+            singer_dict["is_adult"] = singer_dict.pop("_is_adult")
 
         self.singer_repo.create(**singer_dict)
         self._load_singers()

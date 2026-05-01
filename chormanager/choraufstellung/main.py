@@ -1955,7 +1955,7 @@ class MainWindow(QMainWindow):
                         singer = Singer(
                             name,
                             vg,
-                            1,
+                            s.get("height", 0),
                             s.get("singer_id", "")
                         )
                         singer.affinity = s.get("affinity", "")
