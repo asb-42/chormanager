@@ -242,7 +242,6 @@ class SingerPool(QWidget):
         buttons = QVBoxLayout()
         buttons.addWidget(QPushButton("Alle Sänger platzieren", clicked=self.place_all_requested.emit))
         buttons.addWidget(QPushButton("Einzelner Sänger", clicked=self.add_dialog))
-        buttons.addWidget(QPushButton("Import (CSV/TXT)", clicked=self.do_import))
         buttons.addWidget(QPushButton("Ausgewählten entfernen", clicked=self.remove_selected))
         layout.addLayout(buttons)
     

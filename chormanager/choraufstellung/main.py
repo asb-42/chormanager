@@ -1136,28 +1136,6 @@ class SingerPool(QWidget):
                             partner.affinity = ""
                     self.singers.pop(idx)
             self.update_singers(self.singers, self.placed_singer_ids)
-    def do_import(self):
-        fp, _ = QFileDialog.getOpenFileName(self, "Import", "", "Text (*.txt *.csv);;Alle (*)")
-        if not fp: return
-        try:
-            with open(fp, 'r', encoding='utf-8') as f: lines = f.readlines()
-        except Exception as e: QMessageBox.warning(self, "Fehler", str(e)); return
-        imp=err=0
-        for ln in lines:
-            ln=ln.strip()
-            if not ln or ln.startswith('#'): continue
-            p = ln.split(';') if ';' in ln else ln.split(',')
-            if len(p)<2: continue
-            n, vg_s = p[0].strip(), p[1].strip()
-            h = int(p[2].strip()) if len(p)>2 and p[2].strip().isdigit() else 0
-            if not n or vg_s not in get_valid_voice_groups(): err+=1; continue
-            vg = next((v for v in VoiceGroup if hasattr(v,'value') and v.value==vg_s), None)
-            if vg: self.singers.append(Singer(n,vg,h)); imp+=1
-            else: err+=1
-        self.update_singers(self.singers)
-        if hasattr(self.parent(), '_mark_modified'):
-            self.parent()._mark_modified()
-        QMessageBox.information(self, "Fertig", f"{imp} importiert, {err} übersprungen.")
 
 class AddSingerDialog(QDialog):
     def __init__(self, p=None, singer=None):
@@ -1378,10 +1356,7 @@ class MainWindow(QMainWindow):
         f.addAction(QAction("Speichern unter...", self, shortcut="Ctrl+Shift+S", triggered=self.save_as_f))
         f.addSeparator()
         f.addAction(QAction("PDF Export...", self, shortcut="Ctrl+E", triggered=self.export_pdf))
-        f.addAction(QAction("Druckvorschau...", self, shortcut="Ctrl+Shift+P", triggered=self.show_print_preview))
-        f.addAction(QAction("Drucken...", self, shortcut="Ctrl+P", triggered=self.do_print))
         f.addSeparator()
-        f.addAction(QAction("Import CSV/TXT...", self, shortcut="Ctrl+I", triggered=self.pool.do_import))
         f.addAction(QAction("Beenden", self, shortcut="Ctrl+Q", triggered=self.close))
         e=m.addMenu("Bearbeiten")
         e.addAction(QAction("Sänger hinzufügen", self, shortcut="Ctrl+Shift+A", triggered=self.add_singer_via_menu))
@@ -1764,16 +1739,6 @@ class MainWindow(QMainWindow):
             self.file = latest
             self.is_modified = True
 
-    def show_print_preview(self):
-        from PyQt6.QtPrintSupport import QPrinter, QPrintPreviewDialog
-        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
-        dlg = QPrintPreviewDialog(printer, self)
-        dlg.setWindowTitle("Druckvorschau")
-        dlg.paintRequested.connect(lambda p: self.pdf.print_formation(
-            self.singers, self.grid.rows, self.grid.cols, p
-        ))
-        dlg.exec()
-
     def export_pdf(self):
         from PyQt6.QtWidgets import QFileDialog
         fp, _ = QFileDialog.getSaveFileName(
@@ -1788,19 +1753,6 @@ class MainWindow(QMainWindow):
                 self.grid.cols,
                 fp,
                 staggered=self.grid.staggered
-            )
-
-    def do_print(self):
-        from PyQt6.QtPrintSupport import QPrinter, QPrintDialog
-        printer = QPrinter(QPrinter.PrinterMode.HighResolution)
-        dlg = QPrintDialog(printer, self)
-        dlg.setWindowTitle("Drucken")
-        if dlg.exec() == QPrintDialog.DialogCode.Accepted:
-            self.pdf.print_formation(
-                self.singers,
-                self.grid.rows,
-                self.grid.cols,
-                printer
             )
 
     def run_optimizer(self):
