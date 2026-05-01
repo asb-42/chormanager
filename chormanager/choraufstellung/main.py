@@ -372,6 +372,16 @@ class FormationGrid(QWidget):
     def show_grid_context_menu(self, pos):
         menu = QMenu(self)
         
+        if len(self.selected_ids) == 1:
+            sid = list(self.selected_ids)[0]
+            singer = next((s for s in self.singers if s.singer_id == sid), None)
+            if singer and singer.affinity:
+                partner = next((s for s in self.singers if s.singer_id == singer.affinity), None)
+                if partner and partner.row >= 0 and singer.row >= 0:
+                    affinity_action = menu.addAction(f" Nähe: {singer.name} → {partner.name} platzieren")
+                    affinity_action.triggered.connect(lambda: self.apply_affinity_proximity(singer))
+                    menu.addSeparator()
+        
         if len(self.selected_ids) == 2:
             swap_action = menu.addAction("Positionen tauschen")
             swap_action.triggered.connect(self.swap_selected_singers)
@@ -532,6 +542,37 @@ class FormationGrid(QWidget):
 
         self.selected_ids.clear()
         self.refresh_grid()
+    
+    def apply_affinity_proximity(self, singer):
+        if not singer.affinity:
+            return False
+        
+        partner = next((s for s in self.singers if s.singer_id == singer.affinity), None)
+        if not partner or partner.row < 0 or singer.row < 0:
+            return False
+        
+        if singer.row != partner.row:
+            return False
+        
+        if abs(singer.col - partner.col) == 1:
+            return False
+        
+        target_col = singer.col + 1 if singer.col < partner.col else singer.col - 1
+        
+        if target_col < 0 or target_col >= self.cols:
+            return False
+        
+        occupant = next((s for s in self.singers if s.row == singer.row and s.col == target_col), None)
+        
+        if occupant and occupant.singer_id != partner.singer_id:
+            old_row, old_col = partner.row, partner.col
+            partner.row, partner.col = occupant.row, occupant.col
+            occupant.row, occupant.col = old_row, old_col
+        elif not occupant:
+            partner.row, partner.col = singer.row, target_col
+        
+        self.refresh_grid()
+        return True
     
     def refresh_grid(self):
         for tile in list(self.tiles.values()):
