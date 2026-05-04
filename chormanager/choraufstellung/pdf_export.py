@@ -35,9 +35,6 @@ class PDFExporter:
     
     def __init__(self):
         self.styles = getSampleStyleSheet()
-        self.cell_style = self.styles['Normal'].clone('CellStyle')
-        self.cell_style.alignment = TA_CENTER
-        self.cell_style.leading = 12
     
     def export_formation(self, singers: List, rows: int, cols: int,
                         filename: str, title: str = "Choraufstellung",
@@ -140,12 +137,16 @@ class PDFExporter:
         else:
             font_size = min(10, col_width / 4)
         
-        self.cell_style.fontSize = font_size
-        
         display_data = []
         style_commands = []
         
         color_map = self.VOICE_COLORS if color_mode == "color" else None
+        
+        if text_rotation == "vertical":
+            cell_style = self.styles['Normal'].clone('CellStyle')
+            cell_style.alignment = TA_CENTER
+            cell_style.fontSize = font_size
+            cell_style.leading = font_size + 2
         
         for r in range(rows):
             row_data = []
@@ -157,9 +158,9 @@ class PDFExporter:
                     vg_short = vg.split()[0] if vg else ""
                     
                     if text_rotation == "vertical":
-                        cell_text = RotatedParagraph(name, self.cell_style, 90)
+                        cell_text = RotatedParagraph(name, cell_style, 90)
                     else:
-                        cell_text = Paragraph(name, self.cell_style)
+                        cell_text = name
                     
                     row_data.append(cell_text)
                     
@@ -169,6 +170,8 @@ class PDFExporter:
                 else:
                     row_data.append("")
             display_data.append(row_data)
+        
+        style_commands.append(('FONTSIZE', (0, 0), (-1, -1), font_size))
         
         col_widths = [col_width] * cols
         row_heights = [row_height] * rows
@@ -184,14 +187,18 @@ class PDFExporter:
         else:
             font_size = min(10, half_col_width / 2)
         
-        self.cell_style.fontSize = font_size
-        
         display_data = []
         style_commands = []
         
         color_map = self.VOICE_COLORS if color_mode == "color" else None
         
         total_cols = 2 * cols
+        
+        if text_rotation == "vertical":
+            cell_style = self.styles['Normal'].clone('CellStyle')
+            cell_style.alignment = TA_CENTER
+            cell_style.fontSize = font_size
+            cell_style.leading = font_size + 2
         
         for r in range(rows):
             row_data = [''] * total_cols
@@ -204,9 +211,9 @@ class PDFExporter:
                     vg_short = vg.split()[0] if vg else ""
                     
                     if text_rotation == "vertical":
-                        cell_text = RotatedParagraph(name, self.cell_style, 90)
+                        cell_text = RotatedParagraph(name, cell_style, 90)
                     else:
-                        cell_text = Paragraph(name, self.cell_style)
+                        cell_text = name
                     
                     if r % 2 == 0:
                         col_idx = 2 * c
