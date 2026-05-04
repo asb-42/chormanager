@@ -4,6 +4,25 @@ from reportlab.lib.pagesizes import A4, landscape, portrait
 from reportlab.lib.units import mm
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.enums import TA_CENTER
+
+
+class RotatedParagraph(Paragraph):
+    def __init__(self, text, style, angle=90):
+        super().__init__(text, style)
+        self.angle = angle
+    
+    def draw(self):
+        self.canv.saveState()
+        self.canv.translate(self.width/2, self.height/2)
+        self.canv.rotate(self.angle)
+        self.canv.translate(-self.height/2, -self.width/2)
+        super().draw()
+        self.canv.restoreState()
+    
+    def wrap(self, availWidth, availHeight):
+        h, w = super().wrap(availHeight, availWidth)
+        return w, h
 
 
 class PDFExporter:
@@ -16,6 +35,9 @@ class PDFExporter:
     
     def __init__(self):
         self.styles = getSampleStyleSheet()
+        self.cell_style = self.styles['Normal'].clone('CellStyle')
+        self.cell_style.alignment = TA_CENTER
+        self.cell_style.leading = 12
     
     def export_formation(self, singers: List, rows: int, cols: int,
                         filename: str, title: str = "Choraufstellung",
@@ -118,6 +140,8 @@ class PDFExporter:
         else:
             font_size = min(10, col_width / 4)
         
+        self.cell_style.fontSize = font_size
+        
         display_data = []
         style_commands = []
         
@@ -131,20 +155,20 @@ class PDFExporter:
                     name = singer.name
                     vg = singer.voice_group.value if hasattr(singer.voice_group, 'value') else str(singer.voice_group)
                     vg_short = vg.split()[0] if vg else ""
-                    cell_text = name
+                    
+                    if text_rotation == "vertical":
+                        cell_text = RotatedParagraph(name, self.cell_style, 90)
+                    else:
+                        cell_text = Paragraph(name, self.cell_style)
+                    
                     row_data.append(cell_text)
                     
                     if color_mode == "color":
                         bg_color = color_map.get(vg_short, colors.white)
                         style_commands.append(('BACKGROUND', (c, r), (c, r), bg_color))
-                    
-                    if text_rotation == "vertical":
-                        style_commands.append(('ROTATE', (c, r), (c, r), 90))
                 else:
                     row_data.append("")
             display_data.append(row_data)
-        
-        style_commands.append(('FONTSIZE', (0, 0), (-1, -1), font_size))
         
         col_widths = [col_width] * cols
         row_heights = [row_height] * rows
@@ -159,6 +183,8 @@ class PDFExporter:
             font_size = min(10, row_height / 3)
         else:
             font_size = min(10, half_col_width / 2)
+        
+        self.cell_style.fontSize = font_size
         
         display_data = []
         style_commands = []
@@ -176,7 +202,11 @@ class PDFExporter:
                     name = singer.name
                     vg = singer.voice_group.value if hasattr(singer.voice_group, 'value') else str(singer.voice_group)
                     vg_short = vg.split()[0] if vg else ""
-                    cell_text = name
+                    
+                    if text_rotation == "vertical":
+                        cell_text = RotatedParagraph(name, self.cell_style, 90)
+                    else:
+                        cell_text = Paragraph(name, self.cell_style)
                     
                     if r % 2 == 0:
                         col_idx = 2 * c
@@ -189,19 +219,13 @@ class PDFExporter:
                             bg_color = color_map.get(vg_short, colors.white)
                             style_commands.append(('BACKGROUND', (col_idx, r), (col_idx, r), bg_color))
                         style_commands.append(('SPAN', (col_idx, r), (col_idx + 1, r)))
-                        if text_rotation == "vertical":
-                            style_commands.append(('ROTATE', (col_idx, r), (col_idx + 1, r), 90))
                     else:
                         row_data[col_idx] = cell_text
                         if color_mode == "color":
                             bg_color = color_map.get(vg_short, colors.white)
                             style_commands.append(('BACKGROUND', (col_idx, r), (col_idx, r), bg_color))
-                        if text_rotation == "vertical":
-                            style_commands.append(('ROTATE', (col_idx, r), (col_idx, r), 90))
             
             display_data.append(row_data)
-        
-        style_commands.append(('FONTSIZE', (0, 0), (-1, -1), font_size))
         
         col_widths = [half_col_width] * total_cols
         row_heights = [row_height] * rows
