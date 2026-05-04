@@ -46,6 +46,14 @@ class PDFExportDialog(QDialog):
         color_layout.addWidget(self.color_combo)
         layout.addWidget(color_group)
         
+        text_group = QGroupBox("Textausrichtung")
+        text_layout = QVBoxLayout(text_group)
+        self.text_rotation_combo = QComboBox()
+        self.text_rotation_combo.addItem("Standard (waagerecht)", "horizontal")
+        self.text_rotation_combo.addItem("90° rotiert (senkrecht)", "vertical")
+        text_layout.addWidget(self.text_rotation_combo)
+        layout.addWidget(text_group)
+        
         filename_group = QGroupBox("Dateiname")
         filename_layout = QVBoxLayout(filename_group)
         self.filename_input = QLineEdit(self.default_filename)
@@ -69,5 +77,6 @@ class PDFExportDialog(QDialog):
         return {
             "orientation": self.orientation_combo.currentData(),
             "color_mode": self.color_combo.currentData(),
+            "text_rotation": self.text_rotation_combo.currentData(),
             "filename": self.filename_input.text().strip()
         }

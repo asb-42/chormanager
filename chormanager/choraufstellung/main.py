@@ -1865,7 +1865,8 @@ class MainWindow(QMainWindow):
             subtitle=subtitle,
             staggered=self.grid.staggered,
             orientation=settings["orientation"],
-            color_mode=settings["color_mode"]
+            color_mode=settings["color_mode"],
+            text_rotation=settings["text_rotation"]
         )
         
         if success:

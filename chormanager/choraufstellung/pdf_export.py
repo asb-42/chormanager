@@ -14,13 +14,6 @@ class PDFExporter:
         'Bass': colors.Color(1.0, 1.0, 0.85)
     }
     
-    VOICE_COLORS_BW = {
-        'Sopran': colors.Color(0.9, 0.9, 0.9),
-        'Alt': colors.Color(0.8, 0.8, 0.8),
-        'Tenor': colors.Color(0.7, 0.7, 0.7),
-        'Bass': colors.Color(0.6, 0.6, 0.6)
-    }
-    
     def __init__(self):
         self.styles = getSampleStyleSheet()
     
@@ -29,7 +22,8 @@ class PDFExporter:
                         subtitle: str = "",
                         staggered: bool = False,
                         orientation: str = "landscape",
-                        color_mode: str = "color") -> bool:
+                        color_mode: str = "color",
+                        text_rotation: str = "horizontal") -> bool:
         try:
             if orientation == "landscape":
                 page_size = landscape(A4)
@@ -74,11 +68,11 @@ class PDFExporter:
             
             if staggered:
                 display_data, style_commands, col_widths, row_heights = self._create_staggered_grid(
-                    singers, rows, cols, page_width, page_height, color_mode
+                    singers, rows, cols, page_width, page_height, color_mode, text_rotation
                 )
             else:
                 display_data, style_commands, col_widths, row_heights = self._create_standard_grid(
-                    singers, rows, cols, page_width, page_height, color_mode
+                    singers, rows, cols, page_width, page_height, color_mode, text_rotation
                 )
             
             if not display_data:
@@ -86,12 +80,22 @@ class PDFExporter:
             else:
                 table = Table(display_data, colWidths=col_widths, rowHeights=row_heights)
                 
-                base_style = [
-                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                    ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                    ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-                    ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-                ]
+                if color_mode == "bw":
+                    base_style = [
+                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+                        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+                        ('BACKGROUND', (0, 0), (-1, -1), colors.white),
+                    ]
+                else:
+                    base_style = [
+                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+                    ]
                 
                 table.setStyle(TableStyle(base_style + style_commands))
                 story.append(table)
@@ -105,16 +109,19 @@ class PDFExporter:
             traceback.print_exc()
             return False
     
-    def _create_standard_grid(self, singers, rows, cols, page_width, page_height, color_mode):
+    def _create_standard_grid(self, singers, rows, cols, page_width, page_height, color_mode, text_rotation):
         col_width = page_width / cols
         row_height = min(page_height / rows, 40 * mm)
         
-        font_size = min(8, col_width / 5)
+        if text_rotation == "vertical":
+            font_size = min(10, row_height / 3)
+        else:
+            font_size = min(10, col_width / 4)
         
         display_data = []
         style_commands = []
         
-        color_map = self.VOICE_COLORS if color_mode == "color" else self.VOICE_COLORS_BW
+        color_map = self.VOICE_COLORS if color_mode == "color" else None
         
         for r in range(rows):
             row_data = []
@@ -127,8 +134,12 @@ class PDFExporter:
                     cell_text = name
                     row_data.append(cell_text)
                     
-                    bg_color = color_map.get(vg_short, colors.white)
-                    style_commands.append(('BACKGROUND', (c, r), (c, r), bg_color))
+                    if color_mode == "color":
+                        bg_color = color_map.get(vg_short, colors.white)
+                        style_commands.append(('BACKGROUND', (c, r), (c, r), bg_color))
+                    
+                    if text_rotation == "vertical":
+                        style_commands.append(('ROTATE', (c, r), (c, r), 90))
                 else:
                     row_data.append("")
             display_data.append(row_data)
@@ -140,16 +151,19 @@ class PDFExporter:
         
         return display_data, style_commands, col_widths, row_heights
     
-    def _create_staggered_grid(self, singers, rows, cols, page_width, page_height, color_mode):
+    def _create_staggered_grid(self, singers, rows, cols, page_width, page_height, color_mode, text_rotation):
         half_col_width = page_width / (2 * cols)
         row_height = min(page_height / rows, 40 * mm)
         
-        font_size = min(8, half_col_width / 3)
+        if text_rotation == "vertical":
+            font_size = min(10, row_height / 3)
+        else:
+            font_size = min(10, half_col_width / 2)
         
         display_data = []
         style_commands = []
         
-        color_map = self.VOICE_COLORS if color_mode == "color" else self.VOICE_COLORS_BW
+        color_map = self.VOICE_COLORS if color_mode == "color" else None
         
         total_cols = 2 * cols
         
@@ -171,13 +185,19 @@ class PDFExporter:
                     
                     if col_idx + 1 < total_cols:
                         row_data[col_idx] = cell_text
-                        bg_color = color_map.get(vg_short, colors.white)
-                        style_commands.append(('BACKGROUND', (col_idx, r), (col_idx, r), bg_color))
+                        if color_mode == "color":
+                            bg_color = color_map.get(vg_short, colors.white)
+                            style_commands.append(('BACKGROUND', (col_idx, r), (col_idx, r), bg_color))
                         style_commands.append(('SPAN', (col_idx, r), (col_idx + 1, r)))
+                        if text_rotation == "vertical":
+                            style_commands.append(('ROTATE', (col_idx, r), (col_idx + 1, r), 90))
                     else:
                         row_data[col_idx] = cell_text
-                        bg_color = color_map.get(vg_short, colors.white)
-                        style_commands.append(('BACKGROUND', (col_idx, r), (col_idx, r), bg_color))
+                        if color_mode == "color":
+                            bg_color = color_map.get(vg_short, colors.white)
+                            style_commands.append(('BACKGROUND', (col_idx, r), (col_idx, r), bg_color))
+                        if text_rotation == "vertical":
+                            style_commands.append(('ROTATE', (col_idx, r), (col_idx, r), 90))
             
             display_data.append(row_data)
         
