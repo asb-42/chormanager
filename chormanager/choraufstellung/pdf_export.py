@@ -124,7 +124,7 @@ class PDFExporter:
                     name = singer.name
                     vg = singer.voice_group.value if hasattr(singer.voice_group, 'value') else str(singer.voice_group)
                     vg_short = vg.split()[0] if vg else ""
-                    cell_text = f"{name}\n{vg}"
+                    cell_text = name
                     row_data.append(cell_text)
                     
                     bg_color = color_map.get(vg_short, colors.white)
@@ -162,7 +162,7 @@ class PDFExporter:
                     name = singer.name
                     vg = singer.voice_group.value if hasattr(singer.voice_group, 'value') else str(singer.voice_group)
                     vg_short = vg.split()[0] if vg else ""
-                    cell_text = f"{name}\n{vg}"
+                    cell_text = name
                     
                     if r % 2 == 0:
                         col_idx = 2 * c
