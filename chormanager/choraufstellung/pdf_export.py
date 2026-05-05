@@ -142,11 +142,10 @@ class PDFExporter:
         
         color_map = self.VOICE_COLORS if color_mode == "color" else None
         
-        if text_rotation == "vertical":
-            cell_style = self.styles['Normal'].clone('CellStyle')
-            cell_style.alignment = TA_CENTER
-            cell_style.fontSize = font_size
-            cell_style.leading = font_size + 2
+        cell_style = self.styles['Normal'].clone('CellStyle')
+        cell_style.alignment = TA_CENTER
+        cell_style.fontSize = font_size
+        cell_style.leading = font_size + 2
         
         for r in range(rows):
             row_data = []
@@ -160,7 +159,7 @@ class PDFExporter:
                     if text_rotation == "vertical":
                         cell_text = RotatedParagraph(name, cell_style, 90)
                     else:
-                        cell_text = name
+                        cell_text = Paragraph(name, cell_style)
                     
                     row_data.append(cell_text)
                     
@@ -170,8 +169,6 @@ class PDFExporter:
                 else:
                     row_data.append("")
             display_data.append(row_data)
-        
-        style_commands.append(('FONTSIZE', (0, 0), (-1, -1), font_size))
         
         col_widths = [col_width] * cols
         row_heights = [row_height] * rows
@@ -194,11 +191,10 @@ class PDFExporter:
         
         total_cols = 2 * cols
         
-        if text_rotation == "vertical":
-            cell_style = self.styles['Normal'].clone('CellStyle')
-            cell_style.alignment = TA_CENTER
-            cell_style.fontSize = font_size
-            cell_style.leading = font_size + 2
+        cell_style = self.styles['Normal'].clone('CellStyle')
+        cell_style.alignment = TA_CENTER
+        cell_style.fontSize = font_size
+        cell_style.leading = font_size + 2
         
         for r in range(rows):
             row_data = [''] * total_cols
@@ -213,7 +209,7 @@ class PDFExporter:
                     if text_rotation == "vertical":
                         cell_text = RotatedParagraph(name, cell_style, 90)
                     else:
-                        cell_text = name
+                        cell_text = Paragraph(name, cell_style)
                     
                     if r % 2 == 0:
                         col_idx = 2 * c
