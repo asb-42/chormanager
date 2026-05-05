@@ -9,20 +9,21 @@ from reportlab.lib.enums import TA_CENTER
 
 class RotatedParagraph(Paragraph):
     def __init__(self, text, style, angle=90):
-        super().__init__(text, style)
+        Paragraph.__init__(self, text, style)
         self.angle = angle
     
     def draw(self):
         self.canv.saveState()
-        self.canv.translate(self.width/2, self.height/2)
+        self.canv.translate(0, self.height)
         self.canv.rotate(self.angle)
-        self.canv.translate(-self.height/2, -self.width/2)
-        super().draw()
+        Paragraph.draw(self)
         self.canv.restoreState()
     
     def wrap(self, availWidth, availHeight):
-        h, w = super().wrap(availHeight, availWidth)
-        return w, h
+        w, h = Paragraph.wrap(self, availHeight, availWidth)
+        self.width = h
+        self.height = w
+        return self.width, self.height
 
 
 class PDFExporter:
@@ -117,6 +118,7 @@ class PDFExporter:
                     ]
                 
                 table.setStyle(TableStyle(base_style + style_commands))
+                table.hAlign = 'LEFT'
                 story.append(table)
             
             doc.build(story)
