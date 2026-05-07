@@ -58,4 +58,4 @@ workdir/
 # IDE caches
 .ruff_cache/
 .kilo/
-.kilocode/
+.kilocode/.kilo/
