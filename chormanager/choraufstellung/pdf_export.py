@@ -14,8 +14,9 @@ class RotatedParagraph(Paragraph):
     
     def draw(self):
         self.canv.saveState()
-        self.canv.translate(self.width, 0)
+        self.canv.translate(self.width / 2, self.height / 2)
         self.canv.rotate(self.angle)
+        self.canv.translate(-self.height / 2, -self.width / 2)
         Paragraph.draw(self)
         self.canv.restoreState()
     
