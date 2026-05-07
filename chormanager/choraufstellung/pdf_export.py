@@ -145,12 +145,12 @@ class PDFExporter:
     
     def _create_standard_grid(self, singers, rows, cols, page_width, page_height, color_mode, text_rotation):
         col_width = page_width / cols
-        row_height = min(page_height / rows, 40 * mm)
+        row_height = min(page_height / rows, col_width * 2)
         
         if text_rotation == "vertical":
             font_size = min(10, row_height / 3)
         else:
-            font_size = min(10, col_width / 4)
+            font_size = min(10, col_width / 6)
         
         display_data = []
         style_commands = []
