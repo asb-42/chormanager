@@ -26,7 +26,7 @@ class RotatedParagraph(Paragraph):
             y = (self.height - text_width) / 2
             self.canv.translate(x, y)
             self.canv.rotate(self.angle)
-            self.canv.drawCentredString(0, -font_size / 3, self._text)
+            self.canv.drawCentredString(0, 0, self._text)
         else:
             self.canv.drawCentredString(self.width / 2, self.height / 2 - font_size / 2, self._text)
         
