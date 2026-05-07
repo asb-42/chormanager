@@ -11,13 +11,25 @@ class RotatedParagraph(Paragraph):
     def __init__(self, text, style, angle=90):
         Paragraph.__init__(self, text, style)
         self.angle = angle
+        self._text = text
+        self._style = style
     
     def draw(self):
         self.canv.saveState()
-        self.canv.translate(self.width / 2, self.height / 2)
-        self.canv.rotate(self.angle)
-        self.canv.translate(-self.height / 2, -self.width / 2)
-        Paragraph.draw(self)
+        font_name = self._style.fontName
+        font_size = self._style.fontSize
+        self.canv.setFont(font_name, font_size)
+        text_width = self.canv.stringWidth(self._text, font_name, font_size)
+        
+        if self.angle == 90:
+            x = self.width / 2 + font_size / 2
+            y = (self.height - text_width) / 2
+            self.canv.translate(x, y)
+            self.canv.rotate(self.angle)
+            self.canv.drawCentredString(0, 0, self._text)
+        else:
+            self.canv.drawCentredString(self.width / 2, self.height / 2 - font_size / 2, self._text)
+        
         self.canv.restoreState()
     
     def wrap(self, availWidth, availHeight):
