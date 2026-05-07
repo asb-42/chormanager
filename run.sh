@@ -4,7 +4,7 @@ cd "$SCRIPT_DIR"
 
 if [ ! -d ".venv" ]; then
     echo "Erstelle Virtual Environment..."
-    python3 -m venv .venv
+    python3.9 -m venv .venv
 fi
 
 if [ ! -f ".venv/lib/python3*/site-packages/PyQt6/__init__.py" ] 2>/dev/null; then
