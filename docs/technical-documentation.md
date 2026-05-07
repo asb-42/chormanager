@@ -82,6 +82,7 @@ chormanager/
 | short_name | TEXT | Short name/nickname |
 | birth_date | TEXT | ISO format date |
 | voice_group | TEXT | Voice group (e.g., "Sopran 1") |
+| height | INTEGER | Height in cm (for Choraufstellung grid placement) |
 | email | TEXT | Email address |
 | phone | TEXT | Phone number |
 | street | TEXT | Street address |
@@ -215,14 +216,16 @@ singers (1) ──→ (0..1) singers (affinity_uuid self-reference)
 ### Choraufstellung Integration Pipeline
 1. **Trigger**: User selects "Choraufstellung → In Choraufstellung öffnen..."
 2. **Data Export**: 
-   - Query singers with availability status "yes" or "conditional"
-   - Get current event data (project_id, date, name)
+    - Query singers with availability status "yes" or "conditional"
+    - Get current event data (project_id, date, name, event_type)
+    - Pass singer height for optimal grid placement
 3. **Environment Variables**:
-   - `CHOR_PROJECT_ID`: Current project ID
-   - `CHOR_EVENT_ID`: Current event ID
-   - `CHOR_DB_PATH`: Database path (read-only access)
+    - `CHOR_PROJECT_ID`: Current project ID
+    - `CHOR_EVENT_ID`: Current event ID
+    - `CHOR_DB_PATH`: Database path (read-only access)
 4. **Launch**: Start Choraufstellung app with environment variables
 5. **Data Flow**: One-way (ChorManager → Choraufstellung), no write-back
+6. **Metadata**: JSON files include project, event, and event_type fields
 
 ---
 
@@ -250,6 +253,7 @@ singers (1) ──→ (0..1) singers (affinity_uuid self-reference)
 - `joined_display() -> str`: Format joined date as "MM/YYYY"
 - `left_display() -> str`: Format left date as "MM/YYYY"
 - `social_contacts_dict() -> dict`: Parse social_contacts JSON
+- `height`: Height in cm (used for Choraufstellung grid placement)
 - `to_dict() -> dict`: Convert to dictionary
 - `from_dict(data: dict) -> Singer`: Create from dictionary
 
@@ -348,14 +352,16 @@ singers (1) ──→ (0..1) singers (affinity_uuid self-reference)
 - **ProjectDialog**: Name, Season, Description (200px height), linked Repertoire pieces table
 
 #### SingersTab (`views/singers_tab.py`)
-- **Table columns**: Name, Short name, Voice group, Age, Status, etc.
-- **Toolbar**: Search, Voice group filter, Status filter (Active/Minor/U16), Sort options
+- **Table columns**: Name, Short name, Voice group, Height, Age, Status, etc.
+- **Toolbar**: Search, Voice group filter, Status filter (Active/Minor/U16), Sort options (Name, Voice group, Height)
 - **Context menu**: Add, Edit, Delete, Set affinity
-- **SingerSelectionDialog**: Checkbox table for lineup creation
+- **SingerSelectionDialog**: Checkbox table for lineup creation (includes height column)
 
 #### EventsTab (`views/events_tab.py`)
 - **Table columns**: Date, Name, Type, Project, Location
+- **Toolbar**: Sort dropdown (Date, Name, Type), Search
 - **EventAvailabilityDialog**: Radio buttons for availability status, summary by voice group
+- **Availability button**: Quick access to availability dialog
 - **Export**: PDF, CSV, LibreOffice formats
 
 #### RepertoireTab (`views/repertoire_tab.py`)
@@ -371,6 +377,7 @@ singers (1) ──→ (0..1) singers (affinity_uuid self-reference)
 #### ChoraufstellungTab (`views/choraufstellung_tab.py`)
 - **Table columns**: Filename, Size, Project, Event, Type, Saved date
 - **Context menu**: Edit, Duplicate
+- **Sort dropdown**: Sort by filename, project, event date
 - **Integration**: Launch Choraufstellung app with selected JSON
 
 ### Export Outputs
@@ -446,6 +453,12 @@ Dynamic fields for singer data (extendable without code changes).
 - **70% Unit Tests** (`tests/unit/`): Pure Python logic, mocked database
 - **25% Integration Tests** (`tests/integration/`): Real database, file I/O
 - **5% UI Tests** (`tests/gui/`): pytest-qt for critical flows
+
+### New Test Files
+- `test_metadata_saving.py`: Tests for metadata update from event data files in Choraufstellung
+- `test_arrangement_rules.py`: Tests for various arrangement rules (S1S2A1A2, etc.)
+- `test_event_list_dialog_dropdown.py`: Tests for event list dialog with sort dropdown
+- `test_event_list_dialog_dropdown_ui.py`: UI tests for event list dialog
 
 ### Running Tests
 ```bash
@@ -538,6 +551,6 @@ python3 -m pytest --cov=chormanager tests/unit/
 
 ---
 
-**Documentation Version**: 1.0  
-**Last Updated**: 2026-04-30  
-**Corresponding Code Version**: 0.4
+**Documentation Version**: 1.1
+**Last Updated**: 2026-05-07
+**Corresponding Code Version**: 0.5

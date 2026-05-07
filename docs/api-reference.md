@@ -13,7 +13,7 @@ All repositories follow the same pattern:
 Create a new singer.
 
 **Parameters:**
-- `**kwargs`: Singer fields (full_name, short_name, voice_group, etc.)
+- `**kwargs`: Singer fields (full_name, short_name, voice_group, height, etc.)
 
 **Returns:**
 - `Singer`: Created singer instance
@@ -25,6 +25,7 @@ singer = repo.create(
     full_name="Max Mustermann",
     short_name="Max",
     voice_group="Tenor 1",
+    height=180,
     email="max@example.com"
 )
 ```
@@ -46,6 +47,7 @@ Update singer. Handles bidirectional affinity sync.
 
 **Special handling:**
 - If `affinity_uuid` changes, automatically updates partner's affinity.
+- `height` field can be updated for Choraufstellung grid placement.
 
 #### `delete(singer_id: str) -> bool`
 Delete singer. Returns True if deleted.
@@ -300,6 +302,9 @@ Format as "MM/YYYY" or empty string.
 #### `social_contacts_dict() -> dict`
 Parse `social_contacts` JSON string to dict.
 
+#### `height` property
+Height in centimeters. Used for Choraufstellung auto-arrange by height feature.
+
 ---
 
 ## Configuration
@@ -313,18 +318,32 @@ data_dir = get_data_dir()
 ```
 
 ### Voice Groups
-```yaml
-# config/voice_groups.yaml
-- name: "Sopran 1"
-  order: 1
-- name: "Sopran 2"
-  order: 2
-...
+Voice groups are now configured in `config/voice_groups.json` with theme-aware colors:
+
+```json
+{
+  "themes": {
+    "light": {
+      "text": "#1A1A1A",
+      "colors": [
+        {"id": "Sopran 1", "color": "#E5C84B"},
+        ...
+      ]
+    },
+    "dark": {
+      "text": "#F0F0F0",
+      "colors": [...]
+    }
+  }
+}
 ```
 
 ### Dynamic Fields
 ```yaml
 # config/fields.yaml
+- name: "height"
+  type: "integer"
+  label: "Größe (cm)"
 - name: "instrument"
   type: "text"
   label: "Instrument"
@@ -376,5 +395,5 @@ All file writes use atomic pattern:
 
 ---
 
-**API Version**: 1.0  
-**Last Updated**: 2026-04-30
+**API Version**: 1.1
+**Last Updated**: 2026-05-07

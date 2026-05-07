@@ -5,11 +5,13 @@ Desktop-Anwendung zur Verwaltung eines Chors für Linux Mint/Ubuntu.
 ## Features
 
 ### Stammdatenverwaltung
-- **Sänger-Verwaltung**: Name, Kurzname, Stimmgruppe, E-Mail, Telefon, Adresse
+- **Sänger-Verwaltung**: Name, Kurzname, Stimmgruppe, Größe, E-Mail, Telefon, Adresse
 - **Dynamische Felder**: Felder können über YAML-Konfiguration erweitert werden
 - **Filter/Suche**: Suche nach Name, E-Mail, Telefon; Filter nach Stimmgruppe
+- **Sortierung**: Nach Name, Stimmgruppe oder Größe sortierbar
 - **Undo/Redo**: Vollständige Rückgängig/Wiederholen-Funktion
 - **Automatische Backups**: Bei Start und vor dem Speichern
+- **Auto-Reload**: Datenbank nach Backup-Wiederherstellung automatisch neu geladen
 
 ### Projekte & Termine
 - **Projektverwaltung**: Projekte erstellen und verwalten (z.B. "Hoffmann OKO 2026")
@@ -18,6 +20,8 @@ Desktop-Anwendung zur Verwaltung eines Chors für Linux Mint/Ubuntu.
 - **Terminverwaltung**: Termine erstellen mit Typ (GP, OP, SOFA, Probe, Konzert, Auftritt)
 - **Termin-Projekt-Zuordnung**: Jeder Termin ist einem Projekt zugeordnet
 - **Verfügbarkeit**: Verwaltung von Sänger-Verfügbarkeit für Termine
+- **Verfügbarkeits-Button**: Schnellzugriff auf Verfügbarkeit im Termine-Tab
+- **Sortierung**: Termine nach Datum, Name oder Typ sortierbar
 - **Zusammenfassung**: Automatische Auswertung nach Stimmgruppen
 
 ### Verfügbarkeits-Status
@@ -51,12 +55,29 @@ Die Choraufstellung-App ist im `choraufstellung/` Verzeichnis enthalten und wird
 **Einweg-Integration** (ChorManager → Choraufstellung):
 - Sänger mit Zusagen ("yes" oder "conditional") werden aus der ChorManager-Datenbank geladen
 - Event-ID wird via Umgebungsvariable übergeben
-- Folgende Daten werden übertragen: singer_id, full_name, short_name, voice_group, affinity_uuid
+- Folgende Daten werden übertragen: singer_id, full_name, short_name, voice_group, height, affinity_uuid
+- Metadaten: Projekt, Termin, Termin-Typ werden in JSON-Datei gespeichert
 
 **Aktuelle Limitierungen**:
 - Die Integration ist **einweg**: Änderungen in Choraufstellung fließen **NICHT** zurück in die ChorManager-Datenbank
 - Drag & Drop: Funktioniert abhängig von Event-Verfügbarkeitsdaten
 - Speicherort: Alle Daten werden in `choraufstellung/data/` gespeichert (nicht im User-Home)
+
+#### Choraufstellung Features
+
+- **Optimieren**: Automatische Platzierung mit verschiedenen Regeln:
+  - Nach Stimmgruppen sortiert
+  - Nach Größe (Height) sortiert
+  - Nähe (Singpartner) berücksichtigen
+  - Stimmgruppen zusammenhaltend
+- **PDF-Export**: Druckfertige Aufstellung
+  - Konfigurationsdialog: Schriftgröße, Seitenrand, Schwarz-Weiß-Modus
+  - Querformat-Automatik
+  - Versetztes Raster unterstützt
+- **Theming**: Hell-/Dunkelmodus
+  - Stimmgruppen-Farben theme-aware (Hell/Dunkel)
+  - Konfigurierbar in `config/voice_groups.json`
+- **Nähe (Singpartner)**: Menüpunkt platziert Sänger mit Affinität zusammen
 
 #### PyQt6
 
@@ -72,9 +93,10 @@ Die App使用的是 PyQt6 mit folgenden Enum-Änderungen:
 
 ### UI/UX
 - **Theme**: Hell/Dunkel-Modus (via Konfigurationsdialog einstellbar)
-- **Tab-Interface**: Projekte, Sänger, Termine als separate Tabs
-- **Sortierung**: Klick auf Spaltenüberschriften sortiert auf-/absteigend
+- **Tab-Interface**: Projekte, Sänger, Besetzungen, Termine, Aufstellung, Repertoire
+- **Sortierung**: Dropdown-Sortierung in Sänger (Name, Stimmgruppe, Größe), Termine (Datum, Name, Typ), Aufstellung (Dateiname, Projekt, Datum)
 - **Verfügbarkeits-Dialog**: Radio-Buttons für Status-Auswahl mit Zusammenfassungstabelle
+- **Verfügbarkeits-Button**: Schnellzugriff im Termine-Tab
 - **Konfigurationsdialog**: Einstellungen für Datenpfade, Backup, Logging, Choraufstellung
 
 ### Sonstiges
@@ -176,11 +198,12 @@ chormanager/
 ├── data/                # Datenbank-Layer
 ├── domain/              # Geschäftslogik (Models, Services)
 ├── ui/                  # PyQt6 UI-Komponenten
-│   ├── views/           # Hauptansichten (Sänger, Termine, Projekte)
+│   ├── views/           # Hauptansichten (Sänger, Termine, Projekte, Repertoire, Aufstellung)
 │   └── dialogs/         # Dialoge (Event, Availability, Config, Selbstdarstellung)
 ├── export/              # Export-Logik (CSV, PDF, JSON, DB-Zugriff)
 ├── backup/              # Backup-Management
 ├── history/             # Undo/Redo mit Command Pattern
+├── tools/               # Hilfs-Skripte (z.B. import_singers.py)
 └── tests/               # pytest Test-Suite
 ```
 
@@ -189,9 +212,10 @@ chormanager/
 ### Version 1.x (2026)
 
 - Projektverwaltung hinzugefügt
-- Tab-basierte UI mit Projekt-, Sänger- und Termine-Tabs
+- Tab-basierte UI mit Projekt-, Sänger-, Besetzung-, Termine-, Aufstellung- und Repertoire-Tabs
 - Projekt-Filter für Sänger und Termine
 - Verfügbarkeits-Dialog mit Radio-Buttons und Zusammenfassung nach Stimmgruppen
+- Verfügbarkeits-Button für schnellen Zugriff
 - Direkter DB-Zugriff für Choraufstellung (chormanager_db.py Modul)
 - Choraufstellung-Menüintegration
 - Selbstdarstellung (Marketing-Texte) im Menü
@@ -200,6 +224,14 @@ chormanager/
 - **PyQt6-Portierung**: Alle Enums auf scoped format umgestellt (Qt6 compatibility)
 - **Sängerpool laden**: Event-basierte Verfügbarkeit wird aus DB gelesen
 - **Speicherort**: Alle Choraufstellung-Daten lokal im `data/`-Ordner
+- **Sänger-Größe**: height-Feld für optimale Choraufstellung-Platzierung
+- **Sortierung**: Dropdown-Sortierung in Sänger-, Termine- und Aufstellung-Tabs
+- **Auto-Reload**: Datenbank nach Backup-Wiederherstellung automatisch neu geladen
+- **Choraufstellung-Enhancements**:
+  - PDF-Export mit Konfigurationsdialog
+  - Nähe (Singpartner) Optimierung
+  - Stimmgruppen-Farben (theme-aware)
+  - Versetztes Raster im PDF-Export
 
 ### Version 0.x
 
@@ -240,7 +272,7 @@ chormanager/
 - Context Toolbar mit vollständigen Aktionen für Besetzung-Tab
 - Context Menu: Bearbeiten, Umbenennen, Als aktiv, Löschen
 - Dunkeltheme: QCheckBox-Styling hinzugefügt
-- Tab-Indizes korrigiert (0=Projekte, 1=Sänger, 2=Besetzung, 3=Termine, 4=Aufstellung)
+- Tab-Indizes korrigiert (0=Projekte, 1=Sänger, 2=Besetzung, 3=Termine, 4=Aufstellung, 5=Repertoire)
 - Projekt-Dropdown aus Besetzung-Tab entfernt (verwendet aktives Projekt)
 - Alter-Spalte in SingerSelectionDialog
 
@@ -256,3 +288,28 @@ chormanager/
 
 **Testing:**
 - Alle Unit-Tests erfolgreich (135 passed, 1 skipped)
+
+---
+
+### Änderungen heute (2026-05-07)
+
+**ChorManager Enhancements:**
+- Sänger-Größe (height) Feld hinzugefügt für Choraufstellung-Optimierung
+- Sortierung in Sänger-Tab: Nach Name, Stimmgruppe oder Größe sortierbar
+- Sortierung in Termine-Tab: Dropdown für Datum, Name, Typ
+- Verfügbarkeits-Button in Termine-Tab für schnellen Zugriff
+- Auto-Reload: Datenbank nach Backup-Wiederherstellung automatisch neu geladen
+- Repertoire: Projekt-Verknüpfung und Sortierung verbessert
+
+**Choraufstellung Enhancements:**
+- PDF-Export: Konfigurationsdialog (Schriftgröße, Seitenrand, Schwarz-Weiß-Modus)
+- PDF-Export: Versetztes Raster und Querformat-Automatik
+- 'Nähe (Singpartner)' Menü für Affinitäts-Optimierung
+- Stimmgruppen-Farben: Theme-aware (Hell/Dunkel), konfigurierbar in `config/voice_groups.json`
+- Arrangement-Regeln: S1S2A1A2, S1S2B1B2T1T2A1A2, VoiceGroupCohesion
+- Auto-Arrange by Height: Sänger nach Größe automatisch platzieren
+- Metadaten: Projekt, Termin, Termin-Typ in JSON-Datei gespeichert
+
+**Testing:**
+- Neue Tests: test_metadata_saving.py, test_arrangement_rules.py
+- Alle Unit-Tests erfolgreich

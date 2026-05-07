@@ -21,6 +21,7 @@ CREATE TABLE singers (
     short_name TEXT,                           -- Optional nickname
     birth_date TEXT,                            -- YYYY-MM-DD
     voice_group TEXT,                           -- e.g., "Sopran 1"
+    height INTEGER,                              -- Height in cm (for Choraufstellung)
     email TEXT,                                 -- Email address
     phone TEXT,                                 -- Phone number
     street TEXT,                                -- Street address
@@ -50,6 +51,7 @@ CREATE TABLE singers (
 - `street`, `postal_code`, `city` added via ALTER TABLE
 - `guardian1`, `guardian1_phone`, `guardian2`, `guardian2_phone` added via ALTER TABLE
 - `is_adult` column was removed (logic computed from `birth_date`)
+- `height` added via ALTER TABLE (for Choraufstellung grid placement)
 
 ---
 
@@ -210,6 +212,7 @@ singers (1) ──→ (0..1) singers (affinity_uuid self-reference)
 
 ### Integer Fields
 - `joined_year`, `joined_month`, `left_year`, `left_month`: NULL if not set
+- `height`: Height in centimeters (NULL if not set)
 - `is_active`: 0 (inactive) or 1 (active)
 
 ### Timestamps
@@ -303,6 +306,6 @@ service.restore_backup("/path/to/backup.zip")
 
 ---
 
-**Schema Version**: 1.0  
-**Last Updated**: 2026-04-30  
-**Corresponding Code Version**: 0.4
+**Schema Version**: 1.1
+**Last Updated**: 2026-05-07
+**Corresponding Code Version**: 0.5

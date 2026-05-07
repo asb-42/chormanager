@@ -123,14 +123,15 @@ Das aktive Projekt filtert automatisch:
 1. Tab **Sänger** öffnen
 2. Toolbar: **Hinzufügen** klicken
 3. Felder ausfüllen:
-   - **Name** (Pflichtfeld)
-   - **Kurzname** (z.B. "M. Müller")
-   - **Stimmgruppe**: Sopran 1, Sopran 2, Alt 1, Alt 2, Tenor 1, Tenor 2, Bass 1, Bass 2
-   - **E-Mail**, **Telefon** (optional)
-   - **Adresse**: Straße, PLZ, Stadt (optional)
-   - **Geburtsdatum** (für Altersberechnung)
-   - **Guardien** (für Minderjährige)
-   - **Beitrittsdatum**: Jahr und Monat
+    - **Name** (Pflichtfeld)
+    - **Kurzname** (z.B. "M. Müller")
+    - **Stimmgruppe**: Sopran 1, Sopran 2, Alt 1, Alt 2, Tenor 1, Tenor 2, Bass 1, Bass 2
+    - **Größe (cm)**: Für optimale Platzierung in der Choraufstellung
+    - **E-Mail**, **Telefon** (optional)
+    - **Adresse**: Straße, PLZ, Stadt (optional)
+    - **Geburtsdatum** (für Altersberechnung)
+    - **Guardien** (für Minderjährige)
+    - **Beitrittsdatum**: Jahr und Monat
 4. **Speichern**
 
 ### Sänger bearbeiten
@@ -149,6 +150,12 @@ Das aktive Projekt filtert automatisch:
 - **Stimmgruppe**: Dropdown oben im Tab
 - **Status**: Alle/Aktive/Minderjährige/U16
 - **Suche**: Nach Name, Kurzname, E-Mail
+
+### Sortierung
+
+Oben in der Toolbar können Sie sortieren:
+- **Sortieren nach**: Name, Stimmgruppe, Größe
+- **Reihenfolge**: Aufsteigend oder Absteigend
 
 ### Sänger löschen
 
@@ -198,26 +205,32 @@ Die aktive Besetzung wird an anderen Stellen verwendet:
 1. Tab **Termine** öffnen
 2. Toolbar: **Hinzufügen** klicken
 3. Felder ausfüllen:
-   - **Name** (z.B. "1. Generalprobe")
-   - **Datum/Zeit**
-   - **Typ**: 
-     - GP (Generalprobe)
-     - OP (Orchesterprobe)
-     - SOFA (Solo/Finale/Anders)
-     - Probe
-     - Konzert
-     - Auftritt
-   - **Ort** (optional)
-   - **Beschreibung** (optional)
-   - **Projekt**: Automatisch auf aktives Projekt gesetzt
+    - **Name** (z.B. "1. Generalprobe")
+    - **Datum/Zeit**
+    - **Typ**: 
+      - GP (Generalprobe)
+      - OP (Orchesterprobe)
+      - SOFA (Solo/Finale/Anders)
+      - Probe
+      - Konzert
+      - Auftritt
+    - **Ort** (optional)
+    - **Beschreibung** (optional)
+    - **Projekt**: Automatisch auf aktives Projekt gesetzt
 4. **Speichern**
+
+### Sortierung im Termine-Tab
+
+Oben in der Toolbar können Sie sortieren:
+- **Sortieren nach**: Datum, Name, Typ
+- **Reihenfolge**: Aufsteigend (älteste zuerst) oder Absteigend (neueste zuerst)
 
 ### Verfügbarkeit erfassen
 
 Für jeden Termin können Sie angeben, wer kommt:
 
 1. Termin auswählen
-2. Toolbar: **Verfügbarkeit erfassen**
+2. Toolbar: **Verfügbarkeit**-Button klicken (oder Rechtsklick → Verfügbarkeit erfassen)
 3. Dialog zeigt alle Sänger mit:
    - **Schnellsuche** (Kurzname)
    - **Stimmgruppe-Filter**
@@ -268,9 +281,19 @@ Die Choraufstellung ist ein separates Plugin zur Planung der Sängerpositionen.
 
 - **Drag & Drop**: Sänger in die Raster ziehen
 - **Rubber-Band**: Mehrere Sänger auswählen
-- **Optimieren**: Automatische Platzierung
+- **Optimieren**: Automatische Platzierung mit verschiedenen Regeln:
+  - Nach Stimmgruppen sortiert
+  - Nach Größe (Height) sortiert
+  - Nähe (Singpartner) berücksichtigen
+  - Stimmgruppen zusammenhaltend (VoiceGroupCohesion)
 - **PDF-Export**: Druckfertige Auffstellung
+  - Konfigurationsdialog: Schriftgröße, Seitenrand, Schwarz-Weiß-Modus
+  - Querformat-Automatik
+  - Versetztes Raster unterstützt
 - **Theming**: Hell-/Dunkelmodus
+  - Stimmgruppen-Farben theme-aware (Hell/Dunkel)
+  - Konfigurierbar in `config/voice_groups.json`
+- **Nähe (Singpartner)**: Menüpunkt "Aufstellen → Nähe (Singpartner)" platziert Sänger mit Affinität zusammen
 
 ---
 
@@ -312,6 +335,12 @@ Oben in der Toolbar können Sie sortieren:
 - **Sortieren nach**: Komponist, Land, Standort
 - **Reihenfolge**: Aufsteigend (A-Z) oder Absteigend (Z-A)
 - **Standard**: Sortiert nach Komponist, aufsteigend
+
+### Repertoire einem Projekt zuordnen
+
+- Im Dialog "Programm" (Dropdown) das passende Projekt auswählen
+- Das Stück erscheint dann im Projekt-Dialog unter "Stücke in diesem Programm"
+- Sortierung nach Projekt möglich
 
 ### Suche im Repertoire
 
@@ -360,9 +389,12 @@ Exportiert Daten im JSON-Format für die Choraufstellung-App:
 **Manuell:**
 1. Menü: **Extras → Backup erstellen**
 2. ZIP-Datei wird erstellt mit:
-   - `chor.db` (Datenbank)
-   - `config/` (Einstellungen)
-   - `choraufstellung/data/` (Aufstellungen)
+    - `chor.db` (Datenbank)
+    - `config/` (Einstellungen)
+    - `choraufstellung/data/` (Aufstellungen)
+
+**Nach Wiederherstellung:**
+- Datenbank wird automatisch neu geladen (kein Neustart nötig)
 
 ### Daten importieren (von USB/anderem PC)
 
@@ -472,11 +504,16 @@ MIT License
 
 ---
 
-**Version**: 1.1 (2026-04-30)  
-**ChorManager Version**: 0.4  
+**Version**: 1.2 (2026-05-07)
+**ChorManager Version**: 0.5
 **Neu in dieser Version**:
-- Repertoire: Programm-Verknüpfung mit Dropdown
-- Repertoire: Sortierung nach Komponist, Land, Standort
-- Projekt-Dialog: Repertoire-Stücke am Ende angezeigt
-- Projekt-Dialog: Beschreibungsfeld auf 10 Zeilen vergrößert
+- Sänger: Größe (height) Feld für Choraufstellung hinzugefügt
+- Sänger-Tab: Sortierung nach Größe möglich
+- Termine-Tab: Sortierung per Dropdown (Datum, Name, Typ)
+- Termine-Tab: Verfügbarkeit-Button für schnellen Zugriff
+- Choraufstellung: PDF-Export mit Konfigurationsdialog (Schriftgröße, Seitenrand)
+- Choraufstellung: 'Nähe (Singpartner)' Menü für Affinität-Optimierung
+- Choraufstellung: Stimmgruppen-Farben (theme-aware, konfigurierbar)
+- Choraufstellung: Versetztes Raster im PDF-Export unterstützt
+- Auto-Reload nach Backup-Wiederherstellung (kein Neustart nötig)
 - Verbesserte Benutzeroberfläche und Fehlerbehebungen
