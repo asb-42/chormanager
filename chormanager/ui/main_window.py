@@ -2408,7 +2408,50 @@ class MainWindow(QMainWindow):
 
         dialog = BackupRestoreDialog(self)
         dialog.service = service
-        dialog.exec()
+        if dialog.exec():
+            if dialog.restored:
+                self._reload_after_restore()
+
+    def _reload_after_restore(self):
+        """Reload database and all tabs after backup restore."""
+        try:
+            self.db.close()
+            self.db = Database(self.db_path)
+            self.db.connect()
+            
+            self.singer_repo = SingerRepository(self.db)
+            
+            for tab_attr in ['projects_tab', 'singers_tab', 'besetzung_tab', 'events_tab']:
+                if hasattr(self, tab_attr):
+                    tab = getattr(self, tab_attr)
+                    if hasattr(tab, 'db'):
+                        tab.db = self.db
+                    if hasattr(tab, 'singer_repo'):
+                        tab.singer_repo = self.singer_repo
+                    if hasattr(tab, 'project_repo'):
+                        from ..domain.repository import ProjectRepository
+                        tab.project_repo = ProjectRepository(self.db)
+                    if hasattr(tab, 'event_repo'):
+                        from ..domain.repository import EventRepository
+                        tab.event_repo = EventRepository(self.db)
+                    if hasattr(tab, 'besetzung_repo'):
+                        from ..domain.repository import BesetzungRepository
+                        tab.besetzung_repo = BesetzungRepository(self.db)
+            
+            if hasattr(self, 'projects_tab'):
+                self.projects_tab._load_projects()
+            if hasattr(self, 'singers_tab'):
+                self.singers_tab._load_singers()
+            if hasattr(self, 'events_tab'):
+                self.events_tab._load_events()
+            if hasattr(self, 'besetzung_tab'):
+                self.besetzung_tab._load_besetzungen()
+            
+            self.statusBar().showMessage("Datenbank nach Backup-Restore neu geladen.", 3000)
+        except Exception as e:
+            QMessageBox.critical(
+                self, "Fehler", f"Fehler beim Neuladen der Datenbank:\n{str(e)}"
+            )
 
 
     def _get_data_dir(self):

@@ -1481,6 +1481,7 @@ class BackupRestoreDialog(QDialog):
         self.setMinimumSize(550, 450)
         self.service = None
         self.pending_restore_path = None
+        self.restored = False
         self._setup_ui()
 
     def _setup_ui(self):
@@ -1611,10 +1612,11 @@ class BackupRestoreDialog(QDialog):
             return
         try:
             restored = self.service.restore_backup(self.pending_restore_path)
+            self.restored = True
             QMessageBox.information(
                 self, "Erfolgreich", f"{len(restored)} Dateien wiederhergestellt."
             )
-            self.pending_restore_path = None
+            self.accept()
             self.drop_zone.label.setText(
                 "Backup-Datei hierher ziehen\noder klicken zum Auswählen"
             )
