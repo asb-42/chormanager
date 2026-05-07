@@ -1382,7 +1382,7 @@ class MainWindow(QMainWindow):
         
         raster_layout = QHBoxLayout()
         raster_layout.addWidget(QLabel("Raster:"))
-        sc=QScrollArea(); sc.setWidgetResizable(True); self.grid=FormationGrid(4,5)
+        sc=QScrollArea(); sc.setWidgetResizable(False); self.grid=FormationGrid(4,5)
         self.grid.singer_removed_from_grid.connect(self.on_singer_removed_from_grid); self.grid.singer_edit_requested.connect(self.edit_singer); self.grid.singer_affinity_requested.connect(self.set_singer_affinity)
         self.grid.undo_stack.canUndoChanged.connect(self.update_undo_redo)
         self.grid.undo_stack.canRedoChanged.connect(self.update_undo_redo)
@@ -1871,6 +1871,9 @@ class MainWindow(QMainWindow):
         
         if success:
             QMessageBox.information(self, "PDF Export", f"PDF exportiert nach:\n{fp}")
+            from PyQt6.QtGui import QDesktopServices
+            from PyQt6.QtCore import QUrl
+            QDesktopServices.openUrl(QUrl.fromLocalFile(os.path.dirname(fp)))
         else:
             QMessageBox.warning(self, "Fehler", "PDF-Export fehlgeschlagen.")
 
