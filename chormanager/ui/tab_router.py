@@ -25,11 +25,10 @@ imported.
 
 KNOWN DEAD CODE
 ---------------
-There are TWO definitions of ``_on_selection_changed`` in the
-original main_window.py. Python keeps the second; the first is
-unreachable. We keep that quirk here for the moment and will
-remove it in a separate, dedicated cleanup commit so this M-1
-step remains a pure byte-for-byte extraction.
+The duplicate ``_on_selection_changed`` that existed in the
+original main_window.py (Python kept the second; the first was
+unreachable) was removed in a dedicated cleanup commit. Only the
+one remaining definition lives here now.
 """
 
 from __future__ import annotations
@@ -109,15 +108,6 @@ class TabRouterMixin:
                 selection = title
 
         self._on_selection_changed(tab_index, selection)
-
-    def _on_selection_changed(self, tab_index, selection):
-        """Handle selection change from any tab to update context toolbar.
-
-        Args:
-            tab_index: Index of the tab (int)
-            selection: Selected object (Project/Event/Singer) or None
-        """
-        self._update_context_toolbar(tab_index, selection)
 
     def _update_context_toolbar(self, tab_index, selection):
         """Update toolbar actions based on active tab and selection.
