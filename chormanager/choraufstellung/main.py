@@ -2,106 +2,42 @@ import sys
 import os
 import json
 
-try:
-    from qt_compat import exec_qt
-except ImportError:
-    def exec_qt(obj, action=None):
-        if action is None:
-            return obj.exec_()
-        else:
-            return obj.exec_(action)
+# PyQt5/PyQt6 cross-compatibility, enum aliases (QFrame.Panel, Qt.AlignCenter)
+# and fallback classes (FallbackSinger, FallbackOptimizerDialog, FallbackGridEngine)
+# all live in ``qt_compat``. ``main.py`` no longer needs a try/except block
+# for any of those concerns.
+from qt_compat import (
+    # Cross-compat helper
+    exec_qt,
+    QT_VERSION,
+    # Re-exported Qt classes used below
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
+    QGridLayout, QLabel, QPushButton, QMenuBar, QMenu,
+    QFileDialog, QDialog, QFormLayout, QLineEdit, QComboBox, QListWidget,
+    QListWidgetItem, QScrollArea, QMessageBox, QFrame, QCheckBox, QSplitter,
+    QGraphicsDropShadowEffect, QRubberBand,
+    QCompleter, QTableWidget, QTableWidgetItem, QHeaderView,
+    QRadioButton,
+    Qt, QMimeData, pyqtSignal, QRect, QTimer, QPoint,
+    QPrinter, QPrintDialog,
+    QDrag, QColor, QPalette, QFont, QAction, QUndoStack,
+    QUndoCommand, QActionGroup,
+)
 
-# PyQt6 and PyQt5 compatibility - handle enum changes between versions
-try:
-    from PyQt6.QtWidgets import (
-        QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-        QGridLayout, QLabel, QPushButton, QMenuBar, QMenu,
-        QFileDialog, QDialog, QFormLayout, QLineEdit, QComboBox, QListWidget,
-        QListWidgetItem, QScrollArea, QMessageBox, QFrame, QCheckBox, QSplitter,
-        QGraphicsDropShadowEffect, QRubberBand,
-        QCompleter, QTableWidget, QTableWidgetItem, QHeaderView,
-        QRadioButton
-    )
-    from PyQt6.QtCore import Qt, QMimeData, pyqtSignal, QRect, QTimer, QPoint
-    from PyQt6.QtPrintSupport import QPrinter, QPrintDialog
-    from PyQt6.QtGui import QDrag, QColor, QPalette, QFont, QAction, QUndoStack, QUndoCommand, QActionGroup
-
-    QFrame.Panel = QFrame.Shape.Panel
-    QFrame.Raised = QFrame.Shadow.Raised
-    QFrame.Sunken = QFrame.Shadow.Sunken
-    QFrame.HLine = QFrame.Shape.HLine
-    QFrame.VLine = QFrame.Shape.VLine
-    QFrame.StyledPanel = QFrame.Shape.StyledPanel
-    QFrame.NoFrame = QFrame.Shape.NoFrame
-
-    Qt.Horizontal = Qt.Orientation.Horizontal
-    Qt.Vertical = Qt.Orientation.Vertical
-    Qt.AlignCenter = Qt.AlignmentFlag.AlignCenter
-    Qt.AlignRight = Qt.AlignmentFlag.AlignRight
-    Qt.AlignTop = Qt.AlignmentFlag.AlignTop
-    Qt.LeftButton = Qt.MouseButton.LeftButton
-    Qt.RightButton = Qt.MouseButton.RightButton
-    Qt.ControlModifier = Qt.KeyboardModifier.ControlModifier
-
-except ImportError:
-    from PyQt5.QtWidgets import (
-        QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-        QGridLayout, QLabel, QPushButton, QMenuBar, QMenu,
-        QFileDialog, QDialog, QFormLayout, QLineEdit, QComboBox, QListWidget,
-        QListWidgetItem, QScrollArea, QMessageBox, QFrame, QCheckBox, QSplitter,
-        QUndoStack, QUndoCommand, QGraphicsDropShadowEffect, QRubberBand,
-        QCompleter, QTableWidget, QTableWidgetItem, QHeaderView,
-        QRadioButton
-    )
-    from PyQt5.QtCore import Qt, QMimeData, pyqtSignal, QRect, QTimer
-    from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
-    from PyQt5.QtGui import QDrag, QColor, QPalette, QFont, QAction, QActionGroup
-
-try:
-    from config import load_settings, save_settings, load_voice_groups_config, get_valid_voice_groups, get_voice_group_color, get_data_dir, clear_color_cache
-except ImportError:
-    def load_settings(): return {"theme": "standard"}
-    def save_settings(s): return True
-    def load_voice_groups_config(): return []
-    def get_valid_voice_groups(): return []
-    def get_voice_group_color(v): return "#cccccc"
-    def get_data_dir(): return "."
-    def clear_color_cache(): pass
-
-try:
-    from PyQt6.QtWidgets import QDialog
-except ImportError:
-    from PyQt5.QtWidgets import QDialog
-
-try:
-    from singer_model import Singer, VoiceGroup, voice_group_color
-    from storage import FormationStorage
-    from pdf_export import PDFExporter
-    from core.optimizer import FormationOptimizer
-    from core.grid_engine import GridEngine, GridConfig
-    from ui.optimizer_dialog import OptimizerDialog
-except ImportError:
-    from enum import Enum
-    class VoiceGroup(Enum):
-        SOPRAN_1 = "Sopran 1"
-    def voice_group_color(vg): return "#cccccc"
-    class Singer:
-        def __init__(self, name, voice_group, height=0, singer_id="1"):
-            self.name, self.voice_group, self.height, self.singer_id = name, voice_group, height, singer_id
-    class FormationStorage:
-        def load_formation(self, f): return None
-        def save_formation(self, *a): return True
-    class PDFExporter:
-        def export_formation(self, *a): return True
-    class FormationOptimizer:
-        @staticmethod
-        def run(*a): return None
-    class OptimizerDialog(QDialog):
-        def __init__(self, parent=None):
-            super().__init__(parent)
-            self.setWindowTitle("Optimierung nicht verfügbar")
-    class GridEngine:
-        def __init__(self, *a): pass
+# Domain modules (choraufstellung-specific). These were previously inside
+# a try/except block, but every module listed here is a hard dependency
+# of the choraufstellung subapp, so a plain import is fine and clearer.
+from config import (
+    load_settings, save_settings, load_voice_groups_config,
+    get_valid_voice_groups, get_voice_group_color, get_data_dir,
+    clear_color_cache,
+)
+from singer_model import Singer, VoiceGroup, voice_group_color
+from storage import FormationStorage
+from pdf_export import PDFExporter
+from core.optimizer import FormationOptimizer
+from core.grid_engine import GridEngine, GridConfig
+from ui.optimizer_dialog import OptimizerDialog
 
 class DraggableListWidget(QListWidget):
     def startDrag(self, actions):
