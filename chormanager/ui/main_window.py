@@ -2768,42 +2768,8 @@ class MainWindow(QMainWindow):
 from .update_controller import VersionCheckDialog  # noqa: E402, F401
 
 
-# --- NEW: helper extracted to module level so it is unit-testable
-# in headless mode (see tests/unit/test_reload_after_restore.py).
-# Replaces the previous ad-hoc if/hasattr loop that forgot
-# avail_repo and repertoire_repo, causing the user-visible
-# "Not connected to database" error after a backup-restore.
-def refresh_tab_repositories(tab, new_db):
-    """Rebind every known repository on a tab to a new Database instance.
-
-    Called from MainWindow._reload_after_restore() after a backup has
-    been restored. Idempotent: re-creates every repository listed below
-    on the given tab and re-points its ``db`` attribute.
-
-    The repository list MUST be kept in sync with the attributes that
-    the tab classes initialise in their constructors.
-    """
-    from ..domain.repository import (
-        SingerRepository,
-        EventRepository,
-        ProjectRepository,
-        BesetzungRepository,
-        AvailabilityRepository,
-        RepertoireRepository,
-    )
-
-    if hasattr(tab, 'db'):
-        tab.db = new_db
-    if hasattr(tab, 'singer_repo'):
-        tab.singer_repo = SingerRepository(new_db)
-    if hasattr(tab, 'event_repo'):
-        tab.event_repo = EventRepository(new_db)
-    if hasattr(tab, 'project_repo'):
-        tab.project_repo = ProjectRepository(new_db)
-    if hasattr(tab, 'besetzung_repo'):
-        tab.besetzung_repo = BesetzungRepository(new_db)
-    if hasattr(tab, 'avail_repo'):
-        tab.avail_repo = AvailabilityRepository(new_db)
-    if hasattr(tab, 'repertoire_repo'):
-        tab.repertoire_repo = RepertoireRepository(new_db)
-# --- END NEW ---
+# --- M-1 step 3: refresh_tab_repositories was moved to its own module.
+# Re-exported here for backward compatibility with the unit test
+# (tests/unit/test_reload_after_restore.py) that imports it from
+# the original location.
+from .choraufstellung_launcher import refresh_tab_repositories  # noqa: E402, F401
