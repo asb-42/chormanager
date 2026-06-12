@@ -954,6 +954,12 @@ class SingerPool(QWidget):
     place_all_requested = pyqtSignal()
     def __init__(self, parent=None):
         super().__init__(parent); self.singers=[]
+        # M-2 2026-06-12 (auto-shrink): defer the width clamp until
+        # ``update_singers`` has been called with real data.  Calling
+        # ``setMaximumWidth(50)`` during the MainWindow constructor
+        # (when the pool is inside an unlaid-out QSplitter) causes
+        # Qt's offscreen plugin to hang on ``propagateSizeHints()``.
+        self._pool_width_initialized = False
         lay = QVBoxLayout(self)
         lay.addWidget(QLabel("<b>Sängerpool</b>"))
         self.pool_count_label = QLabel("0 Sänger")
@@ -1027,6 +1033,12 @@ class SingerPool(QWidget):
             if hasattr(self.parent(), '_mark_modified'):
                 self.parent()._mark_modified()
     
+    # Width (in px) the pool collapses to when no singers are in it.
+    # Used by _apply_pool_width() to keep the grid area large enough
+    # for wide formations (e.g. 2x16 grids where the pool would
+    # otherwise eat ~250 px of splitter space).
+    EMPTY_POOL_WIDTH = 50
+
     def update_singers(self, singers, placed_ids=None):
         self.singers = singers
         if placed_ids is not None:
@@ -1037,7 +1049,7 @@ class SingerPool(QWidget):
                 continue
             row_pos = self.table.rowCount()
             self.table.insertRow(row_pos)
-            
+
             name_item = QTableWidgetItem(s.name)
             name_item.setData(Qt.ItemDataRole.UserRole, s)
             name_item.setFont(QFont("SansSerif", 9, QFont.Weight.Bold))
@@ -1045,16 +1057,16 @@ class SingerPool(QWidget):
             vg_color = voice_group_color(s.voice_group)
             name_item.setBackground(QColor(vg_color))
             self.table.setItem(row_pos, 0, name_item)
-            
+
             vg_item = QTableWidgetItem(vg_val)
             vg_item.setBackground(QColor(vg_color))
             self.table.setItem(row_pos, 1, vg_item)
-            
+
             height_text = f"{s.height} cm" if s.height > 0 else ""
             height_item = QTableWidgetItem(height_text)
             height_item.setBackground(QColor(vg_color))
             self.table.setItem(row_pos, 2, height_item)
-            
+
             affinity_name = ""
             if s.affinity:
                 partner = next((p for p in self.singers if p.singer_id == s.affinity), None)
@@ -1063,10 +1075,43 @@ class SingerPool(QWidget):
             affinity_item = QTableWidgetItem(affinity_name)
             affinity_item.setBackground(QColor(vg_color))
             self.table.setItem(row_pos, 3, affinity_item)
-        
+
         pool_count = self.table.rowCount()
         self.pool_count_label.setText(f"{pool_count} Sänger")
-    
+
+        # M-2 follow-up 2026-06-12 (auto-shrink): when the pool is
+        # empty the splitter can give its entire left column to the
+        # FormationGrid.  We clamp the pool's min/max width to
+        # EMPTY_POOL_WIDTH in that case and release the clamp as soon
+        # as a singer is added back.  See the regression test
+        # ``test_choraufstellung_pool_auto_shrink.py``.
+        self._apply_pool_width(pool_count)
+
+    def _apply_pool_width(self, pool_count: int) -> None:
+        """Shrink the pool to ``EMPTY_POOL_WIDTH`` when empty, else
+        release the clamp so it can grow back to its natural width.
+
+        Skipped on the very first call (the one inside the
+        ``MainWindow.setup_ui()`` path) because the pool is not yet
+        fully laid out at that point and calling setMaximumWidth(50)
+        causes Qt's offscreen plugin to hang on ``propagateSizeHints``.
+        """
+        if not self._pool_width_initialized:
+            # First call (empty pool, just laid out) - just record
+            # that we're done, don't change widths.
+            self._pool_width_initialized = True
+            return
+        if pool_count <= 0:
+            self.setMinimumWidth(self.EMPTY_POOL_WIDTH)
+            self.setMaximumWidth(self.EMPTY_POOL_WIDTH)
+        else:
+            # QWIDGETSIZE_MAX is the Qt sentinel for "no upper bound".
+            self.setMaximumWidth(16777215)
+            # Reset minimum to 0 (no constraint) instead of calling
+            # minimumSizeHint() which would force Qt to recompute
+            # layout sizes inside a possibly-not-yet-laid-out parent.
+            self.setMinimumWidth(0)
+
     def update_placed_singers(self, placed_ids):
         self.placed_singer_ids = placed_ids
         self.update_singers(self.singers, placed_ids)

@@ -60,12 +60,17 @@ class TestEmptyPoolShrinks:
 
     def test_empty_pool_has_maximum_width_50(self, qtbot):
         pool = _make_pool(qtbot)
-        # Pool starts empty
+        # Prime the pool (simulating MainWindow.setup_ui calling
+        # update_singers with empty singers at construct time).
+        pool.update_singers([], placed_ids=set())
+        # Now drive it empty again - the second call must shrink.
         pool.update_singers([], placed_ids=set())
         assert pool.maximumWidth() == EMPTY_POOL_WIDTH
 
     def test_empty_pool_has_minimum_width_50(self, qtbot):
         pool = _make_pool(qtbot)
+        # Prime: see comment in test_empty_pool_has_maximum_width_50.
+        pool.update_singers([], placed_ids=set())
         pool.update_singers([], placed_ids=set())
         assert pool.minimumWidth() == EMPTY_POOL_WIDTH
 
@@ -97,11 +102,16 @@ class TestNonEmptyPoolExpands:
         # maximumWidth() returns 16777215 (QWIDGETSIZE_MAX) when unconstrained
         assert pool.maximumWidth() >= NON_EMPTY_POOL_MIN
 
-    def test_pool_with_singer_minimum_width_larger_than_empty(self, qtbot):
+    def test_pool_with_singer_clamp_released(self, qtbot):
+        """When a singer is in the pool, the max-width must be
+        unconstrained (i.e. QWIDGETSIZE_MAX), which proves the
+        empty-pool clamp has been released.
+        """
         s1 = _make_singer(name="Alice", sid="1")
         pool = _make_pool(qtbot)
         pool.update_singers([s1], placed_ids=set())
-        assert pool.minimumWidth() > EMPTY_POOL_WIDTH
+        # 16777215 is QWIDGETSIZE_MAX in Qt.
+        assert pool.maximumWidth() == 16777215
 
     def test_pool_with_one_singer_among_many_placed_expands(self, qtbot):
         """One singer unplaced among many placed -> pool must show that singer."""
@@ -129,13 +139,17 @@ class TestPoolWidthRoundTrip:
         s1 = _make_singer(name="Alice", sid="1")
         pool = _make_pool(qtbot)
 
+        # 0) Prime: first call is a no-op (skipped to avoid QSplitter
+        # propagateSizeHints hang during construction).
+        pool.update_singers([], placed_ids=set())
+
         # 1) start empty -> shrunk
         pool.update_singers([], placed_ids=set())
         assert pool.maximumWidth() == EMPTY_POOL_WIDTH
 
         # 2) add a singer -> expand
         pool.update_singers([s1], placed_ids=set())
-        assert pool.maximumWidth() >= NON_EMPTY_POOL_MIN
+        assert pool.maximumWidth() == 16777215  # QWIDGETSIZE_MAX
 
         # 3) remove the singer -> shrink again
         pool.update_singers([], placed_ids=set())
@@ -170,3 +184,43 @@ class TestPoolWidthWithManySingers:
         pool = _make_pool(qtbot)
         pool.update_singers(singers, placed_ids=set())
         assert pool.maximumWidth() >= NON_EMPTY_POOL_MIN
+
+
+
+# ---------------------------------------------------------------------------
+# Regression test: the SingerPool in main.py is the ACTIVE one in the
+# choraufstellung subshell. It must have the same auto-shrink behavior
+# as the duplicate in ui/pool_widget.py.
+# ---------------------------------------------------------------------------
+
+
+class TestMainPySingerPoolAutoShrinks:
+    """The ``SingerPool`` defined in main.py must auto-shrink too.
+
+    M-2 Schritt 5 (planned) will extract this widget into its own
+    module, but until then both copies must behave identically.
+    """
+
+    def test_main_py_singer_pool_has_empty_pool_width_constant(self):
+        from chormanager.choraufstellung.main import SingerPool
+        assert hasattr(SingerPool, "EMPTY_POOL_WIDTH")
+        assert SingerPool.EMPTY_POOL_WIDTH == EMPTY_POOL_WIDTH
+
+    def test_main_py_singer_pool_shrinks_when_empty(self, qtbot):
+        from chormanager.choraufstellung.main import SingerPool
+        pool = SingerPool()
+        qtbot.addWidget(pool)
+        # Prime: see comment in the ui/pool_widget.py test.
+        pool.update_singers([], placed_ids=set())
+        pool.update_singers([], placed_ids=set())
+        assert pool.maximumWidth() == EMPTY_POOL_WIDTH
+        assert pool.minimumWidth() == EMPTY_POOL_WIDTH
+
+    def test_main_py_singer_pool_expands_when_non_empty(self, qtbot):
+        from chormanager.choraufstellung.main import SingerPool
+        pool = SingerPool()
+        qtbot.addWidget(pool)
+        s1 = _make_singer(name="Alice", sid="1")
+        pool.update_singers([s1], placed_ids=set())
+        # 16777215 is QWIDGETSIZE_MAX in Qt.
+        assert pool.maximumWidth() == 16777215

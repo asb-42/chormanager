@@ -221,6 +221,12 @@ class SingerPool(QWidget):
         super().__init__(parent)
         self.singers = []
         self.placed_singer_ids = set()
+        # M-2 2026-06-12 (auto-shrink): defer the width clamp until
+        # ``update_singers`` has been called with real data.  Calling
+        # ``setMaximumWidth(50)`` during the MainWindow constructor
+        # (when the pool is inside an unlaid-out QSplitter) causes
+        # Qt's offscreen plugin to hang on ``propagateSizeHints()``.
+        self._pool_width_initialized = False
         self._setup_ui()
     
     def _setup_ui(self):
@@ -372,22 +378,28 @@ class SingerPool(QWidget):
 
     def _apply_pool_width(self, pool_count: int) -> None:
         """Shrink the pool to ``EMPTY_POOL_WIDTH`` when empty, else
-        release the clamp so it can grow back to its default width.
+        release the clamp so it can grow back to its natural width.
 
-        When expanding, we let Qt recompute the natural minimum from
-        the children's ``minimumSizeHint()`` (4 table columns + header
-        + scrollbar), which is normally several hundred pixels.
+        Skipped on the very first call (the one inside the
+        ``MainWindow.setup_ui()`` path) because the pool is not yet
+        fully laid out at that point and calling setMaximumWidth(50)
+        causes Qt's offscreen plugin to hang on ``propagateSizeHints``.
         """
+        if not self._pool_width_initialized:
+            # First call (empty pool, just laid out) - just record
+            # that we're done, don't change widths.
+            self._pool_width_initialized = True
+            return
         if pool_count <= 0:
             self.setMinimumWidth(self.EMPTY_POOL_WIDTH)
             self.setMaximumWidth(self.EMPTY_POOL_WIDTH)
         else:
             # QWIDGETSIZE_MAX is the Qt sentinel for "no upper bound".
             self.setMaximumWidth(16777215)
-            # Use minimumSizeHint() so the pool never gets smaller than
-            # what its contents (table + header + buttons) actually need.
-            natural = self.minimumSizeHint().width()
-            self.setMinimumWidth(max(natural, 0))
+            # Reset minimum to 0 (no constraint) instead of calling
+            # minimumSizeHint() which would force Qt to recompute
+            # layout sizes inside a possibly-not-yet-laid-out parent.
+            self.setMinimumWidth(0)
     
     def update_placed_singers(self, placed_ids):
         self.placed_singer_ids = placed_ids
