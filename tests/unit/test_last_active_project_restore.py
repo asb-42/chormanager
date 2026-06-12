@@ -124,10 +124,12 @@ class TestMissingSavedProjectDoesNotCrash:
             assert window.projects_tab.current_project is None
             # The info bar must say "Keines" (not crash, not "None")
             assert window.project_info_label.text() == "Keines"
-            # MainWindow.current_project may or may not be set
-            # depending on whether _on_project_changed was ever
-            # called. If it is set, it must be None.
-            if hasattr(window, "current_project"):
-                assert window.current_project is None
+            # MainWindow.current_project must exist and be None.
+            # It is initialised in MainWindow._create_central_widget
+            # so that callers (e.g. line 1042 of main_window.py that
+            # reads self.current_project.id) can rely on hasattr and
+            # never hit an AttributeError when no project is active.
+            assert hasattr(window, "current_project")
+            assert window.current_project is None
         finally:
             window.close()

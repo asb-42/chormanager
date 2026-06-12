@@ -610,6 +610,15 @@ class MainWindow(QMainWindow, ThemeMixin, TabRouterMixin):
         self.context_toolbar.setIconSize(QSize(16, 16))
         content_layout.addWidget(self.context_toolbar)
 
+        # Runtime selection state. Initialised to None so that code
+        # paths that read self.current_project / self.current_event
+        # (e.g. line 1042: 'self.current_project.id if
+        # self.current_project else None') never trip an AttributeError
+        # when no project has been selected yet (e.g. fresh DB or a
+        # stale last_active_project_id that no longer exists).
+        # _on_project_changed / _on_event_selected (in tab_router.py)
+        # overwrite these when a real selection happens.
+        self.current_project = None
         self.current_event = None
 
         from .views.projects_tab import ProjectsTab
