@@ -52,6 +52,10 @@ from ..config import (
     set_last_active_project_id,
 )
 from ..core.export_service import ExportService
+from ..core.response_matrix import build_response_matrix
+from ..core.response_render_pdf import render_response_matrix_pdf
+from ..core.response_render_odt import render_response_matrix_odt
+from .export_format_dialog import ExportFormatDialog, SUPPORTED_FORMATS
 from .export_dialog import ExportDialog
 from PyQt6.QtWidgets import QFileDialog
 
@@ -1151,6 +1155,27 @@ class MainWindow(QMainWindow):
                 )
                 set_active_action.triggered.connect(self.events_tab._set_selected_event)
                 self.context_toolbar.addAction(set_active_action)
+
+                self.context_toolbar.addSeparator()
+
+                # Project-wide response-matrix export (PDF / ODT)
+                self.export_matrix_action = QAction(
+                    "Zusagen/Absagen-Liste exportieren", self
+                )
+                self.export_matrix_action.setIcon(
+                    get_icon(
+                        "document-save",
+                        QStyle.StandardPixmap.SP_DialogSaveButton,
+                    )
+                )
+                self.export_matrix_action.setToolTip(
+                    "Erstellt eine projekt-weite Übersicht der Zusagen und "
+                    "Absagen für alle Termine als PDF oder LibreOffice-Datei."
+                )
+                self.export_matrix_action.triggered.connect(
+                    self._export_response_matrix
+                )
+                self.context_toolbar.addAction(self.export_matrix_action)
 
                 self.context_toolbar.addSeparator()
 
@@ -2441,6 +2466,118 @@ class MainWindow(QMainWindow):
                 self, "Fehler", f"Fehler beim Neuladen der Datenbank:\n{str(e)}"
             )
 
+
+    def _export_response_matrix(self):
+        """Export a project-wide response matrix (PDF or ODT).
+
+        The matrix covers:
+          * All events belonging to the currently active project.
+          * All singers in the active Besetzung (Choraufstellung filter).
+            If there is no active Besetzung, all singers are included.
+
+        The user is first asked for the output format (PDF / ODT), then
+        for a destination file. A status-bar message confirms success
+        or reports errors.
+        """
+        try:
+            from ..domain.repository import (
+                SingerRepository,
+                EventRepository,
+                ProjectRepository,
+                BesetzungRepository,
+                AvailabilityRepository,
+            )
+            from ..config import get_last_active_besetzung_id
+
+            # 1) Resolve the active project
+            project = (
+                self.projects_tab.current_project
+                if hasattr(self, "projects_tab")
+                else None
+            )
+            if project is None:
+                QMessageBox.information(
+                    self,
+                    "Information",
+                    "Bitte wählen Sie zuerst ein aktives Projekt aus.",
+                )
+                return
+
+            # 2) Load singers (filtered by active Besetzung)
+            singer_repo = SingerRepository(self.db)
+            singers = singer_repo.get_active()
+            singer_filter_ids = None
+            saved_besetzung_id = get_last_active_besetzung_id()
+            if saved_besetzung_id:
+                besetzung_repo = BesetzungRepository(self.db)
+                besetzung = besetzung_repo.get_by_id(saved_besetzung_id)
+                if besetzung and besetzung.project_id == project.id:
+                    singer_filter_ids = besetzung.get_singer_ids()
+
+            # 3) Load events for this project
+            event_repo = EventRepository(self.db)
+            all_events = event_repo.get_all()
+            project_events = [e for e in all_events if e.project_id == project.id]
+
+            # 4) Load availabilities for these events
+            avail_repo = AvailabilityRepository(self.db)
+            event_ids = {e.id for e in project_events}
+            availabilities = [
+                a
+                for a in (
+                    avail_repo.get_by_event(eid) for eid in event_ids
+                )
+                for a in a
+            ] if event_ids else []
+
+            # 5) Build the matrix
+            matrix = build_response_matrix(
+                singers=singers,
+                events=project_events,
+                availabilities=availabilities,
+                title=project.name,
+                singer_filter_ids=singer_filter_ids,
+            )
+
+            if not matrix.columns:
+                QMessageBox.information(
+                    self,
+                    "Information",
+                    f"Das Projekt '{project.name}' enthält keine Termine. "
+                    "Es gibt nichts zu exportieren.",
+                )
+                return
+
+            # 6) Ask the user for the output format
+            dlg = ExportFormatDialog(self, default_format="pdf")
+            if dlg.exec() != QDialog.DialogCode.Accepted:
+                return
+            fmt_key = dlg.selected_format
+            ext = SUPPORTED_FORMATS[fmt_key]["ext"]
+
+            # 7) Ask for the destination file
+            default_name = f"{project.name}-Zusagen{ext}"
+            out_path = ExportFormatDialog.get_save_path(
+                self, fmt_key, default_name,
+            )
+            if out_path is None:
+                return
+
+            # 8) Render
+            if fmt_key == "pdf":
+                render_response_matrix_pdf(matrix, out_path)
+            else:
+                render_response_matrix_odt(matrix, out_path)
+
+            self.statusBar().showMessage(
+                f"Zusagen/Absagen-Liste exportiert nach {out_path}", 5000,
+            )
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Fehler",
+                f"Export fehlgeschlagen:\n{type(e).__name__}: {e}",
+            )
 
     def _get_data_dir(self):
         """Get current data directory."""
