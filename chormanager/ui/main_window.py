@@ -66,6 +66,7 @@ from .export_controller import (
     ExportJsonSyncMixin,
     ExportTabSpecificMixin,
 )
+from .main_window_actions import MainWindowActionsMixin
 
 
 # --- M-1 step 5: ``get_icon`` was moved to its own module to avoid a
@@ -96,6 +97,7 @@ class MainWindow(
     ExportCoreMixin,
     ExportJsonSyncMixin,
     ExportTabSpecificMixin,
+    MainWindowActionsMixin,
 ):
     """Main window for ChorManager.
 
@@ -123,6 +125,9 @@ class MainWindow(
     ``_export_termine``, ``_export_aufstellung``) are inherited from
     ``ExportTabSpecificMixin``
     (see ``chormanager/ui/export_controller.py``).
+    M-1 step 8: the per-tab action handlers (Singer, Event, Project
+    menus) are inherited from ``MainWindowActionsMixin``
+    (see ``chormanager/ui/main_window_actions.py``).
     """
 
 
@@ -773,27 +778,9 @@ class MainWindow(
         """Handle voice group filter change."""
         self.singers_tab._load_singers()
 
-    def _add_singer(self):
-        """Add new singer."""
-        self.singers_tab._add_singer()
-
-    def _edit_singer(self):
-        """Edit selected singer."""
-        self.singers_tab._edit_singer()
-
-    def _delete_singer(self):
-        self.singers_tab._delete_singer()
-
-    def _edit_event(self):
-        self.events_tab._edit_event()
-
-    def _delete_event(self):
-        self.events_tab._delete_event()
-
-    def _duplicate_event(self):
-        self.events_tab._duplicate_event()
-
-    def _manage_availability(self):
+    # NOTE: Singer/Event/Project action handlers moved to
+    # ``MainWindowActionsMixin`` in M-1 step 8 (see
+    # ``chormanager/ui/main_window_actions.py``).
         self.events_tab._manage_availability()
 
     # NOTE: ``_open_choraufstellung_for_event`` and ``_edit_formation``
@@ -828,94 +815,6 @@ class MainWindow(
     # NOTE: ``_export_csv``, ``_export_pdf`` and ``_export_libreoffice`` moved to
     # ``ExportCoreMixin`` in M-1 step 7a (see
     # ``chormanager/ui/export_controller.py``).
-
-    def _new_event(self):
-        """Create a new event."""
-        from .dialogs import EventDialog
-        from ..domain.repository import EventRepository
-
-        prefilled_project_id = self.current_project.id if self.current_project else None
-        dialog = EventDialog(db=self.db, parent=self, prefilled_project_id=prefilled_project_id)
-
-        if dialog.exec() == QDialog.DialogCode.Accepted:
-            data = dialog.get_data()
-
-            if not data.get("name"):
-                QMessageBox.warning(self, "Fehler", "Name ist erforderlich")
-                return
-
-            repo = EventRepository(self.db)
-            repo.create(**data)
-            if hasattr(self, 'projects_tab'):
-                self.projects_tab._load_projects()
-            if hasattr(self, 'events_tab'):
-                self.events_tab._load_events()
-
-            self.statusBar().showMessage("Termin erstellt")
-
-    def _manage_availability(self):
-        """Manage availability for events."""
-        self.events_tab._manage_availability()
-
-    def _list_events(self):
-        """List all events."""
-        from .dialogs import EventDialog
-        from ..domain.repository import EventRepository
-        from PyQt6.QtWidgets import QTableWidget, QTableWidgetItem, QMessageBox
-
-        repo = EventRepository(self.db)
-        events = repo.get_all()
-
-        if not events:
-            QMessageBox.information(self, "Termine", "Keine Termine vorhanden")
-            return
-
-        # Show events in a simple dialog
-        event_text = "Vorhandene Termine:\n\n"
-        for event in events:
-            event_text += f"- {event.name} ({event.date}) [{event.event_type}]\n"
-
-        QMessageBox.information(self, "Termine", event_text)
-
-    # NOTE: ``_export_singers_json``, ``_export_events_json``,
-    # ``_export_availability_json``, ``_export_singers_csv`` and
-    # ``_export_all_sync`` moved to ``ExportJsonSyncMixin`` in M-1 step 7b
-    # (see ``chormanager/ui/export_controller.py``).
-
-    def _new_projekt(self):
-        """Create new project."""
-        self.projects_tab._add_project()
-
-    def _edit_project(self):
-        """Edit selected project."""
-        self.projects_tab._edit_project()
-
-    def _delete_project(self):
-        """Delete selected project."""
-        self.projects_tab._delete_project()
-
-    def _duplicate_project(self):
-        """Duplicate selected project."""
-        self.projects_tab._duplicate_project()
-
-    def _save_projekt(self):
-        """Save current project."""
-        from PyQt6.QtWidgets import QMessageBox
-
-        project = self.projects_tab.current_project
-        if project:
-            QMessageBox.information(
-                self, "Speichern", f"Projekt '{project.name}' ist bereits gespeichert."
-            )
-        else:
-            QMessageBox.warning(self, "Speichern", "Kein Projekt ausgewählt.")
-
-    def _open_projekt(self):
-        """Open existing project."""
-        self.tabs.setCurrentIndex(0)
-        QMessageBox.information(
-            self, "Öffnen", "Bitte wählen Sie ein Projekt aus der Liste aus."
-        )
 
     def _show_config(self):
         """Show configuration dialog."""
