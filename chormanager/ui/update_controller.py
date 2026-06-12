@@ -52,7 +52,7 @@ class VersionCheckDialog(QDialog):
         layout.addWidget(button_box)
 
     def _check_version(self):
-        """Check GitHub for newer version on branch 0.4."""
+        """Check GitHub for newer version on branch 'main'."""
         self.status_label.setText("Prüfe GitHub Repository...")
         QApplication.processEvents()
 
@@ -61,8 +61,11 @@ class VersionCheckDialog(QDialog):
             import json
             import subprocess
 
-            # Get latest commit on branch 0.4 from GitHub API
-            url = "https://api.github.com/repos/asb-42/chormanager/branches/0.4"
+            # Get latest commit on branch 'main' from GitHub API.
+            # (Previously this pointed at branch '0.4', which has not
+            # existed on the remote for a while; the user reported
+            # HTTP 404 in the version check dialog.)
+            url = "https://api.github.com/repos/asb-42/chormanager/branches/main"
             req = urllib.request.Request(url)
             req.add_header('User-Agent', 'ChorManager')
 
@@ -98,7 +101,7 @@ class VersionCheckDialog(QDialog):
         try:
             import subprocess
             result = subprocess.run(
-                ['git', 'pull', 'origin', '0.4'],
+                ['git', 'pull', 'origin', 'main'],
                 capture_output=True, text=True, cwd='/media/data/coding/chormanager'
             )
 
