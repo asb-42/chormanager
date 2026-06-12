@@ -20,8 +20,31 @@ from qt_compat import (
     QRadioButton,
     Qt, QMimeData, pyqtSignal, QRect, QTimer, QPoint,
     QPrinter, QPrintDialog,
-    QDrag, QColor, QPalette, QFont, QAction, QUndoStack,
-    QUndoCommand, QActionGroup,
+    QDrag, QColor, QPalette, QFont, QAction, QActionGroup,
+    # NOTE (M-2 Schritt 3): QUndoStack / QUndoCommand removed from
+    # the qt_compat re-export.  Undo/redo now lives in the
+    # pure-Python ``core.commands`` module, with a thin Qt-signal
+    # bridge in ``undo_bridge.QtUndoStack`` imported below.
+)
+
+# M-2 Schritt 3: undo/redo logic now lives in the Qt-agnostic
+# ``core.commands`` module.  ``undo_bridge.QtUndoStack`` is a thin
+# QObject wrapper that exposes the same ``canUndo()`` / ``canRedo()``
+# / ``canUndoChanged`` / ``canRedoChanged`` API the rest of main.py
+# already uses.
+#
+# These imports are sibling-module imports (no leading
+# ``chormanager.``) on purpose: the choraufstellung subshell launches
+# this file as ``__main__`` with only the choraufstellung directory
+# on ``sys.path``.  In that mode an absolute
+# ``from chormanager.choraufstellung.undo_bridge import …`` raises
+# ``ModuleNotFoundError: No module named 'chormanager'`` — the same
+# trap M-2 Schritt 2 hit for ``widgets.draggable_list``.
+from undo_bridge import QtUndoStack
+from core.commands import (
+    MoveSingerCommand,
+    SwapSingersCommand,
+    MoveGroupCommand,
 )
 
 # Domain modules (choraufstellung-specific). These were previously inside
@@ -183,66 +206,19 @@ class SingerTile(QFrame):
         else:
             super().mouseMoveEvent(e)
 
-class MoveSingerCommand(QUndoCommand):
-    def __init__(self, singer, old_row, old_col, new_row, new_col, grid):
-        super().__init__()
-        self.singer = singer
-        self.old_row = old_row
-        self.old_col = old_col
-        self.new_row = new_row
-        self.new_col = new_col
-        self.grid = grid
-        self.setText("Sänger verschoben")
-    
-    def redo(self):
-        self.singer.row = self.new_row
-        self.singer.col = self.new_col
-        self.grid.refresh_grid()
-    
-    def undo(self):
-        self.singer.row = self.old_row
-        self.singer.col = self.old_col
-        self.grid.refresh_grid()
-
-class SwapSingersCommand(QUndoCommand):
-    def __init__(self, singer1, singer2, grid):
-        super().__init__("Positionen getauscht")
-        self.singer1 = singer1
-        self.singer2 = singer2
-        self.grid = grid
-        self.old_row1, self.old_col1 = singer1.row, singer1.col
-        self.old_row2, self.old_col2 = singer2.row, singer2.col
-    
-    def redo(self):
-        self.singer1.row, self.singer2.row = self.old_row2, self.old_row1
-        self.singer1.col, self.singer2.col = self.old_col2, self.old_col1
-        self.grid.refresh_grid()
-    
-    def undo(self):
-        self.singer1.row, self.singer2.row = self.old_row1, self.old_row2
-        self.singer1.col, self.singer2.col = self.old_col1, self.old_col2
-        self.grid.refresh_grid()
-
-class MoveGroupCommand(QUndoCommand):
-    def __init__(self, selected_ids, dx, dy, grid):
-        super().__init__("Gruppe verschoben")
-        self.selected_ids = selected_ids
-        self.dx = dx
-        self.dy = dy
-        self.grid = grid
-        self.old_positions = {}
-        for sid in selected_ids:
-            singer = next((s for s in grid.singers if s.singer_id == sid), None)
-            if singer:
-                self.old_positions[sid] = (singer.row, singer.col)
-
-    def redo(self):
-        for sid in self.selected_ids:
-            singer = next((s for s in self.grid.singers if s.singer_id == sid), None)
-            if singer:
-                singer.row += self.dy
-                singer.col += self.dx
-        self.grid.refresh_grid()
+# M-2 Schritt 3: The local ``MoveSingerCommand`` / ``SwapSingersCommand``
+# / ``MoveGroupCommand`` classes that used to live here were deleted.
+# The active implementations now live in the pure-Python
+# ``core.commands`` module and are imported at the top of this file
+# (see the ``from core.commands import …`` block).
+#
+# The three class names are re-exported from this module so any
+# external caller that did
+# ``from chormanager.choraufstellung.main import MoveSingerCommand``
+# keeps working — they just get the new core.commands class now.
+#
+# (No code is needed here; the import at the top of the file
+# already binds the names into this module's namespace.)
 
     def undo(self):
         for sid in self.selected_ids:
@@ -279,7 +255,22 @@ class FormationGrid(QWidget):
         self.rubber_band = None
         self.drag_start_pos = None
         self.is_group_dragging = False
-        self.undo_stack = QUndoStack(self)
+        # M-2 Schritt 3: ``QUndoStack`` replaced by ``QtUndoStack``
+        # (defined in ``undo_bridge.py``).  ``QtUndoStack`` exposes
+        # the same ``canUndo()`` / ``canRedo()`` / ``undo()`` /
+        # ``redo()`` / ``push()`` API and emits the same
+        # ``canUndoChanged`` / ``canRedoChanged`` signals the rest of
+        # this file already uses.
+        self.undo_stack = QtUndoStack(self)
+        # Closure helpers the pure-Python ``core.commands`` command
+        # classes need: a singer-id → Singer lookup and a
+        # post-mutation refresh.
+        self._undo_get_singer = (
+            lambda sid: next(
+                (s for s in self.singers if s.singer_id == sid), None
+            )
+        )
+        self._undo_refresh = self.refresh_grid
         self.setAcceptDrops(True)
         self.setMinimumSize(self.cols * self.CELL_WIDTH + self.MARGIN_LEFT + 50, 
                            self.rows * self.CELL_HEIGHT + self.MARGIN_TOP + 50)
@@ -454,7 +445,14 @@ class FormationGrid(QWidget):
         if not singer1 or not singer2:
             return
 
-        command = SwapSingersCommand(singer1, singer2, self)
+        # M-2 Schritt 3: ``SwapSingersCommand`` is now the pure-Python
+        # ``core.commands.SwapSingersCommand``, which takes
+        # ``(singer1_id, singer2_id, get_singer_fn, refresh_fn)``
+        # instead of the old ``(singer1, singer2, grid)`` triple.
+        command = SwapSingersCommand(
+            singer1.singer_id, singer2.singer_id,
+            self._undo_get_singer, self._undo_refresh,
+        )
         self.undo_stack.push(command)
 
         self.selected_ids.clear()
@@ -802,7 +800,18 @@ class FormationGrid(QWidget):
                 self.refresh_grid()
                 return
 
-            command = MoveGroupCommand(group_ids, delta_col, delta_row, self)
+            # M-2 Schritt 3: ``MoveGroupCommand`` is now the
+            # pure-Python ``core.commands.MoveGroupCommand`` with the
+            # ``(singer_ids, dx, dy, get_singer_fn, get_all_fn,
+            # refresh_fn)`` signature.  ``get_all`` is required by
+            # that class even though the move logic only uses
+            # ``get_singer``.
+            command = MoveGroupCommand(
+                group_ids, delta_col, delta_row,
+                self._undo_get_singer,
+                lambda: list(self.singers),
+                self._undo_refresh,
+            )
             self.undo_stack.push(command)
 
             self.selected_ids.clear()
@@ -822,8 +831,18 @@ class FormationGrid(QWidget):
             dragged_singer.col = col
 
             if dragged_singer.row != old_row or dragged_singer.col != old_col:
-                command = MoveSingerCommand(dragged_singer, old_row, old_col,
-                                            dragged_singer.row, dragged_singer.col, self)
+                # M-2 Schritt 3: ``MoveSingerCommand`` is now the
+                # pure-Python ``core.commands.MoveSingerCommand``,
+                # which takes ``(singer_id, old_row, old_col,
+                # new_row, new_col, get_singer_fn, refresh_fn)``
+                # instead of ``(singer, old_row, old_col, new_row,
+                # new_col, grid)``.
+                command = MoveSingerCommand(
+                    dragged_singer.singer_id,
+                    old_row, old_col,
+                    dragged_singer.row, dragged_singer.col,
+                    self._undo_get_singer, self._undo_refresh,
+                )
                 self.undo_stack.push(command)
 
         self.refresh_grid()
