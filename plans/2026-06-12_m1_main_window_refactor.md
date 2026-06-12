@@ -89,6 +89,12 @@ chormanager/ui/
 
 **Geschätzter Aufwand:** 8-10 Commits, jeweils 5-30 min, dazwischen User-Pause.
 
+> **Status (2026-06-12):** Alle 8 Schritte **abgeschlossen** + Cleanup-Commit.
+> Commits: `89a101e` (Schritt 1) … `2f32d0d` (Schritt 8) + `06e6328` (Cleanup duplicate `_on_selection_changed`).
+> Test-Suite: 518 passed, 4 skipped, 0 failed.
+> `chormanager/ui/main_window.py`: 3 105 → 924 LOC (-70%).
+> Nächster Schritt: M-2 (siehe `plans/2026-06-12_m2_choraufstellung_refactor.md`).
+
 ---
 
 ## ⚠️ Risiken & Mitigationen
