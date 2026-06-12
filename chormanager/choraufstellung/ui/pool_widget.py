@@ -25,12 +25,11 @@ from core.commands import UndoCommand
 # M-2 Schritt 2: DraggableTableWidget was extracted from this file (Z. 445)
 # into widgets/draggable_list.py. Re-exported here for backward compat
 # with any local code that referenced it via pool_widget.DraggableTableWidget.
-# Use the absolute import path: the choraufstellung subshell prepends the
-# package dir to sys.path, which would turn a relative ``widgets`` import
-# into a top-level package.
-from chormanager.choraufstellung.widgets.draggable_list import (
-    DraggableTableWidget,
-)
+#
+# Same caveat as in ``main.py``: the choraufstellung subshell runs this
+# module with only the package directory on ``sys.path``, so we must use
+# the relative import to find ``widgets.draggable_list``.
+from widgets.draggable_list import DraggableTableWidget
 
 
 class AddSingerDialog(QDialog):

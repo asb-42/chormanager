@@ -43,12 +43,17 @@ from ui.optimizer_dialog import OptimizerDialog
 # Z. 42-78) into ``widgets/draggable_list.py``. The two local names are
 # re-exported here for backward compatibility with any external caller
 # that did ``from chormanager.choraufstellung.main import DraggableListWidget``.
-# NOTE: We import via the absolute ``chormanager.choraufstellung.widgets``
-# path, not the relative ``widgets`` shortcut, because the choraufstellung
-# subshell prepends the package directory to ``sys.path`` (see
-# ``chormanager/choraufstellung/__init__.py``), which would otherwise turn
-# ``widgets`` into a top-level package and shadow the right one.
-from chormanager.choraufstellung.widgets.draggable_list import (
+#
+# The choraufstellung subshell is launched as a standalone script
+# (``python __main__.py`` from inside the choraufstellung directory,
+# see ``choraufstellung_launcher.py``) — in that mode the top-level
+# ``chormanager`` package is NOT on ``sys.path``, so an absolute
+# ``from chormanager.choraufstellung.widgets...`` import fails with
+# ``ModuleNotFoundError: No module named 'chormanager'``.  We must
+# therefore use the relative import.  In test/package-import mode
+# (``chormanager.choraufstellung.main``) the relative import still
+# works because the package's parent directory is on ``sys.path``.
+from widgets.draggable_list import (
     DraggableListWidget,
     DraggableTableWidget,
 )
