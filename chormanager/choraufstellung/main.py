@@ -1389,6 +1389,31 @@ class MainWindow(QMainWindow):
         sc.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         sc.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         sc.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        # The viewport size is set once at construction and does not
+        # grow with the QScrollArea because setWidgetResizable(False).
+        # We install a resize listener that resizes the inner grid
+        # widget to match the viewport width, so that enlarging the
+        # MainWindow actually gives the grid more horizontal room.
+        # (The grid keeps its own minimum width via setMinimumSize in
+        # FormationGrid, so the scrollbar appears when the grid is
+        # wider than the viewport - which is the correct behavior for
+        # very wide formations like 2x16.)
+        def _resize_grid_to_viewport():
+            viewport_w = sc.viewport().width()
+            # The grid's natural width (cols * 130 + 80 + 50) is
+            # already its minimum; if the viewport is smaller we let
+            # the grid overflow (scrollbar appears). If the viewport
+            # is bigger we expand the grid so the columns fill the
+            # available space.
+            grid_w = max(self.grid.minimumWidth(), viewport_w)
+            self.grid.setFixedWidth(grid_w)
+        # Defer the first call until the scroll area is laid out.
+        from PyQt6.QtCore import QTimer
+        QTimer.singleShot(0, _resize_grid_to_viewport)
+        sc.viewport().installEventFilter(self)
+        # Stash the resizer on the scroll area so we can call it from
+        # the eventFilter when the viewport size changes.
+        self._resize_grid_to_viewport = _resize_grid_to_viewport
         self.grid=FormationGrid(4,5)
         self.grid.singer_removed_from_grid.connect(self.on_singer_removed_from_grid); self.grid.singer_edit_requested.connect(self.edit_singer); self.grid.singer_affinity_requested.connect(self.set_singer_affinity)
         self.grid.undo_stack.canUndoChanged.connect(self.update_undo_redo)
@@ -1424,6 +1449,24 @@ class MainWindow(QMainWindow):
         self.pool.placed_singer_ids = set()
         self.pool.singers = self.singers
         self.pool.update_singers(self.singers, self.pool.placed_singer_ids)
+
+    def eventFilter(self, obj, event):
+        """Resize the inner grid when the QScrollArea viewport changes size.
+
+        This is the M-2 2026-06-12 follow-up to the resize-bug fix.
+        Without it the grid stays at its construction-time size even
+        when the user enlarges the MainWindow.
+        """
+        from PyQt6.QtCore import QEvent
+        if event.type() == QEvent.Type.Resize:
+            # Find the QScrollArea viewport in our tree and resize the
+            # grid when its size changes.  The QScrollArea itself is
+            # the parent of the viewport and the grid is the widget.
+            sc = obj.parent() if obj is not None else None
+            if sc is not None and hasattr(sc, "viewport") and obj is sc.viewport():
+                if hasattr(self, "_resize_grid_to_viewport"):
+                    self._resize_grid_to_viewport()
+        return super().eventFilter(obj, event)
 
     def menu(self):
         m=self.menuBar()
