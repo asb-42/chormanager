@@ -61,7 +61,7 @@ from PyQt6.QtWidgets import QFileDialog
 from .theme_manager import ThemeMixin
 from .tab_router import TabRouterMixin
 from .choraufstellung_launcher import ChorAufstellungLauncherMixin
-from .export_controller import ExportCoreMixin
+from .export_controller import ExportCoreMixin, ExportJsonSyncMixin
 
 
 # --- M-1 step 5: ``get_icon`` was moved to its own module to avoid a
@@ -90,6 +90,7 @@ class MainWindow(
     TabRouterMixin,
     ChorAufstellungLauncherMixin,
     ExportCoreMixin,
+    ExportJsonSyncMixin,
 ):
     """Main window for ChorManager.
 
@@ -106,10 +107,12 @@ class MainWindow(
     and the ``_edit_formation`` wrapper are inherited from
     ``ChorAufstellungLauncherMixin``
     (see ``chormanager/ui/choraufstellung_launcher.py``).
-    M-1 step 7a: the export-core methods (``_export_csv``,
-    ``_export_pdf``, ``_export_libreoffice``, ``_export_response_matrix``,
-    ``_export_tab_generic`` and the four tab-switcher helpers) are
-    inherited from ``ExportCoreMixin``
+    M-1 step 7a: the export-core methods are inherited from
+    ``ExportCoreMixin`` (see ``chormanager/ui/export_controller.py``).
+    M-1 step 7b: the JSON-Sync export methods (``_export_singers_json``,
+    ``_export_events_json``, ``_export_availability_json``,
+    ``_export_singers_csv``, ``_export_all_sync``) are inherited from
+    ``ExportJsonSyncMixin``
     (see ``chormanager/ui/export_controller.py``).
     """
 
@@ -865,124 +868,10 @@ class MainWindow(
 
         QMessageBox.information(self, "Termine", event_text)
 
-    def _export_singers_json(self):
-        """Export singers as JSON for choraufstellung sync."""
-        from PyQt6.QtWidgets import QFileDialog, QMessageBox
-        from ..export.sync import export_singers_json
-
-        default_path = (
-            self.db_path.replace(".db", "_singers.json")
-            if self.db_path
-            else "singers.json"
-        )
-        filename, _ = QFileDialog.getSaveFileName(
-            self, "Sänger exportieren", default_path, "JSON Dateien (*.json)"
-        )
-
-        if filename:
-            from pathlib import Path
-
-            output_path = Path(filename)
-            try:
-                export_singers_json(self.db, output_path)
-                self.statusBar().showMessage(f"Sänger exportiert nach {filename}")
-                QMessageBox.information(self, "Export", f"Exportiert nach:\n{filename}")
-            except Exception as e:
-                QMessageBox.warning(self, "Fehler", f"Export fehlgeschlagen:\n{str(e)}")
-
-    def _export_events_json(self):
-        """Export events as JSON for choraufstellung sync."""
-        from PyQt6.QtWidgets import QFileDialog, QMessageBox
-        from ..export.sync import export_events_json
-
-        default_path = (
-            self.db_path.replace(".db", "_termine.json")
-            if self.db_path
-            else "termine.json"
-        )
-        filename, _ = QFileDialog.getSaveFileName(
-            self, "Termine exportieren", default_path, "JSON Dateien (*.json)"
-        )
-
-        if filename:
-            from pathlib import Path
-
-            output_path = Path(filename)
-            try:
-                export_events_json(self.db, output_path)
-                self.statusBar().showMessage(f"Termine exportiert nach {filename}")
-                QMessageBox.information(self, "Export", f"Exportiert nach:\n{filename}")
-            except Exception as e:
-                QMessageBox.warning(self, "Fehler", f"Export fehlgeschlagen:\n{str(e)}")
-
-    def _export_availability_json(self):
-        """Export availability matrix as JSON."""
-        from PyQt6.QtWidgets import QFileDialog, QMessageBox
-        from ..export.sync import export_availability_json
-
-        default_path = (
-            self.db_path.replace(".db", "_verfuegbarkeit.json")
-            if self.db_path
-            else "verfuegbarkeit.json"
-        )
-        filename, _ = QFileDialog.getSaveFileName(
-            self, "Verfügbarkeit exportieren", default_path, "JSON Dateien (*.json)"
-        )
-
-        if filename:
-            from pathlib import Path
-
-            output_path = Path(filename)
-            try:
-                export_availability_json(self.db, output_path)
-                self.statusBar().showMessage(
-                    f"Verfügbarkeit exportiert nach {filename}"
-                )
-                QMessageBox.information(self, "Export", f"Exportiert nach:\n{filename}")
-            except Exception as e:
-                QMessageBox.warning(self, "Fehler", f"Export fehlgeschlagen:\n{str(e)}")
-
-    def _export_singers_csv(self):
-        """Export singers as CSV fallback for choraufstellung."""
-        from PyQt6.QtWidgets import QFileDialog, QMessageBox
-        from ..export.sync import export_singers_csv
-
-        default_path = (
-            self.db_path.replace(".db", "_singers.csv")
-            if self.db_path
-            else "singers.csv"
-        )
-        filename, _ = QFileDialog.getSaveFileName(
-            self, "CSV exportieren", default_path, "CSV Dateien (*.csv)"
-        )
-
-        if filename:
-            from pathlib import Path
-
-            output_path = Path(filename)
-            try:
-                export_singers_csv(self.db, output_path)
-                self.statusBar().showMessage(f"CSV exportiert nach {filename}")
-                QMessageBox.information(self, "Export", f"Exportiert nach:\n{filename}")
-            except Exception as e:
-                QMessageBox.warning(self, "Fehler", f"Export fehlgeschlagen:\n{str(e)}")
-
-    def _export_all_sync(self):
-        """Export all sync files to default location."""
-        from PyQt6.QtWidgets import QMessageBox
-        from ..export.sync import export_all_sync
-
-        try:
-            result = export_all_sync(self.db)
-
-            output_text = "Exportierte Dateien:\n\n"
-            for export_type, path in result.items():
-                output_text += f"{export_type}: {path}\n"
-
-            self.statusBar().showMessage("Alle Sync-Dateien exportiert")
-            QMessageBox.information(self, "Sync-Export", output_text)
-        except Exception as e:
-            QMessageBox.warning(self, "Fehler", f"Export fehlgeschlagen:\n{str(e)}")
+    # NOTE: ``_export_singers_json``, ``_export_events_json``,
+    # ``_export_availability_json``, ``_export_singers_csv`` and
+    # ``_export_all_sync`` moved to ``ExportJsonSyncMixin`` in M-1 step 7b
+    # (see ``chormanager/ui/export_controller.py``).
 
     def _new_projekt(self):
         """Create new project."""
