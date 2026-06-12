@@ -428,11 +428,21 @@ class MainWindow(QMainWindow, ThemeMixin, TabRouterMixin):
 
         choraufstellung_menu = menubar.addMenu("Aufstellung")
 
+        # Bug-fix 2026-06-12: 'In Aufstellung öffnen...' was wired to
+        # ``self._open_choraufstellung`` which always spawned a fresh
+        # editor (no CHOR_FILE) and therefore showed an empty grid
+        # when the user wanted to reopen a saved formation. It is now
+        # wired to ``self._edit_formation`` (same handler as
+        # context-toolbar and right-click 'Bearbeiten'), which opens
+        # the currently selected formation file. If no row is
+        # selected, it falls back to opening a fresh editor.
         open_action = QAction("In Aufstellung öffnen...", self)
         open_action.setIcon(
             get_icon("media-playback-start", QStyle.StandardPixmap.SP_FileIcon)
         )
-        open_action.triggered.connect(self._open_choraufstellung)
+        open_action.triggered.connect(
+            lambda: self._open_choraufstellung_selected_or_new()
+        )
         choraufstellung_menu.addAction(open_action)
 
         choraufstellung_menu.addSeparator()
@@ -1291,6 +1301,29 @@ class MainWindow(QMainWindow, ThemeMixin, TabRouterMixin):
     def _open_choraufstellung(self):
         """Open Choraufstellung app with current project/event data."""
         self._open_choraufstellung_file(None)
+
+    def _open_choraufstellung_selected_or_new(self):
+        """Open the currently selected formation file, or a fresh
+        editor if no row is selected.
+
+        Used by the main-menu 'Aufstellung → In Aufstellung öffnen…'
+        entry point (bug-fix 2026-06-12). The previous wiring called
+        ``_open_choraufstellung`` directly which always passed
+        ``None`` (no CHOR_FILE) and therefore showed an empty grid
+        when the user wanted to reopen a saved formation. Now the
+        menu action uses the same logic as the context-toolbar /
+        right-click 'Bearbeiten' actions: open the selected file if
+        one is selected, otherwise fall back to a fresh editor.
+        """
+        tab = getattr(self, "choraufstellung_tab", None)
+        if tab is not None and tab.table.currentRow() >= 0:
+            # Delegate to the wrapper used by the context-toolbar /
+            # right-click 'Bearbeiten' (it sets CHOR_FILE).
+            self._edit_formation()
+        else:
+            # No selection: original behaviour (fresh editor with
+            # current project/event context).
+            self._open_choraufstellung()
 
     def _open_choraufstellung_file(self, filepath: str = None):
         """Open ChorAufstellung app, optionally with a specific file."""

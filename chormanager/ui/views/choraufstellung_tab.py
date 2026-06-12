@@ -46,12 +46,18 @@ class ChorAufstellungTab(QWidget):
         """Set up the user interface."""
         layout = QVBoxLayout(self)
 
-        header = QHBoxLayout()
-        self.load_btn = QPushButton("Aus ChorManager laden")
-        self.load_btn.clicked.connect(self._load_from_chormanager)
-        header.addWidget(self.load_btn)
+        # The old "Aus ChorManager laden" button was removed in
+        # 2026-06-12 (bug-fix). It was wired to a handler that
+        # always spawned a fresh editor (no CHOR_FILE) and therefore
+        # showed an empty grid even when a saved formation was
+        # selected. The supported ways to open a saved formation are
+        # now: the context toolbar's "Bearbeiten" action, the table
+        # row's right-click "Bearbeiten" action, and the main menu
+        # "Aufstellung → In Aufstellung öffnen…" entry, all of which
+        # delegate to ``_edit_formation``.
 
-        layout.addLayout(header)
+        layout.addStretch()
+        layout.takeAt(0)  # belt-and-suspenders: keep a clean top
 
         search_layout = QHBoxLayout()
         search_layout.addStretch()
@@ -128,25 +134,52 @@ class ChorAufstellungTab(QWidget):
             )
 
     def _load_from_chormanager(self, event=None):
+        """Open a saved formation in the Choraufstellung editor.
+
+        Bug-fix 2026-06-12: this method was previously the handler
+        for the (now removed) big 'Aus ChorManager laden' button and
+        for the main-menu 'Aufstellung → In Aufstellung öffnen…'
+        entry point. The old code ALWAYS spawned a fresh editor
+        (no CHOR_FILE) which is why the saved formation was not
+        loaded. Now it routes to the same handler as the
+        context-toolbar / right-click 'Bearbeiten':
+
+          * if a row is selected in the table -> open THAT file
+            (CHOR_FILE is set, saved singers are restored to the grid)
+          * otherwise -> open a fresh editor (backward compatible)
+        """
         try:
             main_window = self.window()
-            
-            #Check for pending event from NewFormationDialog
-            event = event or getattr(self, "_pending_event", None)
+
+            # Backward compatibility for callers that pass an event
+            # (e.g. the old NewFormationDialog flow). The
+            # ``_pending_event`` mechanism was dead code (never set)
+            # and is removed; the event argument is the only path
+            # for the 'open-from-event' flow now.
             if event:
-                self._pending_event = None
-                main_window._open_choraufstellung_for_event(event)
+                if hasattr(main_window, "_open_choraufstellung_for_event"):
+                    main_window._open_choraufstellung_for_event(event)
                 return
-            
-            if not hasattr(main_window, "_open_choraufstellung"):
+
+            # If the user has selected a row in the table, open that
+            # formation. This is the path the context-toolbar /
+            # right-click 'Bearbeiten' use; it sets CHOR_FILE so
+            # the saved grid is restored.
+            if self.table.currentRow() >= 0:
+                if hasattr(main_window, "_edit_formation"):
+                    main_window._edit_formation()
+                    return
+
+            # No row selected: fall back to a fresh editor with
+            # the current project / event context.
+            if hasattr(main_window, "_open_choraufstellung"):
+                main_window._open_choraufstellung()
+            else:
                 QMessageBox.information(
                     self,
                     "Info",
-                    "Bitte nutzen Sie: Menü → Choraufstellung → In Choraufstellung öffnen",
+                    "Bitte nutzen Sie: Menü → Choraufstellung → In Aufstellung öffnen",
                 )
-                return
-
-            main_window._open_choraufstellung()
 
         except Exception as e:
             QMessageBox.warning(
