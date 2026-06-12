@@ -1091,6 +1091,13 @@ class SingerPool(QWidget):
         """Shrink the pool to ``EMPTY_POOL_WIDTH`` when empty, else
         release the clamp so it can grow back to its natural width.
 
+        Also moves the QSplitter handle to the new pool size, because
+        setting only the minimum/maximum on the pool leaves the
+        splitter's persistent handle position unchanged (Qt
+        keeps the empty space between the shrunk widget and the
+        handle).  See the screenshot in the bug report for an
+        illustration of the "shrunken pool, old handle" effect.
+
         Skipped on the very first call (the one inside the
         ``MainWindow.setup_ui()`` path) because the pool is not yet
         fully laid out at that point and calling setMaximumWidth(50)
@@ -1101,9 +1108,22 @@ class SingerPool(QWidget):
             # that we're done, don't change widths.
             self._pool_width_initialized = True
             return
+        # Find the QSplitter that contains us.  We need it so we can
+        # move the handle along with the pool's width change.
+        splitter = self.parentWidget()
+        from PyQt6.QtWidgets import QSplitter
+        while splitter is not None and not isinstance(splitter, QSplitter):
+            splitter = splitter.parentWidget()
         if pool_count <= 0:
             self.setMinimumWidth(self.EMPTY_POOL_WIDTH)
             self.setMaximumWidth(self.EMPTY_POOL_WIDTH)
+            if splitter is not None:
+                total = sum(splitter.sizes())
+                if total > 0:
+                    splitter.setSizes(
+                        [self.EMPTY_POOL_WIDTH,
+                         max(0, total - self.EMPTY_POOL_WIDTH)]
+                    )
         else:
             # QWIDGETSIZE_MAX is the Qt sentinel for "no upper bound".
             self.setMaximumWidth(16777215)
@@ -1111,6 +1131,21 @@ class SingerPool(QWidget):
             # minimumSizeHint() which would force Qt to recompute
             # layout sizes inside a possibly-not-yet-laid-out parent.
             self.setMinimumWidth(0)
+            # If the splitter exists, also move the handle back to a
+            # "natural" position when the handle is still parked at
+            # the EMPTY_POOL_WIDTH position from a prior shrink.
+            if splitter is not None:
+                sizes = splitter.sizes()
+                if sizes and sizes[0] <= self.EMPTY_POOL_WIDTH:
+                    total = sum(sizes)
+                    if total > 0:
+                        # Restore the pool to about 1/3 of the total
+                        # width (a reasonable default for a singer
+                        # list with 4 columns).
+                        natural = max(250, total // 3)
+                        splitter.setSizes(
+                            [natural, max(0, total - natural)]
+                        )
 
     def update_placed_singers(self, placed_ids):
         self.placed_singer_ids = placed_ids

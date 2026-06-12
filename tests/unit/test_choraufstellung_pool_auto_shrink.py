@@ -21,6 +21,7 @@ The pool must:
 from __future__ import annotations
 
 import pytest
+from PyQt6.QtWidgets import QLabel
 
 # ---------------------------------------------------------------------------
 # Constants mirror the implementation (kept in sync deliberately)
@@ -224,3 +225,69 @@ class TestMainPySingerPoolAutoShrinks:
         pool.update_singers([s1], placed_ids=set())
         # 16777215 is QWIDGETSIZE_MAX in Qt.
         assert pool.maximumWidth() == 16777215
+
+
+
+# ---------------------------------------------------------------------------
+# Splitter-handle behavior: when the pool shrinks, the QSplitter handle
+# must also move. Otherwise Qt leaves an empty gap between the
+# shrunken pool and the (now stale) handle position, which is what
+# the user reported in the screenshot for the 2x16 resize bug.
+# ---------------------------------------------------------------------------
+
+
+class TestPoolShrinkMovesSplitterHandle:
+    """The pool must also move the parent QSplitter's handle."""
+
+    def test_shrink_moves_splitter_handle_left(self, qtbot):
+        from PyQt6.QtWidgets import QSplitter
+        from chormanager.choraufstellung.main import SingerPool
+
+        # Build a minimal splitter + pool + filler setup, mirroring
+        # the MainWindow's structure.
+        sp = QSplitter()
+        qtbot.addWidget(sp)
+        pool = SingerPool()
+        sp.addWidget(pool)
+        filler = QLabel("")  # any widget for the right pane
+        sp.addWidget(filler)
+        sp.setSizes([300, 700])
+        # Prime the pool.
+        pool.update_singers([], placed_ids=set())
+
+        # Now the pool becomes empty -> handle should move to 50 px.
+        pool.update_singers([], placed_ids=set())
+        sizes = sp.sizes()
+        assert sizes[0] == EMPTY_POOL_WIDTH, (
+            f"After shrink, splitter sizes[0] is {sizes[0]}, expected "
+            f"{EMPTY_POOL_WIDTH}. The handle did not move."
+        )
+
+    def test_expand_restores_splitter_handle_to_natural(self, qtbot):
+        from PyQt6.QtWidgets import QSplitter, QLabel
+        from chormanager.choraufstellung.main import SingerPool
+
+        sp = QSplitter()
+        qtbot.addWidget(sp)
+        pool = SingerPool()
+        sp.addWidget(pool)
+        filler = QLabel("")
+        sp.addWidget(filler)
+        # Show the splitter so its widgets have a real geometry, then
+        # force the handle to the shrunk position via setSizes.
+        sp.resize(1000, 500)
+        sp.setSizes([50, 950])
+        # Prime
+        pool.update_singers([], placed_ids=set())
+
+        # Now a singer arrives -> handle should move back to natural.
+        s1 = _make_singer(name="Alice", sid="1")
+        pool.update_singers([s1], placed_ids=set())
+        sizes = sp.sizes()
+        # The exact restored size depends on the table's sizeHint, but
+        # it must be strictly larger than the shrunk position (50).
+        assert sizes[0] > EMPTY_POOL_WIDTH, (
+            f"After expand, splitter sizes[0] is {sizes[0]}, expected "
+            f"> {EMPTY_POOL_WIDTH}. The handle did not restore from the "
+            f"shrunk position."
+        )
