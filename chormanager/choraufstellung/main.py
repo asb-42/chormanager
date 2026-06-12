@@ -1318,7 +1318,17 @@ class MainWindow(QMainWindow):
         
         raster_layout = QHBoxLayout()
         raster_layout.addWidget(QLabel("Raster:"))
-        sc=QScrollArea(); sc.setWidgetResizable(False); self.grid=FormationGrid(4,5)
+        sc=QScrollArea(); sc.setWidgetResizable(False)
+        # M-2 bug-fix 2026-06-12: the QScrollArea must be told it can
+        # grow horizontally, otherwise the splitter's left side (pool)
+        # consumes all the resize-room and the grid stays stuck at
+        # ~5 columns. sizePolicy=Expanding/Preferred lets the right
+        # side claim leftover space when the user enlarges the window.
+        from PyQt6.QtWidgets import QSizePolicy
+        sc.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        sc.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        sc.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.grid=FormationGrid(4,5)
         self.grid.singer_removed_from_grid.connect(self.on_singer_removed_from_grid); self.grid.singer_edit_requested.connect(self.edit_singer); self.grid.singer_affinity_requested.connect(self.set_singer_affinity)
         self.grid.undo_stack.canUndoChanged.connect(self.update_undo_redo)
         self.grid.undo_stack.canRedoChanged.connect(self.update_undo_redo)
@@ -1336,7 +1346,20 @@ class MainWindow(QMainWindow):
         rl.addLayout(raster_layout)
         sr=QHBoxLayout(); sr.addWidget(QLabel("Suche:")); self.search_input=QLineEdit(); self.search_input.setPlaceholderText("Sänger-Name..."); self.search_input.returnPressed.connect(self.do_quick_search); sr.addWidget(self.search_input); sb=QPushButton("🔍"); sb.setFixedWidth(30); sb.clicked.connect(self.do_quick_search); sr.addWidget(sb); rl.addLayout(sr)
         self.leg=QWidget(); self.llay=QHBoxLayout(self.leg); rl.addWidget(self.leg); self.upd_leg()
-        sp.addWidget(rp); sp.setSizes([250,800]); ml.addWidget(sp); self.menu()
+        sp.addWidget(rp)
+        # M-2 bug-fix 2026-06-12: the splitter must grow with the
+        # MainWindow. Without the size-policy + stretch factors below,
+        # it stays at its Preferred size (~640x480) even when the user
+        # enlarges the window to 2500x900. The result: the grid's
+        # QScrollArea is stuck at ~5 columns.
+        from PyQt6.QtWidgets import QSizePolicy
+        sp.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        sp.setSizes([250, 800])
+        sp.setStretchFactor(0, 0)  # pool: keeps its initial 250 px
+        sp.setStretchFactor(1, 1)  # grid: takes the leftover space
+        # Stretch=1 in addWidget tells the surrounding QHBoxLayout
+        # to give the splitter all leftover space when the window grows.
+        ml.addWidget(sp, 1); self.menu()
         self.pool.placed_singer_ids = set()
         self.pool.singers = self.singers
         self.pool.update_singers(self.singers, self.pool.placed_singer_ids)
