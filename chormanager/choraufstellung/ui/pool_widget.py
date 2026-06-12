@@ -22,6 +22,16 @@ from qt_compat import exec_qt
 from singer_model import VoiceGroup, Singer, voice_group_color
 from core.commands import UndoCommand
 
+# M-2 Schritt 2: DraggableTableWidget was extracted from this file (Z. 445)
+# into widgets/draggable_list.py. Re-exported here for backward compat
+# with any local code that referenced it via pool_widget.DraggableTableWidget.
+# Use the absolute import path: the choraufstellung subshell prepends the
+# package dir to sys.path, which would turn a relative ``widgets`` import
+# into a top-level package.
+from chormanager.choraufstellung.widgets.draggable_list import (
+    DraggableTableWidget,
+)
+
 
 class AddSingerDialog(QDialog):
     """Dialog for adding or editing a singer."""
@@ -440,24 +450,3 @@ class SingerPool(QWidget):
             self.parent()._mark_modified()
         
         QMessageBox.information(self, "Fertig", f"{imported} importiert, {errors} übersprungen.")
-
-
-class DraggableTableWidget(QTableWidget):
-    """Table widget with drag support for singers."""
-    
-    def startDrag(self, supportedActions):
-        row = self.currentRow()
-        if row >= 0:
-            from PyQt6.QtCore import QMimeData
-            from PyQt6.QtCore import Qt
-            
-            item = self.item(row, 0)
-            singer = item.data(Qt.ItemDataRole.UserRole)
-            if singer:
-                drag = QDrag(self)
-                mime = QMimeData()
-                mime.setText(f"singer:{singer.singer_id}")
-                drag.setMimeData(mime)
-                drag.exec(Qt.DragAction.Copy)
-        else:
-            super().startDrag(supportedActions)

@@ -39,43 +39,19 @@ from core.optimizer import FormationOptimizer
 from core.grid_engine import GridEngine, GridConfig
 from ui.optimizer_dialog import OptimizerDialog
 
-class DraggableListWidget(QListWidget):
-    def startDrag(self, actions):
-        item = self.currentItem()
-        if item:
-            singer = item.data(Qt.ItemDataRole.UserRole)
-            if singer:
-                drag = QDrag(self)
-                mime = QMimeData()
-                mime.setText(f"singer:{singer.singer_id}")
-                drag.setMimeData(mime)
-                drag.exec(Qt.DropAction.CopyAction)
-        else:
-            super().startDrag(actions)
-
-class DraggableTableWidget(QTableWidget):
-    def startDrag(self, actions):
-        selected = self.selectedItems()
-        if not selected:
-            return
-        
-        sids = []
-        for item in selected:
-            singer = item.data(Qt.ItemDataRole.UserRole)
-            if singer and singer.singer_id not in sids:
-                sids.append(singer.singer_id)
-        
-        if not sids:
-            return
-        
-        drag = QDrag(self)
-        mime = QMimeData()
-        if len(sids) == 1:
-            mime.setText(f"singer:{sids[0]}")
-        else:
-            mime.setText(f"singer:{sids[0]}:group:{','.join(sids)}")
-        drag.setMimeData(mime)
-        drag.exec(Qt.DropAction.CopyAction)
+# M-2 Schritt 2: Draggable widgets were extracted from this file (formerly
+# Z. 42-78) into ``widgets/draggable_list.py``. The two local names are
+# re-exported here for backward compatibility with any external caller
+# that did ``from chormanager.choraufstellung.main import DraggableListWidget``.
+# NOTE: We import via the absolute ``chormanager.choraufstellung.widgets``
+# path, not the relative ``widgets`` shortcut, because the choraufstellung
+# subshell prepends the package directory to ``sys.path`` (see
+# ``chormanager/choraufstellung/__init__.py``), which would otherwise turn
+# ``widgets`` into a top-level package and shadow the right one.
+from chormanager.choraufstellung.widgets.draggable_list import (
+    DraggableListWidget,
+    DraggableTableWidget,
+)
 
 class SingerTile(QFrame):
     removed = pyqtSignal(object)
