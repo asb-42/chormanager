@@ -914,8 +914,22 @@ class MainWindow(QMainWindow):
             tab_index: Index of tab (0-3)
         """
         selection = None
-        if tab_index == 0 and self.projects_tab.current_project:
-            selection = self.projects_tab.current_project
+        if tab_index == 0:
+            # Read the table selection first (user-driven), then fall
+            # back to the programmatically-set current_project.
+            # Bug fix: previously we only read current_project, so a
+            # table row click never reached the context toolbar.
+            row = self.projects_tab.table.currentRow()
+            if row >= 0:
+                item = self.projects_tab.table.item(row, 1)
+                if item is not None:
+                    project_id = item.data(Qt.ItemDataRole.UserRole)
+                    if project_id:
+                        selection = (
+                            self.projects_tab.project_repo.get_by_id(project_id)
+                        )
+            if selection is None and self.projects_tab.current_project:
+                selection = self.projects_tab.current_project
         elif tab_index == 1:
             row = self.singers_tab.table.currentRow()
             if row >= 0:
