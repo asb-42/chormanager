@@ -130,8 +130,13 @@ def get_data_dir() -> Path:
     return get_app_dir() / "data"
 
 
+@lru_cache(maxsize=1)
 def load_voice_groups():
     """Load voice groups from YAML configuration.
+    
+    The result is cached for the lifetime of the process. The cache
+    can be invalidated by calling ``load_voice_groups.cache_clear()``,
+    e.g. after the YAML file is edited at runtime.
     
     Returns:
         list: List of voice group dictionaries sorted by order.
@@ -144,8 +149,12 @@ def load_voice_groups():
     return sorted(groups, key=lambda g: g.get("order", 0))
 
 
+@lru_cache(maxsize=1)
 def load_fields():
     """Load field definitions from YAML configuration.
+    
+    Cached for the lifetime of the process; invalidate via
+    ``load_fields.cache_clear()`` after the YAML file is edited.
     
     Returns:
         list: List of field dictionaries sorted by order.
@@ -158,8 +167,12 @@ def load_fields():
     return sorted(fields, key=lambda f: f.get("order", 0))
 
 
+@lru_cache(maxsize=1)
 def load_app_config():
     """Load application configuration from YAML.
+    
+    Cached for the lifetime of the process; invalidate via
+    ``load_app_config.cache_clear()`` after the YAML file is edited.
     
     Returns:
         dict: Application configuration dictionary.
