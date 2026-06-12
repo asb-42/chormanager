@@ -60,6 +60,7 @@ from .export_dialog import ExportDialog
 from PyQt6.QtWidgets import QFileDialog
 from .theme_manager import ThemeMixin
 from .tab_router import TabRouterMixin
+from .choraufstellung_launcher import ChorAufstellungLauncherMixin
 
 
 # --- M-1 step 5: ``get_icon`` was moved to its own module to avoid a
@@ -74,7 +75,15 @@ from .icons import get_icon  # noqa: E402, F401
 # imports ``chormanager.ui.main_window.SingerDialog``.
 from .forms.singer_dialog import SingerDialog  # noqa: E402, F401
 
-class MainWindow(QMainWindow, ThemeMixin, TabRouterMixin):
+
+# --- M-1 step 3: ``refresh_tab_repositories`` was moved to its own
+# module (``chormanager/ui/choraufstellung_launcher.py``). Re-exported
+# here for backward compatibility with the test that imports it from
+# ``chormanager.ui.main_window``.
+from .choraufstellung_launcher import refresh_tab_repositories  # noqa: E402, F401
+
+
+class MainWindow(QMainWindow, ThemeMixin, TabRouterMixin, ChorAufstellungLauncherMixin):
     """Main window for ChorManager.
 
     M-1 step 4: ``_set_light_theme`` and ``_set_dark_theme`` are now
@@ -84,6 +93,12 @@ class MainWindow(QMainWindow, ThemeMixin, TabRouterMixin):
     ``_update_info_labels``, ``_on_project_changed``, ``_on_event_selected``,
     ``_on_besetzung_changed``, ``_on_tab_changed``) are inherited from
     ``TabRouterMixin`` (see ``chormanager/ui/tab_router.py``).
+    M-1 step 6: the four ChorAufstellung-spawning methods
+    (``_open_choraufstellung``, ``_open_choraufstellung_selected_or_new``,
+    ``_open_choraufstellung_file``, ``_open_choraufstellung_for_event``)
+    and the ``_edit_formation`` wrapper are inherited from
+    ``ChorAufstellungLauncherMixin``
+    (see ``chormanager/ui/choraufstellung_launcher.py``).
     """
 
 
@@ -757,101 +772,11 @@ class MainWindow(QMainWindow, ThemeMixin, TabRouterMixin):
     def _manage_availability(self):
         self.events_tab._manage_availability()
 
-    def _open_choraufstellung_for_event(self, event):
-        """Open ChorAufstellung with event data via temp file."""
-        import json
-        import os
-        import subprocess
-        import tempfile
-        from datetime import datetime
-        from ..domain.repository import AvailabilityRepository, SingerRepository
-        from ..domain.repository import ProjectRepository
-        
-        self.content_stack.setCurrentIndex(4)
-        
-        # 1. Get project
-        project = getattr(self, "current_project", None) or (
-            self.projects_tab.current_project if hasattr(self, "projects_tab") else None
-        )
-        
-        # 2. Get repositories
-        singer_repo = SingerRepository(self.db)
-        avail_repo = AvailabilityRepository(self.db)
-        
-        # 3. Get available singers (status=yes or conditional)
-        singers = singer_repo.get_all()
-        available_singers = []
-        
-        for singer in singers:
-            avail = avail_repo.get_by_ids(singer.id, event.id)
-            if avail and avail.status in ("yes", "conditional"):
-                available_singers.append({
-                    "singer_id": singer.id,
-                    "name": singer.full_name,
-                    "short_name": singer.short_name or "",
-                    "voice_group": singer.voice_group,
-                    "height": singer.height or 0,
-                    "affinity": singer.affinity_uuid or ""
-                })
-        
-        # 3. Prepare data
-        data = {
-            "project": project.name if project else "",
-            "event": {
-                "id": event.id,
-                "name": event.name,
-                "date": event.date,
-                "event_type": event.event_type
-            },
-            "singers": available_singers,
-            "created_at": datetime.now().isoformat()
-        }
-        
-        # 4. Write to temp JSON file
-        temp_dir = tempfile.gettempdir()
-        temp_file = os.path.join(temp_dir, "choraufstellung_event.json")
-        
-        with open(temp_file, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
-        
-        # 5. Pass via environment
-        env = os.environ.copy()
-        env["CHOR_EVENT_DATA"] = temp_file
-        env["CHOR_PROJECT"] = data.get("project", "")
-        
-        # 6. Also set legacy env vars for compatibility
-        if event:
-            env["CHOR_EVENT_DATE"] = event.date[:10]
-            env["CHOR_EVENT_NAME"] = event.name
-            env["CHOR_EVENT_ID"] = event.id
-            env["CHOR_EVENT_TYPE"] = event.event_type
-        
-        # 7. Get data directory for ChorAufstellung
-        choraufstellung_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "..", "choraufstellung"
-        )
-        
-        # 8. Start ChorAufstellung
-        try:
-            main_py = os.path.join(choraufstellung_path, "__main__.py")
-            if os.path.exists(main_py):
-                subprocess.run(
-                    [sys.executable, main_py],
-                    cwd=choraufstellung_path,
-                    env=env
-                )
-                self.choraufstellung_tab._load_formations()
-        except Exception as e:
-            from PyQt6.QtWidgets import QMessageBox
-            QMessageBox.warning(
-                self,
-                "Fehler",
-                f"Choraufstellung konnte nicht gestartet werden:\n{str(e)}"
-            )
-
-    def _edit_formation(self):
-        self.choraufstellung_tab._edit_formation()
+    # NOTE: ``_open_choraufstellung_for_event`` and ``_edit_formation``
+    # moved to ``ChorAufstellungLauncherMixin`` in M-1 step 6
+    # (see ``chormanager/ui/choraufstellung_launcher.py``). The wrapper
+    # methods below remain here because they are still called from
+    # many places in MainWindow.
 
     def _duplicate_formation(self):
         self.choraufstellung_tab._duplicate_formation()
@@ -1298,111 +1223,9 @@ class MainWindow(QMainWindow, ThemeMixin, TabRouterMixin):
         dialog = SelbstdarstellungDialog(self.db, self)
         dialog.exec()
 
-    def _open_choraufstellung(self):
-        """Open Choraufstellung app with current project/event data."""
-        self._open_choraufstellung_file(None)
-
-    def _open_choraufstellung_selected_or_new(self):
-        """Open the currently selected formation file, or a fresh
-        editor if no row is selected.
-
-        Used by the main-menu 'Aufstellung → In Aufstellung öffnen…'
-        entry point (bug-fix 2026-06-12). The previous wiring called
-        ``_open_choraufstellung`` directly which always passed
-        ``None`` (no CHOR_FILE) and therefore showed an empty grid
-        when the user wanted to reopen a saved formation. Now the
-        menu action uses the same logic as the context-toolbar /
-        right-click 'Bearbeiten' actions: open the selected file if
-        one is selected, otherwise fall back to a fresh editor.
-        """
-        tab = getattr(self, "choraufstellung_tab", None)
-        if tab is not None and tab.table.currentRow() >= 0:
-            # Delegate to the wrapper used by the context-toolbar /
-            # right-click 'Bearbeiten' (it sets CHOR_FILE).
-            self._edit_formation()
-        else:
-            # No selection: original behaviour (fresh editor with
-            # current project/event context).
-            self._open_choraufstellung()
-
-    def _open_choraufstellung_file(self, filepath: str = None):
-        """Open ChorAufstellung app, optionally with a specific file."""
-        import subprocess
-        import os
-        import sqlite3
-        from PyQt6.QtWidgets import (
-    QApplication,
-            QMessageBox,
-            QInputDialog,
-            QDialog,
-            QVBoxLayout,
-            QLabel,
-            QPushButton,
-        )
-
-        choraufstellung_path = (
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            + "/choraufstellung"
-        )
-
-        if not os.path.exists(choraufstellung_path):
-            QMessageBox.warning(
-                self,
-                "Fehler",
-                f"Choraufstellung nicht gefunden unter:\n choraufstellung_path",
-            )
-            return
-
-        project = (
-            self.projects_tab.current_project if hasattr(self, "projects_tab") else None
-        )
-
-        event = None
-        event_id = None
-        current_row = (
-            self.events_tab.table.currentRow() if hasattr(self, "events_tab") else -1
-        )
-
-        if current_row >= 0:
-            item = self.events_tab.table.item(current_row, 0)
-            event_id = item.data(Qt.ItemDataRole.UserRole) if item else None
-            if event_id:
-                event = self.events_tab.event_repo.get_by_id(event_id)
-
-        vars_to_pass = []
-        if project:
-            vars_to_pass.append(f"CHOR_PROJECT={project.name}")
-        if event:
-            vars_to_pass.append(f"CHOR_EVENT_DATE={event.date[:10]}")
-            vars_to_pass.append(f"CHOR_EVENT_NAME={event.name}")
-            vars_to_pass.append(f"CHOR_EVENT_ID={event.id}")
-            vars_to_pass.append(f"CHOR_EVENT_TYPE={event.event_type}")
-        if filepath:
-            vars_to_pass.append(f"CHOR_FILE={filepath}")
-
-        env = os.environ.copy()
-        for var in vars_to_pass:
-            key, value = var.split("=", 1)
-            env[key] = value
-
-        db_path = self.db_path or os.path.expanduser(
-            "~/.local/share/chormanager/chor.db"
-        )
-        env["CHOR_DB_PATH"] = db_path
-
-        try:
-            main_py = os.path.join(choraufstellung_path, "__main__.py")
-            if os.path.exists(main_py):
-                subprocess.run(
-                    [sys.executable, main_py], cwd=choraufstellung_path, env=env
-                )
-                self.choraufstellung_tab._load_formations()
-        except Exception as e:
-            QMessageBox.warning(
-                self,
-                "Fehler",
-                f"Choraufstellung konnte nicht gestartet werden:\n{str(e)}",
-            )
+    # NOTE: ``_open_choraufstellung``, ``_open_choraufstellung_selected_or_new`` and
+    # ``_open_choraufstellung_file`` moved to ``ChorAufstellungLauncherMixin``
+    # in M-1 step 6 (see ``chormanager/ui/choraufstellung_launcher.py``).
 
     def _open_backup_restore(self):
         """Open Backup & Restore dialog."""
