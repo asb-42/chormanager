@@ -2418,25 +2418,13 @@ class MainWindow(QMainWindow):
             self.db.close()
             self.db = Database(self.db_path)
             self.db.connect()
-            
+
             self.singer_repo = SingerRepository(self.db)
-            
-            for tab_attr in ['projects_tab', 'singers_tab', 'besetzung_tab', 'events_tab']:
+
+            for tab_attr in ['projects_tab', 'singers_tab', 'besetzung_tab', 'events_tab', 'repertoire_tab', 'choraufstellung_tab']:
                 if hasattr(self, tab_attr):
                     tab = getattr(self, tab_attr)
-                    if hasattr(tab, 'db'):
-                        tab.db = self.db
-                    if hasattr(tab, 'singer_repo'):
-                        tab.singer_repo = self.singer_repo
-                    if hasattr(tab, 'project_repo'):
-                        from ..domain.repository import ProjectRepository
-                        tab.project_repo = ProjectRepository(self.db)
-                    if hasattr(tab, 'event_repo'):
-                        from ..domain.repository import EventRepository
-                        tab.event_repo = EventRepository(self.db)
-                    if hasattr(tab, 'besetzung_repo'):
-                        from ..domain.repository import BesetzungRepository
-                        tab.besetzung_repo = BesetzungRepository(self.db)
+                    refresh_tab_repositories(tab, self.db)
             
             if hasattr(self, 'projects_tab'):
                 self.projects_tab._load_projects()
@@ -2923,3 +2911,43 @@ class VersionCheckDialog(QDialog):
         except Exception as e:
             self.status_label.setText(f"Update fehlgeschlagen: {str(e)}")
 
+
+# --- NEW: helper extracted to module level so it is unit-testable
+# in headless mode (see tests/unit/test_reload_after_restore.py).
+# Replaces the previous ad-hoc if/hasattr loop that forgot
+# avail_repo and repertoire_repo, causing the user-visible
+# "Not connected to database" error after a backup-restore.
+def refresh_tab_repositories(tab, new_db):
+    """Rebind every known repository on a tab to a new Database instance.
+
+    Called from MainWindow._reload_after_restore() after a backup has
+    been restored. Idempotent: re-creates every repository listed below
+    on the given tab and re-points its ``db`` attribute.
+
+    The repository list MUST be kept in sync with the attributes that
+    the tab classes initialise in their constructors.
+    """
+    from ..domain.repository import (
+        SingerRepository,
+        EventRepository,
+        ProjectRepository,
+        BesetzungRepository,
+        AvailabilityRepository,
+        RepertoireRepository,
+    )
+
+    if hasattr(tab, 'db'):
+        tab.db = new_db
+    if hasattr(tab, 'singer_repo'):
+        tab.singer_repo = SingerRepository(new_db)
+    if hasattr(tab, 'event_repo'):
+        tab.event_repo = EventRepository(new_db)
+    if hasattr(tab, 'project_repo'):
+        tab.project_repo = ProjectRepository(new_db)
+    if hasattr(tab, 'besetzung_repo'):
+        tab.besetzung_repo = BesetzungRepository(new_db)
+    if hasattr(tab, 'avail_repo'):
+        tab.avail_repo = AvailabilityRepository(new_db)
+    if hasattr(tab, 'repertoire_repo'):
+        tab.repertoire_repo = RepertoireRepository(new_db)
+# --- END NEW ---
