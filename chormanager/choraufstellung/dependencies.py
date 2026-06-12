@@ -62,12 +62,16 @@ def create_singer_fallback(name: str, voice_group, height: int = 0, singer_id: s
         @classmethod
         def from_dict(cls, data):
             vg_val = data.get("voice_group", "Sopran 1")
+            # M-4: bare except: -> concrete exception.
+            # VoiceGroup is an Enum; its constructor raises
+            # ValueError on unknown values. We deliberately do NOT
+            # catch broader exceptions here.
             try:
                 if VoiceGroup:
                     vg = VoiceGroup(vg_val)
                 else:
                     vg = FallbackVoiceGroup(vg_val)
-            except:
+            except ValueError:
                 vg = FallbackVoiceGroup(vg_val)
             return cls(
                 name=data.get("name", ""),
@@ -79,17 +83,26 @@ def create_singer_fallback(name: str, voice_group, height: int = 0, singer_id: s
 
 
 def get_valid_voice_groups() -> List[str]:
+    # M-4: bare except: -> concrete exceptions.
+    # Only File-I/O (OSError) and JSON parsing (JSONDecodeError, which
+    # is a subclass of ValueError) can realistically fly out of this
+    # block. We list ValueError explicitly to be future-proof if the
+    # json module grows new exception types.
     try:
         config_file = "config/voice_groups.json"
         if os.path.exists(config_file):
             with open(config_file, 'r', encoding='utf-8') as f:
                 return [vg["id"] for vg in json.load(f).get("voice_groups", [])]
-    except:
+    except (OSError, ValueError):
         pass
     return ["Sopran 1", "Sopran 2", "Alt 1", "Alt 2", "Tenor 1", "Tenor 2", "Bass 1", "Bass 2"]
 
 
 def get_voice_group_color_fallback(vid: str) -> str:
+    # M-4: bare except: -> concrete exceptions.
+    # The dict lookups inside the loop can raise KeyError/TypeError if
+    # the JSON file has a malformed voice_groups entry; we handle that
+    # alongside File-I/O and JSON parsing.
     try:
         config_file = "config/voice_groups.json"
         if os.path.exists(config_file):
@@ -97,7 +110,7 @@ def get_voice_group_color_fallback(vid: str) -> str:
                 for vg in json.load(f).get("voice_groups", []):
                     if vg["id"] == vid:
                         return vg["color"]
-    except:
+    except (OSError, ValueError, KeyError, TypeError):
         pass
     return "#cccccc"
 
