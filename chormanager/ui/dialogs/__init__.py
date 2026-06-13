@@ -1,4 +1,9 @@
+# M-3 Schritt 1: Re-export wrapper for backward compatibility.
+# The 12 dialog classes will be incrementally moved into sub-modules
+# (_event.py, _config.py, ...) in M-3 Schritte 2-12. The package-level
+# re-exports below keep  working.
 """Dialogs for event management."""
+
 
 from PyQt6.QtWidgets import (
     QDialog,
@@ -29,14 +34,14 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QDragEnterEvent, QDropEvent
 from PyQt6.QtCore import QDateTime, Qt
 
-from ..domain.repository import (
+from ...domain.repository import (
     SingerRepository,
     AvailabilityRepository,
     EventRepository,
     ProjectRepository,
     RepertoireRepository,
 )
-from ..config import load_voice_groups
+from ...config import load_voice_groups
 
 
 AVAILABILITY_STATUS = [
@@ -123,8 +128,8 @@ class AvailabilityDialog(QDialog):
         return self.status_combo.currentData()
 
     def accept(self):
-        from ..domain.repository import AvailabilityRepository
-        from ..data.database import Database
+        from ...domain.repository import AvailabilityRepository
+        from ...data.database import Database
 
         db = Database()
         db.connect()
@@ -159,7 +164,7 @@ class EventDialog(QDialog):
 
     def _setup_ui(self, db=None):
         """Set up the UI."""
-        from ..domain.repository import ProjectRepository
+        from ...domain.repository import ProjectRepository
 
         self.setWindowTitle(
             "Termin hinzufügen" if not self.event else "Termin bearbeiten"
@@ -286,7 +291,7 @@ class EventListDialog(QDialog):
 
     def _load_events(self):
         """Load events into combo box."""
-        from ..domain.repository import EventRepository
+        from ...domain.repository import EventRepository
 
         repo = EventRepository(self.db)
 
@@ -361,7 +366,7 @@ class EventListDialog(QDialog):
             super().accept()
             return
 
-        from ..domain.repository import AvailabilityRepository
+        from ...domain.repository import AvailabilityRepository
 
         avail_repo = AvailabilityRepository(self.db)
 
@@ -727,7 +732,7 @@ class EventAvailabilityDialog(QDialog):
 
         project_name = ""
         if self.event.project_id:
-            from ..domain.repository import ProjectRepository
+            from ...domain.repository import ProjectRepository
 
             project_repo = ProjectRepository(self.db)
             project = project_repo.get_by_id(self.event.project_id)
@@ -760,7 +765,7 @@ class EventAvailabilityDialog(QDialog):
 
         project_name = ""
         if self.event.project_id:
-            from ..domain.repository import ProjectRepository
+            from ...domain.repository import ProjectRepository
 
             project_repo = ProjectRepository(self.db)
             project = project_repo.get_by_id(self.event.project_id)
@@ -877,7 +882,7 @@ class EventAvailabilityDialog(QDialog):
             {"name": "status", "label": "Status"},
         ]
 
-        from ..ui.export_dialog import ExportDialog
+        from ...ui.export_dialog import ExportDialog
 
         dialog = ExportDialog(avail_fields, self)
         if not dialog.exec():
@@ -890,7 +895,7 @@ class EventAvailabilityDialog(QDialog):
             QMessageBox.warning(self, "Warnung", "Keine Felder ausgewählt.")
             return
 
-        from ..core.export_service import ExportService
+        from ...core.export_service import ExportService
         from PyQt6.QtWidgets import QFileDialog
         from pathlib import Path
         from datetime import datetime
@@ -1364,7 +1369,7 @@ class SingerSelectionDialog(QDialog):
             QMessageBox.warning(self, "Warnung", "Keine Sänger ausgewählt.")
             return
 
-        from ..ui.export_dialog import ExportDialog
+        from ...ui.export_dialog import ExportDialog
 
         singer_fields = [
             {"name": "full_name", "label": "Name"},
@@ -1386,8 +1391,8 @@ class SingerSelectionDialog(QDialog):
             QMessageBox.warning(self, "Warnung", "Keine Felder ausgewählt.")
             return
 
-        from ..domain.repository import SingerRepository
-        from ..core.export_service import ExportService
+        from ...domain.repository import SingerRepository
+        from ...core.export_service import ExportService
         from PyQt6.QtWidgets import QFileDialog
         from pathlib import Path
         from datetime import datetime
