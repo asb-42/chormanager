@@ -181,12 +181,22 @@ class SingerTile(QFrame):
             modifiers = QApplication.keyboardModifiers()
             parent_grid = self.parent()
 
-            # TYPE_CHECKING-guard around the FormationGrid import:
-            # we need a runtime isinstance-check but cannot import
-            # the grid class at module-load time.  The import lives
-            # in this function so it is paid only on mouse-press.
-            from widgets.formation_grid import FormationGrid
-            if isinstance(parent_grid, FormationGrid):
+            # Duck-typing the parent: instead of
+            # ``isinstance(parent_grid, FormationGrid)`` (which would
+            # require importing ``widgets.formation_grid`` and would
+            # break the moment ``FormationGrid`` is in the middle of
+            # being moved out of ``main.py``), we just check for the
+            # attributes the tile needs.  This decouples the tile
+            # from the exact grid class while keeping the same
+            # behaviour: anything that quacks like a formation grid
+            # (selected_ids, update_selection_visuals,
+            # is_group_dragging) gets the selection handling.
+            if (
+                parent_grid is not None
+                and hasattr(parent_grid, "selected_ids")
+                and hasattr(parent_grid, "update_selection_visuals")
+                and hasattr(parent_grid, "is_group_dragging")
+            ):
                 sid = self.singer.singer_id
                 if modifiers & Qt.ControlModifier:
                     if sid in parent_grid.selected_ids:
@@ -227,10 +237,12 @@ class SingerTile(QFrame):
             mime = QMimeData()
 
             parent_grid = self.parent()
-            # Same delayed import trick as in ``mousePressEvent``.
-            from widgets.formation_grid import FormationGrid
+            # Same duck-typing trick as in ``mousePressEvent``:
+            # we don't import FormationGrid here, we just check for
+            # the attributes the drag-init code needs.
             if (
-                isinstance(parent_grid, FormationGrid)
+                parent_grid is not None
+                and hasattr(parent_grid, "selected_ids")
                 and len(parent_grid.selected_ids) > 1
             ):
                 group_ids = list(parent_grid.selected_ids)
