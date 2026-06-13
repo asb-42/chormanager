@@ -45,6 +45,7 @@ from autosave import AutoSaveController
 from file_io import FormationFileIO
 from pdf_export_integration import PDFExportBridge
 from chormanager_bridge import ChorManagerBridge
+from recovery import RecoveryController
 from core.commands import (
     MoveSingerCommand,
     SwapSingersCommand,
@@ -196,6 +197,10 @@ class MainWindow(QMainWindow):
         # ChorManager-Bridge (M-2 Schritt 10): seeds the host with
         # singers from the parent ChorManager app (temp JSON or DB).
         self.cm_bridge = ChorManagerBridge(self)
+
+        # Recovery-Controller (M-2 Schritt 11): owns the autosave-vs-
+        # manual-save decision and the "Wiederherstellen?" dialog.
+        self.recovery = RecoveryController(self.storage, self)
 
         self._finish_init()
 
@@ -695,26 +700,8 @@ class MainWindow(QMainWindow):
         return self.file_io.generate_filename(event_date, event_name)
 
     def _check_recovery(self):
-        """Check for autosave and offer recovery if newer than last manual save."""
-        latest = self.storage.get_latest_autosave_path()
-        if not latest:
-            return
-        if self.storage.get_latest_autosave_mtime() <= self.last_manual_save_mtime:
-            return
-        
-        r = QMessageBox.question(self, "Wiederherstellen", 
-                           "Es wurde eine automatisch gespeicherte Aufstellung gefunden, die neuer ist als Ihre letzte manuelle Speicherung.\n\n"
-                           "Möchten Sie die automatisch gespeicherte Version wiederherstellen?\n"
-                           "(Ihre manuell gespeicherte Version bleibt erhalten.)",
-                           QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No)
-        if r != QMessageBox.StandardButton.Yes:
-            return
-        
-        data = self.storage.load_formation(latest)
-        if data:
-            self._load_formation_data(data)
-            self.file = latest
-            self._is_modified = True
+        """Backward-compat: delegate to self.recovery (M-2 Schritt 11)."""
+        return self.recovery.check()
 
     def export_pdf(self):
         # Backward-compat: menu wiring calls this method.
