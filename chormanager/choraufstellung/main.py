@@ -900,7 +900,7 @@ class MainWindow(QMainWindow):
         self.autosave_timer.start(120000)
         
         self.setup_ui()
-        self.resize(1100, 750)
+        self.resize(1280, 768)
         
         if self.chormanager_mode:
             self._load_from_chormanager()
