@@ -218,7 +218,7 @@ class TestSingerSelectionDialogInit:
     def test_voice_filter_populated(self, qtbot, seeded_database):
         from chormanager.ui.dialogs import SingerSelectionDialog
         with patch(
-            "chormanager.ui.dialogs.load_voice_groups",
+            "chormanager.ui.dialogs._singer_selection.load_voice_groups",
             return_value=[{"name": "Sopran"}, {"name": "Bass"}],
         ):
             dlg = SingerSelectionDialog(db=seeded_database)
@@ -230,7 +230,7 @@ class TestSingerSelectionDialogFiltering:
     def test_voice_filter_narrows_table(self, qtbot, seeded_database):
         from chormanager.ui.dialogs import SingerSelectionDialog
         with patch(
-            "chormanager.ui.dialogs.load_voice_groups",
+            "chormanager.ui.dialogs._singer_selection.load_voice_groups",
             return_value=[{"name": "Sopran"}, {"name": "Bass"}],
         ):
             dlg = SingerSelectionDialog(db=seeded_database)
