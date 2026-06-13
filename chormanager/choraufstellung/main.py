@@ -42,6 +42,7 @@ from qt_compat import (
 # trap M-2 Schritt 2 hit for ``widgets.draggable_list``.
 from undo_bridge import QtUndoStack
 from autosave import AutoSaveController
+from file_io import FormationFileIO
 from core.commands import (
     MoveSingerCommand,
     SwapSingersCommand,
@@ -177,6 +178,12 @@ class MainWindow(QMainWindow):
             storage=self.storage,
             interval_ms=120_000,
         )
+
+        # File-IO bridge (M-2 Schritt 8): delegates new/open/save to
+        # the standalone FormationFileIO class. The window only owns
+        # the dialog-heavy bits (resize warning etc.); the storage
+        # round-trip and filename logic live in file_io.py.
+        self.file_io = FormationFileIO(self.storage)
 
         self._finish_init()
 
@@ -594,127 +601,86 @@ class MainWindow(QMainWindow):
         else:
             QMessageBox.information(self, "Nähe", "Alle Singpartner sind bereits nebeneinander oder nicht in der gleichen Reihe.")
 
+    # ------------------------------------------------------------------
+    # File-IO (M-2 Schritt 8) -- thin delegates around FormationFileIO
+    # ------------------------------------------------------------------
+    #
+    # The dialog-heavy paths (resize-warning when there are more placed
+    # singers than grid cells) stay on MainWindow; the storage round-trip
+    # and the auto-filename generator live in file_io.py.
+
     def new_f(self):
-        if self.is_modified:
-            r = QMessageBox.question(self, "Ungespeichert", "Änderungen speichern?", QMessageBox.StandardButton.Save|QMessageBox.StandardButton.Discard|QMessageBox.StandardButton.Cancel)
-            if r == QMessageBox.StandardButton.Save:
-                self.save_f()
-            elif r == QMessageBox.StandardButton.Cancel:
-                return
-        self.grid.singers = []
-        self.grid.refresh_grid()
-        self.singers = []
-        self.file = None
-        self._is_modified = False
-        self.update_grid_count()
+        # Backward-compat: menu wiring calls this method.
+        return self.file_io.new(parent=self, is_modified=self._is_modified)
 
     def open_f(self):
-        fp, _ = QFileDialog.getOpenFileName(self, "Öffnen", "", "JSON (*.json);;Alle (*)")
-        if not fp:
-            return
-        self._open_file(fp)
+        # Backward-compat: menu wiring calls this method.
+        return self.file_io.open(parent=self)
 
     def _open_file(self, fp):
+        """Backward-compat helper: load the formation at ``fp`` into self."""
         data = self.storage.load_formation(fp)
         if not data:
             return
-        self.singers = data.get("singers", [])
-        for s in self.singers:
-            if not hasattr(s, 'affinity'):
-                s.affinity = ""
-        self.grid.singers = [s for s in self.singers if s.row >= 0]
-        self.grid.refresh_grid()
-        self.pool.singers = self.singers
-        self.pool.placed_singer_ids = self.grid.get_placed_singer_ids()
-        self.pool.update_singers(self.singers, self.pool.placed_singer_ids)
+        self.file_io.load_formation_data(self, data)
         self.file = fp
-        self._is_modified = False
-        self.update_grid_count()
         self._loaded_metadata = data.get("metadata", {})
 
-    def save_f(self):
+    def _exceeds_grid_capacity(self):
+        """Return ``excess`` (>=1) when more singers are placed than the grid holds."""
         grid_cells = self.grid.rows * self.grid.cols
         placed = len(self.grid.singers)
-        if placed > grid_cells:
-            excess = placed - grid_cells
-            msg_box = QMessageBox(self)
-            msg_box.setWindowTitle("Zu viele Sänger")
-            msg_box.setText(f"Die Aufstellung hat {placed} Sänger im Raster, aber nur {grid_cells} Plätze.")
-            msg_box.setIcon(QMessageBox.Icon.Warning)
-            
-            btn_resize = QPushButton("Raster vergrößern")
-            btn_pool = QPushButton("In Pool zurücksetzen")
-            msg_box.addButton(btn_resize, QMessageBox.ButtonRole.ActionRole)
-            msg_box.addButton(btn_pool, QMessageBox.ButtonRole.ActionRole)
-            
-            reply = msg_box.exec()
-            if reply == btn_pool:
-                self._reset_excess_to_pool(excess)
-                return self._save_file(self.file, metadata=self._loaded_metadata)
-            return False
-        
+        if placed <= grid_cells:
+            return 0
+        return placed - grid_cells
+
+    def _ask_resize_or_reset(self, excess: int) -> bool:
+        """Show the resize/reset dialog. Returns True if the user picked
+        'In Pool zurücksetzen' (excess singers should be reset to the pool)."""
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle("Zu viele Sänger")
+        msg_box.setText(
+            f"Die Aufstellung hat {len(self.grid.singers)} Sänger im Raster, "
+            f"aber nur {self.grid.rows * self.grid.cols} Plätze."
+        )
+        msg_box.setIcon(QMessageBox.Icon.Warning)
+
+        btn_resize = QPushButton("Raster vergrößern")
+        btn_pool = QPushButton("In Pool zurücksetzen")
+        msg_box.addButton(btn_resize, QMessageBox.ButtonRole.ActionRole)
+        msg_box.addButton(btn_pool, QMessageBox.ButtonRole.ActionRole)
+        return msg_box.exec() == btn_pool
+
+    def save_f(self):
+        excess = self._exceeds_grid_capacity()
+        if excess:
+            if not self._ask_resize_or_reset(excess):
+                return False
+            self._reset_excess_to_pool(excess)
         if not self.file:
             return self.save_as_f()
-        
         return self._save_file(self.file, metadata=self._loaded_metadata)
 
     def save_as_f(self):
-        from config import get_data_dir
-        data_dir = get_data_dir()
-        auto_name = self.generate_filename(
-            self._loaded_metadata.get("event_date", ""),
-            self._loaded_metadata.get("event", "")
-        )
-        fp, _ = QFileDialog.getSaveFileName(self, "Speichern", os.path.join(data_dir, auto_name), "JSON (*.json)")
-        if not fp:
-            return False
-        if not fp.endswith(".json"):
-            fp += ".json"
-        
-        grid_cells = self.grid.rows * self.grid.cols
-        placed = len(self.grid.singers)
-        if placed > grid_cells:
-            excess = placed - grid_cells
-            msg_box = QMessageBox(self)
-            msg_box.setWindowTitle("Zu viele Sänger")
-            msg_box.setText(f"Die Aufstellung hat {placed} Sänger im Raster, aber nur {grid_cells} Plätze.")
-            msg_box.setIcon(QMessageBox.Icon.Warning)
-            
-            btn_resize = QPushButton("Raster vergrößern")
-            btn_pool = QPushButton("In Pool zurücksetzen")
-            msg_box.addButton(btn_resize, QMessageBox.ButtonRole.ActionRole)
-            msg_box.addButton(btn_pool, QMessageBox.ButtonRole.ActionRole)
-            
-            reply = msg_box.exec()
-            if reply == btn_pool:
-                self._reset_excess_to_pool(excess)
-            else:
+        excess = self._exceeds_grid_capacity()
+        if excess:
+            if not self._ask_resize_or_reset(excess):
                 return False
-        
-        return self._save_file(fp, metadata=self._loaded_metadata)
+            self._reset_excess_to_pool(excess)
+        return self.file_io.save_as(parent=self, grid=self.grid)
 
     def _save_file(self, fp, metadata: dict = None):
-        placed = self.grid.get_placed_singers()
-        singers = self.singers
-        rows = self.grid.rows
-        cols = self.grid.cols
-        staggered = self.grid.staggered
-        
-        if self.storage.save_formation(singers, rows, cols, fp, placed, staggered, metadata=metadata):
+        if self.file_io.save_to_path(fp, self.grid, metadata=metadata):
             self.file = fp
             self._is_modified = False
             import time
             self.last_manual_save_mtime = time.time()
             return True
         return False
-    
+
     def generate_filename(self, event_date: str, event_name: str = None) -> str:
-        """Generate auto filename: choraufstellung-DATE-version-DATE.json"""
-        from datetime import datetime
-        today = datetime.now().strftime("%Y-%m-%d")
-        name_part = event_name.replace(" ", "-") if event_name else "event"
-        date_part = event_date[:10] if event_date else today
-        return f"choraufstellung-{date_part}-version-{today}.json"
+        """Delegate to FormationFileIO for backward compatibility."""
+        return self.file_io.generate_filename(event_date, event_name)
 
     def _check_recovery(self):
         """Check for autosave and offer recovery if newer than last manual save."""
