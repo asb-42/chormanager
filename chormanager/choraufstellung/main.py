@@ -44,6 +44,7 @@ from undo_bridge import QtUndoStack
 from autosave import AutoSaveController
 from file_io import FormationFileIO
 from pdf_export_integration import PDFExportBridge
+from chormanager_bridge import ChorManagerBridge
 from core.commands import (
     MoveSingerCommand,
     SwapSingersCommand,
@@ -191,6 +192,10 @@ class MainWindow(QMainWindow):
         # pass itself; the bridge reads the grid / pdf / singers via
         # duck typing.
         self.pdf_bridge = PDFExportBridge(self)
+
+        # ChorManager-Bridge (M-2 Schritt 10): seeds the host with
+        # singers from the parent ChorManager app (temp JSON or DB).
+        self.cm_bridge = ChorManagerBridge(self)
 
         self._finish_init()
 
@@ -845,126 +850,8 @@ class MainWindow(QMainWindow):
             e.accept()
 
     def _load_from_chormanager(self):
-        """Load singers from ChorManager DB or temp JSON file."""
-        import os
-        import json
-        
-        # Check for temp JSON file first (preferred method)
-        event_data_file = os.environ.get("CHOR_EVENT_DATA", "")
-        
-        if event_data_file and os.path.exists(event_data_file):
-            try:
-                with open(event_data_file, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                
-                event_info = data.get("event", {})
-                if event_info:
-                    self._loaded_metadata = {
-                        "project": data.get("project", ""),
-                        "event": event_info.get("name", ""),
-                        "event_date": event_info.get("date", "")[:10] if event_info.get("date") else "",
-                        "event_type": event_info.get("event_type", "")
-                    }
-                
-                singers_data = data.get("singers", [])
-                if singers_data:
-                    self.singers = []
-                    for s in singers_data:
-                        name = s.get("short_name") or s.get("name", "")
-                        vg_str = s.get("voice_group", "Sopran")
-                        # Convert string to VoiceGroup enum
-                        vg = next((v for v in VoiceGroup if hasattr(v,'value') and v.value == vg_str), None)
-                        if not vg:
-                            vg = VoiceGroup.SOPRAN_1  # Default
-                        singer = Singer(
-                            name,
-                            vg,
-                            s.get("height", 0),
-                            s.get("singer_id", "")
-                        )
-                        singer.affinity = s.get("affinity", "")
-                        singer.affinity_uuid = s.get("affinity_uuid", "")
-                        self.singers.append(singer)
-                    
-                    self.pool.singers = self.singers
-                    self.pool.update_singers(self.singers, set())
-                    self._is_modified = False
-                    return
-            except Exception as e:
-                print(f"Error reading event data file: {e}")
-        
-        # Fallback: Load from DB
-        import sqlite3
-        
-        db_path = os.environ.get("CHOR_DB_PATH", os.path.expanduser("~/.local/share/chormanager/chor.db"))
-        event_id = self.event_id or os.environ.get("CHOR_EVENT_ID", "")
-        event_date = os.environ.get("CHOR_EVENT_DATE", "")
-        
-        if not db_path or not os.path.exists(db_path):
-            return
-        
-        if event_date:
-            event_date = event_date[:10]
-        
-        try:
-            conn = sqlite3.connect(db_path)
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
-            
-            if event_id:
-                cursor.execute("""
-                    SELECT s.id, s.full_name, s.short_name, s.voice_group, s.affinity_uuid, s.height
-                    FROM singers s
-                    JOIN availability a ON s.id = a.singer_id
-                    WHERE a.event_id = ? AND a.status IN ('yes', 'conditional')
-                    ORDER BY s.full_name
-                """, (event_id,))
-            else:
-                cursor.execute("""
-                    SELECT s.id, s.full_name, s.short_name, s.voice_group, s.affinity_uuid, s.height
-                    FROM singers s
-                    ORDER BY s.full_name
-                """)
-            
-            rows = cursor.fetchall()
-            conn.close()
-            
-            if not rows:
-                return
-            
-            vg_to_enum = {}
-            for vg in VoiceGroup:
-                vg_to_enum[vg.value if hasattr(vg, 'value') else str(vg)] = vg
-            
-            def find_voice_group(vg_str):
-                vg_str = vg_str or "Sopran"
-                if vg_str in vg_to_enum:
-                    return vg_to_enum[vg_str]
-                for vg_name, vg in vg_to_enum.items():
-                    if vg_name.startswith(vg_str):
-                        return vg
-                return VoiceGroup.SOPRAN_1
-            
-            for row in rows:
-                singer_id = row["id"]
-                vg_str = row["voice_group"] or "Sopran"
-                vg = find_voice_group(vg_str)
-                
-                name = row["short_name"] or row["full_name"]
-                height = row["height"] or 0
-                affinity = row["affinity_uuid"] or ""
-                
-                s = Singer(name, vg, height, singer_id)
-                s.affinity = affinity
-                self.singers.append(s)
-            
-            self.pool.singers = self.singers
-            self.pool.update_singers(self.singers, set())
-            
-            self._is_modified = False
-            
-        except Exception as e:
-            print(f"Error loading from chormanager: {e}")
+        """Backward-compat: delegate to self.cm_bridge (M-2 Schritt 10)."""
+        return self.cm_bridge.load_from_env()
     
     def _load_formation_data(self, data: dict):
         """Load formation data from dict (used when opening saved file)."""
