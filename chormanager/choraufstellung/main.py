@@ -41,6 +41,7 @@ from qt_compat import (
 # ``ModuleNotFoundError: No module named 'chormanager'`` — the same
 # trap M-2 Schritt 2 hit for ``widgets.draggable_list``.
 from undo_bridge import QtUndoStack
+from autosave import AutoSaveController
 from core.commands import (
     MoveSingerCommand,
     SwapSingersCommand,
@@ -156,7 +157,7 @@ class MainWindow(QMainWindow):
         
         self.engine = GridEngine(GridConfig(rows=4, cols=5, staggered=False))
         
-        self.is_modified = False
+        self._is_modified = False
         self.last_manual_save_mtime = 0
         self._loaded_metadata = {
             "project": project_name or "",
@@ -164,22 +165,78 @@ class MainWindow(QMainWindow):
             "event_date": event_date or "",
             "event_type": event_type or ""
         }
-        self.autosave_timer = QTimer(self)
-        self.autosave_timer.timeout.connect(self._autosave_check)
-        self.autosave_timer.start(120000)
-        
+        # M-2 Schritt 7: autosave timer / save-decision moved to
+        # ``AutoSaveController``.  The window only exposes the three
+        # protocol methods the controller needs (is_modified / has_file
+        # / build_data) and owns the source-of-truth flags
+        # (``is_modified``, ``file``).  ``self.autosave_timer`` is
+        # gone -- use ``self.autosave.timer`` if you ever need raw
+        # QTimer access.
+        self.autosave = AutoSaveController(
+            window=self,
+            storage=self.storage,
+            interval_ms=120_000,
+        )
+
+        self._finish_init()
+
+    # ------------------------------------------------------------------
+    # AutoSaveController protocol (M-2 Schritt 7)
+    # ------------------------------------------------------------------
+    #
+    # These three methods are the only contract the controller needs
+    # from the window.  They are duck-typed (the controller uses
+    # ``_AutoSaveWindow`` protocol) so we don't have to subclass
+    # or import MainWindow from autosave.py.
+
+    def is_modified(self) -> bool:
+        return self._is_modified
+
+    def has_file(self) -> bool:
+        return self.file is not None
+
+    def build_data(self) -> dict:
+        placed = self.grid.get_placed_singer_ids()
+        return {
+            "version": "1.0",
+            "rows": self.grid.rows,
+            "cols": self.grid.cols,
+            "staggered": self.grid.staggered,
+            "singers": [
+                {
+                    "name": s.name,
+                    "voice_group": s.voice_group.value if hasattr(s.voice_group, "value") else str(s.voice_group),
+                    "height": s.height,
+                    "singer_id": s.singer_id,
+                    "row": s.row,
+                    "col": s.col,
+                    "affinity": s.affinity,
+                }
+                for s in self.singers
+            ],
+            "placed": list(placed),
+        }
+
+    def _finish_init(self) -> None:
+        """Continue the constructor body.
+
+        These statements were stranded inside ``build_data`` after
+        an earlier botched refactor; M-2 Schritt 7 lifts them back
+        to a class-level helper so the constructor's actual
+        end-of-init sequence runs in a well-defined order.
+        """
         self.setup_ui()
         self.resize(1280, 768)
-        
+
         if self.chormanager_mode:
             self._load_from_chormanager()
         else:
             self._check_recovery()
-        
+
         settings = load_settings()
         current_theme = settings.get("theme", "light")
         self._apply_theme(current_theme)
-        
+
         if current_theme == "dark":
             self.actionDark.setChecked(True)
         else:
@@ -454,7 +511,7 @@ class MainWindow(QMainWindow):
         self.pool.placed_singer_ids = self.grid.get_placed_singer_ids()
         self.pool.update_singers(self.singers, self.pool.placed_singer_ids)
         self.update_grid_count()
-        self.is_modified = True
+        self._is_modified = True
 
     def upd_grid(self):
         r = int(self.rs.currentText())
@@ -507,7 +564,7 @@ class MainWindow(QMainWindow):
             s.row = -1
             s.col = -1
         self.grid.refresh_grid()
-        self.is_modified = True
+        self._is_modified = True
         self.update_grid_count()
 
     def apply_all_affinity_proximity(self):
@@ -533,7 +590,7 @@ class MainWindow(QMainWindow):
             processed.add(partner.singer_id)
         if moved > 0:
             self.statusBar().showMessage(f"{moved} Singpartner nebeneinander platziert", 3000)
-            self.is_modified = True
+            self._is_modified = True
         else:
             QMessageBox.information(self, "Nähe", "Alle Singpartner sind bereits nebeneinander oder nicht in der gleichen Reihe.")
 
@@ -548,7 +605,7 @@ class MainWindow(QMainWindow):
         self.grid.refresh_grid()
         self.singers = []
         self.file = None
-        self.is_modified = False
+        self._is_modified = False
         self.update_grid_count()
 
     def open_f(self):
@@ -571,7 +628,7 @@ class MainWindow(QMainWindow):
         self.pool.placed_singer_ids = self.grid.get_placed_singer_ids()
         self.pool.update_singers(self.singers, self.pool.placed_singer_ids)
         self.file = fp
-        self.is_modified = False
+        self._is_modified = False
         self.update_grid_count()
         self._loaded_metadata = data.get("metadata", {})
 
@@ -645,7 +702,7 @@ class MainWindow(QMainWindow):
         
         if self.storage.save_formation(singers, rows, cols, fp, placed, staggered, metadata=metadata):
             self.file = fp
-            self.is_modified = False
+            self._is_modified = False
             import time
             self.last_manual_save_mtime = time.time()
             return True
@@ -658,26 +715,6 @@ class MainWindow(QMainWindow):
         name_part = event_name.replace(" ", "-") if event_name else "event"
         date_part = event_date[:10] if event_date else today
         return f"choraufstellung-{date_part}-version-{today}.json"
-
-    def _autosave_check(self):
-        if not self.is_modified:
-            return
-        if not self.file:
-            return
-        placed = self.grid.get_placed_singer_ids()
-        data = {
-            "version": "1.0",
-            "rows": self.grid.rows,
-            "cols": self.grid.cols,
-            "staggered": self.grid.staggered,
-            "singers": [
-                {"name": s.name, "voice_group": s.voice_group.value if hasattr(s.voice_group, 'value') else str(s.voice_group),
-                 "height": s.height, "singer_id": s.singer_id, "row": s.row, "col": s.col, "affinity": s.affinity}
-                for s in self.singers
-            ],
-            "placed": list(placed)
-        }
-        self.storage.save_autosave(data)
 
     def _check_recovery(self):
         """Check for autosave and offer recovery if newer than last manual save."""
@@ -699,7 +736,7 @@ class MainWindow(QMainWindow):
         if data:
             self._load_formation_data(data)
             self.file = latest
-            self.is_modified = True
+            self._is_modified = True
 
     def export_pdf(self):
         from pdf_export_dialog import PDFExportDialog
@@ -828,7 +865,7 @@ class MainWindow(QMainWindow):
         s = self.pool.add_dialog()
         if s:
             self.singers.append(s)
-            self.is_modified = True
+            self._is_modified = True
 
     def edit_singer(self, singer):
         new_singer = self.pool.add_dialog(singer)
@@ -836,14 +873,14 @@ class MainWindow(QMainWindow):
             idx = next((i for i, s in enumerate(self.singers) if s.singer_id == singer.singer_id), -1)
             if idx >= 0:
                 self.singers[idx] = new_singer
-            self.is_modified = True
+            self._is_modified = True
 
     def set_singer_affinity(self, singer):
         self.pool.set_affinity(singer)
 
     def on_singer_removed_from_grid(self, singer):
         self.pool.update_singers(self.singers, self.grid.get_placed_singer_ids())
-        self.is_modified = True
+        self._is_modified = True
         self.update_grid_count()
 
     def do_quick_search(self):
@@ -941,7 +978,7 @@ class MainWindow(QMainWindow):
                     
                     self.pool.singers = self.singers
                     self.pool.update_singers(self.singers, set())
-                    self.is_modified = False
+                    self._is_modified = False
                     return
             except Exception as e:
                 print(f"Error reading event data file: {e}")
@@ -1014,7 +1051,7 @@ class MainWindow(QMainWindow):
             self.pool.singers = self.singers
             self.pool.update_singers(self.singers, set())
             
-            self.is_modified = False
+            self._is_modified = False
             
         except Exception as e:
             print(f"Error loading from chormanager: {e}")
@@ -1033,7 +1070,7 @@ class MainWindow(QMainWindow):
         self.pool.singers = self.singers
         self.pool.placed_singer_ids = self.grid.get_placed_singer_ids()
         self.pool.update_singers(self.singers, self.pool.placed_singer_ids)
-        self.is_modified = False
+        self._is_modified = False
         self.update_grid_count()
         
         # Sync ComboBoxes with loaded grid dimensions

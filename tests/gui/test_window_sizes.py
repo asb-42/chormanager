@@ -66,6 +66,10 @@ def choraufstellung_window(qtbot, tmp_path):
     that runs in standalone mode.  The initial size is set in
     ``__init__`` *before* either branch runs, so it is observable
     here.
+
+    We explicitly stop the autosave QTimer in the teardown -- the
+    timer keeps the QApplication event loop alive across tests and
+    would otherwise prevent pytest from exiting cleanly.
     """
     from chormanager.choraufstellung.main import MainWindow
     db_path = tmp_path / "chorauf.db"
@@ -80,6 +84,7 @@ def choraufstellung_window(qtbot, tmp_path):
     )
     qtbot.addWidget(window)
     yield window
+    window.autosave.stop()
     window.close()
 
 
