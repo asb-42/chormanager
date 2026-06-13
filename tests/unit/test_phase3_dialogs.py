@@ -325,7 +325,7 @@ class TestSingerSelectionDialogSelection:
         from chormanager.ui.dialogs import SingerSelectionDialog
         dlg = SingerSelectionDialog(db=seeded_database)
         qtbot.addWidget(dlg)
-        with patch("chormanager.ui.dialogs.QMessageBox.warning") as w:
+        with patch("chormanager.ui.dialogs._singer_selection.QMessageBox.warning") as w:
             dlg._export_singers()
         w.assert_called_once()
 

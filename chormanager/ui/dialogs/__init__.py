@@ -1,92 +1,94 @@
-# M-3 Schritt 1: Re-export wrapper for backward compatibility.
-# The 12 dialog classes will be incrementally moved into sub-modules
-# (_event.py, _config.py, ...) in M-3 Schritte 2-12. The package-level
-# re-exports below keep  working.
-"""Dialogs for event management."""
+"""ChorManager :mod:`chormanager.ui.dialogs` — Qt dialogs (M-3 refactored).
 
+This package replaces the original 1 825 LOC ``chormanager/ui/dialogs.py``
+module. The 12 dialog classes have been split into dedicated sub-modules
+(``_availability.py``, ``_event.py``, …).  For backward compatibility, the
+public ``from chormanager.ui.dialogs import <Class>`` import path is
+preserved by the re-exports below.
 
-from PyQt6.QtWidgets import (
-    QDialog,
-    QVBoxLayout,
-    QHBoxLayout,
-    QFormLayout,
-    QLineEdit,
-    QComboBox,
-    QDateTimeEdit,
-    QTextEdit,
-    QPushButton,
-    QDialogButtonBox,
-    QTableWidget,
-    QTableWidgetItem,
-    QRadioButton,
-    QButtonGroup,
-    QLabel,
-    QScrollArea,
-    QWidget,
-    QGroupBox,
-    QStyledItemDelegate,
-    QSizePolicy,
-    QMessageBox,
-    QFileDialog,
-    QFrame,
-)
-from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QDragEnterEvent, QDropEvent
-from PyQt6.QtCore import QDateTime, Qt
+Class → Sub-module Map
+======================
 
-from ...domain.repository import (
-    SingerRepository,
-    AvailabilityRepository,
-    EventRepository,
-    ProjectRepository,
-    RepertoireRepository,
-)
-from ...config import load_voice_groups
+================================  ======================================
+Public class                      Sub-module
+================================  ======================================
+``AvailabilityDelegate``          ``chormanager.ui.dialogs._availability``
+``AvailabilityDialog``            ``chormanager.ui.dialogs._availability``
+``AVAILABILITY_STATUS`` (const)   ``chormanager.ui.dialogs._availability``
+``EventDialog``                   ``chormanager.ui.dialogs._event``
+``EventListDialog``               ``chormanager.ui.dialogs._event``
+``EventAvailabilityDialog``       ``chormanager.ui.dialogs._event_availability``
+``ConfigDialog``                  ``chormanager.ui.dialogs._config``
+``SelbstdarstellungDialog``       ``chormanager.ui.dialogs._selbstdarstellung``
+``SingerSelectionDialog``         ``chormanager.ui.dialogs._singer_selection``
+``DropZone``                      ``chormanager.ui.dialogs._backup_restore``
+``BackupRestoreDialog``           ``chormanager.ui.dialogs._backup_restore``
+``NewFormationDialog``            ``chormanager.ui.dialogs._new_formation``
+``RepertoireDialog``              ``chormanager.ui.dialogs._repertoire``
+================================  ======================================
 
-# M-3 Schritt 2: Re-exports for back-compat
+The sub-modules are private (leading underscore) and should not be imported
+directly by application code — they are an internal implementation detail of
+this package.  Tests, however, may import from the sub-modules when they need
+to patch a specific dependency.
+"""
+
+# Re-exports for backward compatibility.  Each block corresponds to one
+# M-3 extraction step; the order below matches the order in the M-3 plan
+# (``plans/2026-06-13_m3_dialogs_refactor.md``).
 from ._availability import (
+    AVAILABILITY_STATUS,
     AvailabilityDelegate,
     AvailabilityDialog,
-    AVAILABILITY_STATUS,
 )
-
-# M-3 Schritt 3: Re-exports for back-compat
+from ._backup_restore import (
+    BackupRestoreDialog,
+    DropZone,
+)
+from ._config import (
+    ConfigDialog,
+)
 from ._event import (
     EventDialog,
     EventListDialog,
 )
-
-# M-3 Schritt 4: Re-exports for back-compat
 from ._event_availability import (
     EventAvailabilityDialog,
 )
-
-# M-3 Schritt 5: Re-exports for back-compat
-from ._config import (
-    ConfigDialog,
-)
-
-# M-3 Schritt 6: Re-exports for back-compat
-from ._selbstdarstellung import (
-    SelbstdarstellungDialog,
-)
-
-# M-3 Schritte 7+8: Re-exports for back-compat
-from ._singer_selection import (
-    SingerSelectionDialog,
-)
-from ._backup_restore import (
-    DropZone,
-    BackupRestoreDialog,
-)
-
-
-# M-3 Schritt 9: Re-exports for back-compat
 from ._new_formation import (
     NewFormationDialog,
 )
-
-# M-3 Schritt 10: Re-exports for back-compat
 from ._repertoire import (
     RepertoireDialog,
 )
+from ._selbstdarstellung import (
+    SelbstdarstellungDialog,
+)
+from ._singer_selection import (
+    SingerSelectionDialog,
+)
+
+__all__ = [
+    # _availability
+    "AvailabilityDelegate",
+    "AvailabilityDialog",
+    "AVAILABILITY_STATUS",
+    # _event
+    "EventDialog",
+    "EventListDialog",
+    # _event_availability
+    "EventAvailabilityDialog",
+    # _config
+    "ConfigDialog",
+    # _selbstdarstellung
+    "SelbstdarstellungDialog",
+    # _singer_selection
+    "SingerSelectionDialog",
+    # _backup_restore
+    "DropZone",
+    "BackupRestoreDialog",
+    # _new_formation
+    "NewFormationDialog",
+    # _repertoire
+    "RepertoireDialog",
+]

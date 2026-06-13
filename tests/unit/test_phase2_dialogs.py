@@ -166,9 +166,9 @@ class TestBackupRestoreDialogBackupClick:
         out = fake_app_root / "out.zip"
         # Patch both QFileDialog (return our path) and QMessageBox (suppress modal)
         with patch(
-            "chormanager.ui.dialogs.QFileDialog.getSaveFileName",
+            "chormanager.ui.dialogs._backup_restore.QFileDialog.getSaveFileName",
             return_value=(str(out), ""),
-        ), patch("chormanager.ui.dialogs.QMessageBox.exec", return_value=0):
+        ), patch("chormanager.ui.dialogs._backup_restore.QMessageBox.exec", return_value=0):
             dlg._on_backup()
 
         assert out.exists()
@@ -186,7 +186,7 @@ class TestBackupRestoreDialogBackupClick:
         dlg.service = BackupService(fake_app_root)
 
         with patch(
-            "chormanager.ui.dialogs.QFileDialog.getSaveFileName",
+            "chormanager.ui.dialogs._backup_restore.QFileDialog.getSaveFileName",
             return_value=("", ""),  # user cancelled
         ):
             dlg._on_backup()
@@ -207,9 +207,9 @@ class TestBackupRestoreDialogBackupClick:
 
         dlg.service = _Boom()
         with patch(
-            "chormanager.ui.dialogs.QFileDialog.getSaveFileName",
+            "chormanager.ui.dialogs._backup_restore.QFileDialog.getSaveFileName",
             return_value=("/tmp/x.zip", ""),
-        ), patch("chormanager.ui.dialogs.QMessageBox.critical") as critical:
+        ), patch("chormanager.ui.dialogs._backup_restore.QMessageBox.critical") as critical:
             dlg._on_backup()
         critical.assert_called_once()
 
@@ -238,7 +238,7 @@ class TestBackupRestoreDialogFileDropped:
         bad = fake_app_root / "not_a_zip.txt"
         bad.write_text("hello")
 
-        with patch("chormanager.ui.dialogs.QMessageBox.warning") as warn:
+        with patch("chormanager.ui.dialogs._backup_restore.QMessageBox.warning") as warn:
             dlg._on_file_dropped(str(bad))
         warn.assert_called_once()
         assert dlg.pending_restore_path is None
@@ -290,7 +290,7 @@ class TestBackupRestoreDialogFileDropped:
         # Suppress the warning dialog but still go through the full
         # flow (no OK click in the warning -> pending path stays set).
         with patch(
-            "chormanager.ui.dialogs.QMessageBox.exec",
+            "chormanager.ui.dialogs._backup_restore.QMessageBox.exec",
             return_value=0,  # StandardButton.Cancel
         ):
             dlg._on_file_dropped(str(out))
@@ -326,7 +326,7 @@ class TestBackupRestoreDialogDoRestore:
         (fake_app_root / "data" / "chor.db").unlink()
         assert not (fake_app_root / "data" / "chor.db").exists()
 
-        with patch("chormanager.ui.dialogs.QMessageBox.information"):
+        with patch("chormanager.ui.dialogs._backup_restore.QMessageBox.information"):
             dlg._do_restore()
 
         assert dlg.restored is True
