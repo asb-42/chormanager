@@ -182,7 +182,7 @@ class MainWindow(
     def _setup_ui(self):
         """Set up the UI."""
         self.setWindowTitle("ChorManager")
-        self.setGeometry(80, 80, 1024, 768)
+        self.setGeometry(50, 50, 1280, 768)
 
         self._create_menu_bar()
         self._create_info_bar()

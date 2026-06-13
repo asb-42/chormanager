@@ -2,11 +2,11 @@
 
 Pinned-down defaults (2026-06-13, user request):
 
-* ChorManager  : ``setGeometry(80, 80, 1024, 768)``
+* ChorManager  : ``setGeometry(50, 50, 1280, 768)``
 * ChorAufstellung: ``self.resize(1280, 768)``
 
 Why these specific values?
-  * 1024x768 is the de-facto "fits on every laptop" baseline and
+  * 1280x768 is the de-facto "fits on every laptop" baseline and
     gives a comfortable default for the 4-tab main window.
   * 1280x768 for the choraufstellung plugin leaves room for the
     singer pool on the left and at least ~1100 px for the grid --
@@ -31,11 +31,11 @@ if str(_REPO) not in sys.path:
 
 
 # ---------------------------------------------------------------------------
-# ChorManager  ->  setGeometry(80, 80, 1024, 768)
+# ChorManager  ->  setGeometry(50, 50, 1280, 768)
 # ---------------------------------------------------------------------------
 
 class TestChorManagerWindowSize:
-    """ChorManager main window must open at 1024x768 px, top-left (80,80)."""
+    """ChorManager main window must open at 1280x768 px, top-left (50,50)."""
 
     def test_main_window_geometry(self, qtbot, tmp_path):
         from chormanager.ui.main_window import MainWindow
@@ -44,10 +44,10 @@ class TestChorManagerWindowSize:
         qtbot.addWidget(window)
 
         x, y, w, h = window.geometry().getRect()
-        assert (x, y) == (80, 80), (
-            f"ChorManager position is {(x, y)}, expected (80, 80)"
+        assert (x, y) == (50, 50), (
+            f"ChorManager position is {(x, y)}, expected (50, 50)"
         )
-        assert w == 1024, f"ChorManager width is {w}, expected 1024"
+        assert w == 1280, f"ChorManager width is {w}, expected 1280"
         assert h == 768, f"ChorManager height is {h}, expected 768"
 
         window.close()
