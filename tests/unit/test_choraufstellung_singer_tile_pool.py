@@ -12,6 +12,7 @@ plans/2026-06-12_m2_choraufstellung_refactor.md, Schritt 5.
 from __future__ import annotations
 
 import pytest
+from qt_compat import QObject, QWidget, pyqtSignal
 
 
 # ---------------------------------------------------------------------------
@@ -182,3 +183,136 @@ class TestSingerPool:
         # Add a singer: label updates.
         pool.update_singers([_MockSinger(singer_id="a")])
         assert "1" in pool.pool_count_label.text()
+
+
+# ---------------------------------------------------------------------------
+# Regression: "Positionen tauschen" menu-action must enable on tile click
+# ---------------------------------------------------------------------------
+#
+# Bug context (2026-06-13):
+#   User marked two SingerTiles (left-click, no Ctrl), then opened the
+#   "Bearbeiten" menu.  The action "Positionen tauschen" stayed greyed
+#   out even though ``len(grid.selected_ids) == 2``.
+#
+# Root cause:
+#   The grid's ``selection_changed`` Qt signal was only emitted from
+#   ``FormationGrid.mousePressEvent`` / ``mouseReleaseEvent`` -- which
+#   are never called for clicks on a child tile (Qt routes the event
+#   to the tile directly).  So the MainWindow's ``update_swap_action``
+#   slot was never invoked, leaving the QAction disabled.
+#
+# Fix in ``widgets/singer_tile.py``: ``mousePressEvent`` now emits
+# ``parent_grid.selection_changed`` after updating the selection.
+# The duck-typed ``hasattr`` check keeps the tile compatible with
+# both the current main.py ``FormationGrid`` and the future
+# ``widgets.formation_grid.FormationGrid``.
+
+class _SelectionSignalHost(QObject):
+    """Tiny QObject that exposes a real Qt ``selection_changed`` signal."""
+
+    selection_changed = pyqtSignal()
+
+
+class _MockGrid(QWidget):
+    """Duck-typed stand-in for ``FormationGrid``.
+
+    Inherits ``QWidget`` so ``SingerTile.setParent(grid)`` works.
+    Carries the four attributes ``SingerTile`` touches:
+    ``selected_ids``, ``update_selection_visuals``,
+    ``is_group_dragging`` and ``selection_changed``.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.selected_ids = set()
+        self._visuals_calls = 0
+        self.is_group_dragging = False
+        self._signal_host = _SelectionSignalHost()
+
+    @property
+    def selection_changed(self):
+        return self._signal_host.selection_changed
+
+    def update_selection_visuals(self):
+        self._visuals_calls += 1
+
+
+class TestSingerTileSelectionSignal:
+    def test_left_click_emits_selection_changed(self, qtbot):
+        from widgets.singer_tile import SingerTile
+        from qt_compat import Qt, QMouseEvent, QEvent, QPointF
+
+        grid = _MockGrid()
+        singer = _MockSinger(singer_id="42")
+        tile = SingerTile(singer)
+        qtbot.addWidget(tile)
+        tile.setParent(grid)  # so ``self.parent()`` returns the grid
+
+        ev = QMouseEvent(
+            QEvent.Type.MouseButtonPress,
+            QPointF(5, 5),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        with qtbot.waitSignal(grid.selection_changed, timeout=500):
+            tile.mousePressEvent(ev)
+
+        assert "42" in grid.selected_ids
+        assert grid._visuals_calls == 1
+        assert grid.is_group_dragging is False
+
+    def test_ctrl_click_toggle_emits_selection_changed(self, qtbot):
+        from widgets.singer_tile import SingerTile
+        from qt_compat import Qt, QMouseEvent, QEvent, QPointF
+
+        grid = _MockGrid()
+        singer = _MockSinger(singer_id="7")
+        tile = SingerTile(singer)
+        qtbot.addWidget(tile)
+        tile.setParent(grid)
+        grid.selected_ids = {"7"}  # start selected
+
+        ev = QMouseEvent(
+            QEvent.Type.MouseButtonPress,
+            QPointF(5, 5),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.ControlModifier,
+        )
+        # We mock ``QApplication.keyboardModifiers`` because the
+        # production code reads the *current* keyboard state instead
+        # of the modifier attached to the synthetic QMouseEvent --
+        # which is the correct behaviour for real OS events but
+        # makes synthetic events hard to drive.  Patching it
+        # lets us prove the toggle branch runs and the signal fires.
+        from unittest.mock import patch
+        from qt_compat import QApplication
+        with patch.object(
+            QApplication,
+            "keyboardModifiers",
+            return_value=Qt.KeyboardModifier.ControlModifier,
+        ), qtbot.waitSignal(grid.selection_changed, timeout=500):
+            tile.mousePressEvent(ev)
+        # Ctrl+click on an already-selected singer removes it.
+        assert "7" not in grid.selected_ids
+
+    def test_no_grid_does_not_crash(self, qtbot):
+        """If the tile has no grid parent, mousePress must be a no-op."""
+        from widgets.singer_tile import SingerTile
+        from qt_compat import Qt, QMouseEvent, QEvent, QPointF
+
+        singer = _MockSinger(singer_id="42")
+        tile = SingerTile(singer)
+        qtbot.addWidget(tile)
+        # No setParent() -- parent is None / not a grid.
+
+        ev = QMouseEvent(
+            QEvent.Type.MouseButtonPress,
+            QPointF(5, 5),
+            Qt.MouseButton.LeftButton,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        # Must not raise.
+        tile.mousePressEvent(ev)

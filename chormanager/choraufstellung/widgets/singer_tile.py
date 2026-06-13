@@ -209,6 +209,18 @@ class SingerTile(QFrame):
 
                 parent_grid.update_selection_visuals()
                 parent_grid.is_group_dragging = False
+                # The grid's own ``mousePressEvent`` is never called
+                # when the user clicks on a child tile (Qt routes the
+                # event to us directly), so the grid's
+                # ``selection_changed`` signal is never emitted for
+                # tile clicks.  Emit it here so the MainWindow's
+                # "Positionen tauschen" menu action can react to
+                # the new selection state.  We duck-type the
+                # attribute so this code keeps working whether the
+                # parent is the old main.py FormationGrid or the
+                # future widgets.formation_grid.FormationGrid.
+                if hasattr(parent_grid, "selection_changed"):
+                    parent_grid.selection_changed.emit()
 
     def dragEnterEvent(self, e):
         e.acceptProposedAction()
