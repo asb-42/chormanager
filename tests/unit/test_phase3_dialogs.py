@@ -399,7 +399,7 @@ class TestNewFormationDialogAccept:
         from chormanager.ui.dialogs import NewFormationDialog
         dlg = NewFormationDialog(db=database)
         qtbot.addWidget(dlg)
-        with patch("chormanager.ui.dialogs.QMessageBox.warning") as w:
+        with patch("chormanager.ui.dialogs._new_formation.QMessageBox.warning") as w:
             dlg._on_accept()
         w.assert_called_once()
         assert dlg.selected_event is None
