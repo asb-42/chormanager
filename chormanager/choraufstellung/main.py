@@ -1,3 +1,41 @@
+"""ChorAufstellung :class:`MainWindow` (M-2 finale).
+
+This module is the *thin* application shell for the ChorAufstellung
+sub-app. The bulk of the logic that used to live here has been
+extracted into dedicated modules; the table below maps each of the
+twelve M-2 refactoring steps to its new home:
+
+* :class:`qt_compat`     - cross-PyQt5/PyQt6 helpers + fallbacks
+* :class:`undo_bridge`  - thin QObject wrapper around the pure-Python
+                          undo stack in :mod:`core.commands`
+* :class:`widgets.draggable_list` - DraggableList/Table (Schritt 2)
+* :class:`core.commands` - MoveSinger / SwapSingers / MoveGroup
+                          commands + UndoStack (Schritt 3)
+* :class:`widgets.dialogs` - AddSinger / Affinity / VoicingConfig
+                             dialogs (Schritt 4)
+* :class:`widgets.singer_tile`   - SingerTile (Schritt 5)
+* :class:`widgets.singer_pool`   - SingerPool (Schritt 5)
+* :class:`widgets.formation_grid` - FormationGrid (Schritt 6)
+* :class:`autosave.AutoSaveController` (Schritt 7)
+* :class:`file_io.FormationFileIO`     (Schritt 8)
+* :class:`pdf_export_integration.PDFExportBridge` (Schritt 9)
+* :class:`chormanager_bridge.ChorManagerBridge`   (Schritt 10)
+* :class:`recovery.RecoveryController`  (Schritt 11)
+* :class:`theme.ThemeApplier`          (Schritt 12)
+* :class:`main_menu.MainMenuBuilder`   (Schritt 13)
+
+The :class:`MainWindow` class in this file is now a thin shell that
+wires the controllers together and owns the user-facing dialogs and
+the close-event handler. See :mod:`plans/2026-06-12_m2_choraufstellung_refactor`
+for the full refactoring plan.
+
+Backward compatibility
+----------------------
+This module re-exports the extracted class names so callers that did
+``from chormanager.choraufstellung.main import <X>`` keep working.
+"""
+from __future__ import annotations
+
 import sys
 import os
 import json
@@ -141,6 +179,23 @@ from widgets.dialogs import (
     AffinityDialog,
     VoicingConfigDialog,
 )
+
+
+__all__ = [
+    # Re-exports (back-compat for ``from chormanager.choraufstellung.main import X``)
+    "DraggableListWidget",
+    "DraggableTableWidget",
+    "SingerTile",
+    "SingerPool",
+    "FormationGrid",
+    "AddSingerDialog",
+    "AffinityDialog",
+    "VoicingConfigDialog",
+    # The main class
+    "MainWindow",
+    # The CLI entry point
+    "main",
+]
 
 
 class MainWindow(QMainWindow):
