@@ -229,7 +229,7 @@ class TestEventAvailabilityDialogInit:
     def test_voice_filter_populated(self, qtbot, seeded_availability_db):
         d = _dlg()
         with patch(
-            "chormanager.ui.dialogs.load_voice_groups",
+            "chormanager.ui.dialogs._event_availability.load_voice_groups",
             return_value=[{"name": "Sopran 1"}, {"name": "Bass 1"}],
         ):
             dlg = d.EventAvailabilityDialog(
@@ -332,7 +332,7 @@ class TestEventAvailabilityDialogLoad:
     def test_voice_filter_narrows_table(self, qtbot, seeded_availability_db):
         d = _dlg()
         with patch(
-            "chormanager.ui.dialogs.load_voice_groups",
+            "chormanager.ui.dialogs._event_availability.load_voice_groups",
             return_value=[{"name": "Sopran 1"}, {"name": "Bass 1"}],
         ):
             dlg = d.EventAvailabilityDialog(
