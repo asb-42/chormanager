@@ -46,6 +46,7 @@ from file_io import FormationFileIO
 from pdf_export_integration import PDFExportBridge
 from chormanager_bridge import ChorManagerBridge
 from recovery import RecoveryController
+from theme import ThemeApplier
 from core.commands import (
     MoveSingerCommand,
     SwapSingersCommand,
@@ -201,6 +202,10 @@ class MainWindow(QMainWindow):
         # Recovery-Controller (M-2 Schritt 11): owns the autosave-vs-
         # manual-save decision and the "Wiederherstellen?" dialog.
         self.recovery = RecoveryController(self.storage, self)
+
+        # Theme-Applier (M-2 Schritt 12): owns the QSS strings + the
+        # post-apply refresh of grid and pool.
+        self.theme_applier = ThemeApplier(self)
 
         self._finish_init()
 
@@ -723,44 +728,8 @@ class MainWindow(QMainWindow):
             pass
 
     def _apply_theme(self, theme):
-        if theme == "dark":
-            self.setStyleSheet("""
-                QMainWindow, QWidget { background: #2b2b2b; color: #F0F0F0; }
-                QLabel { color: #F0F0F0; }
-                QTableWidget { background: #3b3b3b; color: #F0F0F0; gridline-color: #555; }
-                QTableWidget::item:selected { background: #4a4a4a; color: #fff; }
-                QHeaderView::section { background: #3b3b3b; color: #F0F0F0; border: 1px solid #555; }
-                QLineEdit, QComboBox { background: #3b3b3b; color: #F0F0F0; border: 1px solid #555; }
-                QPushButton { background: #4a4a4a; color: #F0F0F0; border: 1px solid #555; padding: 4px; }
-                QPushButton:hover { background: #5a5a5a; }
-                QMenuBar { background: #3b3b3b; color: #F0F0F0; }
-                QMenuBar::item:selected { background: #4a4a4a; }
-                QMenu { background: #3b3b3b; color: #F0F0F0; border: 1px solid #555; }
-                QMenu::item:selected { background: #4a4a4a; }
-                QRadioButton { color: #F0F0F0; }
-                QCheckBox { color: #F0F0F0; }
-            """)
-        else:
-            self.setStyleSheet("""
-                QMainWindow, QWidget { background: #f8f4eb; color: #1A1A1A; }
-                QLabel { color: #1A1A1A; }
-                QTableWidget { background: #ffffff; color: #1A1A1A; gridline-color: #d4c9b8; }
-                QTableWidget::item:selected { background: #d4c9b8; color: #1A1A1A; }
-                QHeaderView::section { background: #f0ebe0; color: #1A1A1A; border: 1px solid #d4c9b8; }
-                QLineEdit, QComboBox { background: #ffffff; color: #1A1A1A; border: 1px solid #d4c9b8; }
-                QPushButton { background: #e8e0d4; color: #1A1A1A; border: 1px solid #d4c9b8; padding: 4px; }
-                QPushButton:hover { background: #d4c9b8; }
-                QMenuBar { background: #f0ebe0; color: #1A1A1A; }
-                QMenuBar::item:selected { background: #d4c9b8; }
-                QMenu { background: #f0ebe0; color: #1A1A1A; border: 1px solid #d4c9b8; }
-                QMenu::item:selected { background: #d4c9b8; }
-                QRadioButton { color: #1A1A1A; }
-                QCheckBox { color: #1A1A1A; }
-            """)
-        
-        # Clear color cache and refresh grid to apply new theme colors
-        clear_color_cache()
-        self.grid.refresh_grid()
+        """Backward-compat: delegate to self.theme_applier (M-2 Schritt 12)."""
+        self.theme_applier.apply(theme)
         self.pool.update_singers(self.singers, self.pool.placed_singer_ids)
 
     def add_singer_via_menu(self):
