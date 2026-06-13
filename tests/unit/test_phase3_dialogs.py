@@ -493,7 +493,7 @@ class TestRepertoireDialogAccept:
         from chormanager.ui.dialogs import RepertoireDialog
         dlg = RepertoireDialog(db=database)
         qtbot.addWidget(dlg)
-        with patch("chormanager.ui.dialogs.QMessageBox.warning") as w:
+        with patch("chormanager.ui.dialogs._repertoire.QMessageBox.warning") as w:
             dlg._on_accept()
         w.assert_called_once()
         from chormanager.domain.repository import RepertoireRepository
