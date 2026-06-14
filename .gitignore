@@ -60,3 +60,6 @@ workdir/
 .kilo/
 .kilocode/.kilo/
 .kilocode/
+
+# Hypothesis (property-based tests)
+.hypothesis/
