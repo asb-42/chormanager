@@ -231,15 +231,48 @@ class SingerPool(QWidget):
     # Pool population
     # ------------------------------------------------------------------
 
-    def update_singers(self, singers, placed_ids=None):
+    def update_singers(self, singers, placed_ids=None, deferred: bool = False):
         """Refresh the pool from the master singer list and the set of
         ids that are already placed in the formation grid.
+
+        m3-FIX-A: passing ``deferred=True`` coalesces multiple calls in
+        the same frame into a single repaint. The repaint is scheduled
+        via ``QTimer.singleShot(0, ...)`` so all callers see the
+        freshest data and only one ``setRowCount(0)`` + re-populate
+        cycle runs.
 
         Triggers the auto-shrink logic via ``_apply_pool_width``.
         """
         self.singers = singers
         if placed_ids is not None:
             self.placed_singer_ids = placed_ids
+        if deferred:
+            # m3-FIX-A: coalesce multiple deferred calls in the same
+            # frame into a single repaint on the next event-loop tick.
+            if getattr(self, "_populate_pending", False):
+                return
+            self._populate_pending = True
+            try:
+                from PyQt6.QtCore import QTimer
+
+                def _run() -> None:
+                    self._populate_pending = False
+                    self._populate_table()
+
+                QTimer.singleShot(0, _run)
+            except Exception:
+                # Headless / no event loop: just populate immediately.
+                self._populate_pending = False
+                self._populate_table()
+            return
+        self._populate_table()
+
+    def _populate_table(self) -> None:
+        """Internal: re-build the QTableWidget from ``self.singers``.
+
+        Split out from ``update_singers`` so the deferred path can
+        schedule just this bit on the event loop.
+        """
         self.table.setRowCount(0)
         for s in self.singers:
             if str(s.singer_id) in self.placed_singer_ids:

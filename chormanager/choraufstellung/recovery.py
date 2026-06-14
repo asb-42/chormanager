@@ -87,13 +87,28 @@ class RecoveryController:
         if not data:
             return False
 
-        # Delegate the actual restore to the host (uses its grid / pool
-        # wiring).  We mirror the legacy behaviour: file path is set to
-        # the autosave path, and the formation is marked modified so
-        # the user can decide whether to save it.
-        self._host._load_formation_data(data)
-        self._host.file = latest
-        self._host._is_modified = True
+        # M-6 Fix: AutoSave-Timer waehrend des Recovery-Load pausieren.
+        # Sonst kann ein QTimer-Feuer zwischen load_formation() und
+        # _load_formation_data() einen halb-leeren Auto-Save schreiben,
+        # der den noch nicht fertig restaurierten Stand ueberschreibt.
+        autosave = getattr(self._host, "autosave", None)
+        if autosave is not None and hasattr(autosave, "stop"):
+            autosave.stop()
+
+        try:
+            # Delegate the actual restore to the host (uses its grid / pool
+            # wiring).  We mirror the legacy behaviour: file path is set to
+            # the autosave path, and the formation is marked modified so
+            # the user can decide whether to save it.
+            self._host._load_formation_data(data)
+            # m-1 Fix: host.file = None setzen, damit der naechste save_f()
+            # ein Save-As triggert (sonst wuerde der Auto-Save-Pfad
+            # direkt ueberschrieben).
+            self._host.file = None
+            self._host._is_modified = True
+        finally:
+            if autosave is not None and hasattr(autosave, "start"):
+                autosave.start()
         return True
 
     # ------------------------------------------------------------------

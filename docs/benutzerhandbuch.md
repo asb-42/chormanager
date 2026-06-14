@@ -466,6 +466,37 @@ Falls Fehler:
 
 Beim ersten Start wird automatisch eine neue Datenbank erstellt.
 
+### Update-Check schlägt fehl / TLS / MITM-Proxy (S2-FIX-A)
+
+Der eingebaute Versions-Check (`Extras → Auf Update prüfen`) ruft die
+GitHub-API via `urllib.request.urlopen` auf und nutzt dabei den
+**System-Cert-Store**. Konsequenzen:
+
+* In **Heim- oder Mobilfunknetzen** funktioniert der Update-Check
+  ohne weitere Konfiguration.
+* In **Firmen-Netzwerken mit MITM-Proxy** (z. B. Zscaler, Palo Alto,
+  Blue Coat) akzeptiert Python das vom Proxy mitgelieferte
+  CA-Bundle aus `SSL_CERT_FILE`. Das ist im Single-User-Desktop-
+  Einsatz gewollt (sonst wäre der Update-Check in vielen Netzen
+  blockiert), bedeutet aber: **ein kompromittierter Proxy könnte
+  eine gefälschte Versionsnummer oder einen manipulierten Download
+  liefern.**
+
+**Empfehlungen:**
+
+1. Wenn Sie in einem Firmen-Netz arbeiten, prüfen Sie die
+   angezeigte Update-Version **manuell** gegen
+   <https://github.com/Ihr-Repo/ChorManager/releases>.
+2. Aktivieren Sie Auto-Updates nur, wenn Sie Ihrem Proxy
+   vertrauen.
+3. Für maximale Sicherheit können Sie die Variable
+   `SSL_CERT_FILE` auf das Firmen-CA-Bundle setzen (oder das
+   Setzen unterbinden, um den System-Store zu erzwingen).
+4. Certificate-Pinning für GitHub ist absichtlich **nicht**
+   implementiert: Der Update-Check ist Single-User, nicht
+   sicherheitskritisch, und Pinning würde Firmen-Proxys
+   unbenutzbar machen.
+
 ### Backup wiederherstellen
 
 1. Menü: **Extras → Backup wiederherstellen**

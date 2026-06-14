@@ -80,7 +80,10 @@ class FormationGrid(QWidget):
         self.singers = []
         self.tiles = {}
         self.selected_ids = set()
-        
+        # m5-FIX-A: keep row labels in a member list so refresh_grid()
+        # doesn't have to walk the children tree with findChildren(QLabel).
+        self._row_labels: List[QLabel] = []
+
         self.rubber_band = None
         self.drag_start_pos = None
         self.is_group_dragging = False
@@ -105,6 +108,15 @@ class FormationGrid(QWidget):
                            self.rows * self.CELL_HEIGHT + self.MARGIN_TOP + 50)
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_grid_context_menu)
+
+        # CC4-FIX-A: a single QTimer for the search-pulse highlight is
+        # created up-front and re-used across calls. Previously each
+        # call to ``highlight_singer`` allocated a new timer, which
+        # meant overlapping pulses when the user typed fast.
+        self._search_pulse_timer: Optional[QTimer] = QTimer(self)
+        self._search_pulse_timer.setInterval(200)
+        self._search_pulse_count = 0
+        self._search_pulse_max = 5
     
     def show_grid_context_menu(self, pos):
         menu = QMenu(self)
@@ -154,11 +166,21 @@ class FormationGrid(QWidget):
         if singer.singer_id not in self.tiles:
             return
         tile = self.tiles[singer.singer_id]
-        
+
+        # CC4-FIX-A: re-use the timer that was created in __init__.
+        # ``stop()`` cancels any pulse from a previous highlight;
+        # ``disconnect()`` drops the previous tile-callback so the
+        # lambda below doesn't stack up.
+        self._search_pulse_timer.stop()
+        try:
+            self._search_pulse_timer.timeout.disconnect()
+        except (TypeError, RuntimeError):
+            # No connections to drop.
+            pass
         self._search_pulse_count = 0
-        self._search_pulse_max = 5
-        self._search_pulse_timer = QTimer(self)
-        self._search_pulse_timer.timeout.connect(lambda: self._pulse_step(tile, parent_window))
+        self._search_pulse_timer.timeout.connect(
+            lambda: self._pulse_step(tile, parent_window)
+        )
         self._search_pulse_timer.start(200)
     
     def _pulse_step(self, tile, parent_window):
@@ -290,22 +312,26 @@ class FormationGrid(QWidget):
     def apply_affinity_proximity(self, singer):
         if not singer.affinity:
             return False
-        
+
         partner = next((s for s in self.singers if s.singer_id == singer.affinity), None)
         if not partner or partner.row < 0 or singer.row < 0:
             return False
-        
+
         if singer.row != partner.row:
             return False
-        
+
         if abs(singer.col - partner.col) == 1:
             return False
-        
+
         target_col = singer.col + 1 if singer.col < partner.col else singer.col - 1
-        
+
+        # R-4 Fix: Bounds-Check BEVOR partner.row/col mutiert wird. Sonst
+        # kann occupant.row out-of-bounds sein und refresh_grid() crashen.
+        if not (0 <= singer.row < self.rows):
+            return False
         if target_col < 0 or target_col >= self.cols:
             return False
-        
+
         occupant = next((s for s in self.singers if s.row == singer.row and s.col == target_col), None)
         
         if occupant and occupant.singer_id != partner.singer_id:
@@ -322,11 +348,13 @@ class FormationGrid(QWidget):
         for tile in list(self.tiles.values()):
             tile.deleteLater()
         self.tiles.clear()
-        
-        for label in list(self.findChildren(QLabel)):
-            if label.text().startswith("Reihe "):
-                label.deleteLater()
-        
+
+        # m5-FIX-A: reuse the cached row labels instead of walking the
+        # whole child tree.
+        for label in list(self._row_labels):
+            label.deleteLater()
+        self._row_labels.clear()
+
         for cell in list(self.findChildren(QFrame)):
             if hasattr(cell, '_is_grid_cell'):
                 cell.deleteLater()

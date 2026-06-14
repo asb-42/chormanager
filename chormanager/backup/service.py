@@ -1,13 +1,21 @@
 """Backup service for ChorManager."""
 
+import logging
 import os
 import shutil
+import sqlite3
 from pathlib import Path
 from datetime import datetime
 from typing import List, Optional
 from fnmatch import fnmatch
 
 from ..config import load_app_config, get_data_dir
+
+_logger = logging.getLogger(__name__)
+
+# m9-FIX-A: file extensions we treat as SQLite databases and back up via
+# the consistent ``Connection.backup`` API rather than a plain file copy.
+_SQLITE_SUFFIXES = (".db", ".sqlite", ".sqlite3")
 
 
 class BackupService:
@@ -30,41 +38,75 @@ class BackupService:
         self._max_backups = max_backups
     
     def create_backup(self, source_path: str) -> str:
-        """Create a backup of a file.
-        
+        """Create a backup of ``source_path``.
+
+        For SQLite files (``.db`` / ``.sqlite`` / ``.sqlite3``) the backup
+        is produced via :meth:`sqlite3.Connection.backup`, which yields a
+        transactionally consistent snapshot even while the source DB is
+        still being written (m9-FIX-A). For all other files we fall back
+        to a plain :func:`shutil.copy2`.
+
         Args:
             source_path: Path to file to backup.
-            
+
         Returns:
             str: Path to backup file.
         """
         source = Path(source_path)
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
+
         backup_name = f"{source.stem}_backup_{timestamp}{source.suffix}"
         backup_path = self.backup_dir / backup_name
-        
-        shutil.copy2(source, backup_path)
-        
+
+        if source.suffix.lower() in _SQLITE_SUFFIXES:
+            try:
+                self._sqlite_backup(source, backup_path)
+            except (OSError, sqlite3.Error) as exc:
+                _logger.warning(
+                    "sqlite3.backup failed for %s (%s); falling back to shutil.copy2",
+                    source, exc,
+                )
+                shutil.copy2(source, backup_path)
+        else:
+            shutil.copy2(source, backup_path)
+
         self._cleanup_old_backups()
-        
+
         return str(backup_path)
+
+    @staticmethod
+    def _sqlite_backup(source: Path, dest: Path) -> None:
+        """Stream a consistent snapshot of ``source`` SQLite db to ``dest``.
+
+        Uses :meth:`sqlite3.Connection.backup` so the snapshot is
+        consistent even while other connections are writing to ``source``.
+        """
+        src_conn = sqlite3.connect(str(source))
+        try:
+            dest_conn = sqlite3.connect(str(dest))
+            try:
+                src_conn.backup(dest_conn)
+            finally:
+                dest_conn.close()
+        finally:
+            src_conn.close()
     
     def list_backups(self, pattern: str = "*_backup_*") -> List[str]:
-        """List available backups.
-        
+        """List available backups, newest first.
+
         Args:
             pattern: Glob pattern for backup files.
-            
+
         Returns:
-            List of backup file paths.
+            List of backup file paths, ordered by ``mtime`` (newest first).
         """
-        backups = []
+        backups: list = []
         for file in self.backup_dir.iterdir():
             if fnmatch(file.name, pattern):
-                backups.append(str(file))
-        
-        return sorted(backups, reverse=True)
+                backups.append((str(file), file.stat().st_mtime))
+
+        # m10-FIX-A: sort by mtime, not by filename string.
+        return [p for p, _ in sorted(backups, key=lambda t: t[1], reverse=True)]
     
     def restore_backup(self, backup_path: str, destination: str) -> None:
         """Restore a backup.

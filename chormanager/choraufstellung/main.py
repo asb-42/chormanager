@@ -759,14 +759,6 @@ class MainWindow(QMainWindow):
             self.llay.addWidget(l)
         self.llay.addStretch()
 
-    def _menu_legenda(self):
-        for m in self.menuBar().findChildren(QMenu):
-            if m.title() == "&Hilfe":
-                continue
-            for a in m.actions():
-                if a.text() == "Über":
-                    continue
-
     def show_about(self):
         QMessageBox.about(self, "Über Choraufstellung", "Choraufstellung 1.0\n\nVerwaltung von Choraufstellungen.")
 
@@ -788,31 +780,33 @@ class MainWindow(QMainWindow):
         return self.cm_bridge.load_from_env()
     
     def _load_formation_data(self, data: dict):
-        """Load formation data from dict (used when opening saved file)."""
-        self.singers = data.get("singers", [])
-        for s in self.singers:
-            if not hasattr(s, 'affinity'):
-                s.affinity = ""
-        self.grid.singers = [s for s in self.singers if s.row >= 0]
-        self.grid.rows = data.get("rows", 3)
-        self.grid.cols = data.get("cols", 4)
-        self.grid.staggered = data.get("staggered", False)
-        self.grid.refresh_grid()
-        self.pool.singers = self.singers
-        self.pool.placed_singer_ids = self.grid.get_placed_singer_ids()
-        self.pool.update_singers(self.singers, self.pool.placed_singer_ids)
-        self._is_modified = False
-        self.update_grid_count()
-        
-        # Sync ComboBoxes with loaded grid dimensions
-        if hasattr(self, 'rs'):
-            self.rs.blockSignals(True)
-            self.rs.setCurrentText(str(self.grid.rows))
-            self.rs.blockSignals(False)
-        if hasattr(self, 'cs'):
-            self.cs.blockSignals(True)
-            self.cs.setCurrentText(str(self.grid.cols))
-            self.cs.blockSignals(False)
+        """Load formation data from dict (delegiert an ``self.file_io``).
+
+        A-5 Fix + M-5 Fix: Diese Methode war dupliziert zu
+        :meth:`file_io.FormationFileIO.load_formation_data`. Sie ist jetzt
+        ein duenner Wrapper, der die kanonische Implementierung aufruft.
+        Damit gibt es nur noch **einen** Code-Pfad fuer das Laden einer
+        Formation, was Recovery- und File-IO-Pfade konsistent haelt.
+        """
+        if hasattr(self, "file_io") and self.file_io is not None:
+            self.file_io.load_formation_data(self, data)
+        else:
+            # Defensive Fallback: sehr fruehe Initialisierung ohne file_io.
+            # Setze singer-Liste und Grid minimal.
+            self.singers = data.get("singers", [])
+            self.grid.rows = data.get("rows", 3)
+            self.grid.cols = data.get("cols", 4)
+            self.grid.staggered = data.get("staggered", False)
+            if hasattr(self.grid, "refresh_grid"):
+                self.grid.refresh_grid()
+            if hasattr(self, "pool"):
+                self.pool.singers = self.singers
+                if hasattr(self.grid, "get_placed_singer_ids"):
+                    self.pool.placed_singer_ids = self.grid.get_placed_singer_ids()
+                self.pool.update_singers(self.singers, self.pool.placed_singer_ids)
+            self._is_modified = False
+            if hasattr(self, "update_grid_count"):
+                self.update_grid_count()
 
 
 def main():

@@ -1,26 +1,12 @@
-"""TDD RED: Regression tests for M-2 Schritt 1.
+"""Tests for the A2-FIX-A slimmed-down ``qt_compat`` module.
 
-Refactor: chormanager/choraufstellung/main.py lines 1-86 (PyQt5/PyQt6
-cross-compat try/except block + Klassen-Fallbacks) are extracted into
-chormanager/choraufstellung/qt_compat.py.
+A2-FIX-A removed the dead ``FallbackSinger``, ``FallbackOptimizerDialog``
+and ``FallbackGridEngine`` classes from ``qt_compat.py``. PyQt6 is now
+the only supported binding; the cross-compat shim is reduced to
+``exec_qt``, the enum aliases, and the re-exported Qt classes.
 
-Before the refactor:
-  main.py has:
-    - try/except importing exec_qt (line 5-12)
-    - try/except importing PyQt6 classes with enum mappings (14-58)
-    - try/except importing config helpers with stub fallbacks (60-69)
-    - try/except importing domain classes (Singer, FormationStorage, etc.)
-      with stub fallbacks (76-104)
-
-After the refactor:
-  qt_compat.py is the single source of truth for:
-    - exec_qt() (already there)
-    - All Qt classes (already re-exported via *)
-    - Fallback classes: FallbackSinger, FallbackOptimizerDialog, etc.
-  main.py does ``from qt_compat import ...`` (no try/except).
-
-These tests pin down the EXISTING behavior of the fallback classes
-and the cross-compat layer so we can refactor safely.
+These tests now assert the *removed* behaviour (the fallbacks are
+gone) and the *kept* behaviour (exec_qt, enums, re-exports).
 """
 from __future__ import annotations
 
@@ -31,79 +17,26 @@ import sys
 import pytest
 
 
-class TestQtCompatFallbackSinger:
-    """When singer_model.Singer cannot be imported, qt_compat must
-    provide a FallbackSinger with the same constructor signature."""
+class TestQtCompatNoFallbacks:
+    """A2-FIX-A: the Fallback* classes are gone (dead code)."""
 
-    def test_fallback_singer_module_attribute(self):
-        """qt_compat must expose FallbackSinger as a module attribute."""
+    def test_fallback_singer_removed(self):
         from chormanager.choraufstellung import qt_compat
-        assert hasattr(qt_compat, "FallbackSinger"), (
-            "qt_compat.FallbackSinger is missing; it must be importable "
-            "so that main.py can use it without a try/except."
+        assert not hasattr(qt_compat, "FallbackSinger"), (
+            "A2-FIX-A: FallbackSinger should be removed from qt_compat"
         )
 
-    def test_fallback_singer_constructible(self):
-        """FallbackSinger(name, voice_group, height, singer_id) works."""
-        from chormanager.choraufstellung.qt_compat import FallbackSinger
-        s = FallbackSinger("Anna", "Sopran 1", height=165, singer_id="s-1")
-        assert s.name == "Anna"
-        assert s.voice_group == "Sopran 1"
-        assert s.height == 165
-        assert s.singer_id == "s-1"
-
-    def test_fallback_singer_default_height(self):
-        """FallbackSinger default height is 0."""
-        from chormanager.choraufstellung.qt_compat import FallbackSinger
-        s = FallbackSinger("Bea", "Alt 1")
-        assert s.height == 0
-        assert s.singer_id == "1"
-
-
-class TestQtCompatFallbackOptimizerDialog:
-    """When ui.optimizer_dialog.OptimizerDialog cannot be imported,
-    qt_compat must provide a FallbackOptimizerDialog."""
-
-    def test_fallback_optimizer_dialog_module_attribute(self):
+    def test_fallback_optimizer_dialog_removed(self):
         from chormanager.choraufstellung import qt_compat
-        assert hasattr(qt_compat, "FallbackOptimizerDialog"), (
-            "qt_compat.FallbackOptimizerDialog is missing"
+        assert not hasattr(qt_compat, "FallbackOptimizerDialog"), (
+            "A2-FIX-A: FallbackOptimizerDialog should be removed from qt_compat"
         )
 
-    def test_fallback_optimizer_dialog_inherits_qdialog(self):
-        """FallbackOptimizerDialog must be a QDialog so callers can
-        call .exec()/.show() on it without crashing."""
-        from PyQt6.QtWidgets import QApplication
-        app = QApplication.instance() or QApplication(sys.argv)
-        from chormanager.choraufstellung.qt_compat import FallbackOptimizerDialog
-        dlg = FallbackOptimizerDialog()
-        # Must be a QDialog subclass
-        from PyQt6.QtWidgets import QDialog
-        assert isinstance(dlg, QDialog)
-
-    def test_fallback_optimizer_dialog_has_title(self):
-        from PyQt6.QtWidgets import QApplication
-        app = QApplication.instance() or QApplication(sys.argv)
-        from chormanager.choraufstellung.qt_compat import FallbackOptimizerDialog
-        dlg = FallbackOptimizerDialog()
-        # The original fallback set a window title
-        assert dlg.windowTitle() != ""
-
-
-class TestQtCompatFallbackGridEngine:
-    """When core.grid_engine.GridEngine cannot be imported, qt_compat
-    must provide a FallbackGridEngine stub."""
-
-    def test_fallback_grid_engine_module_attribute(self):
+    def test_fallback_grid_engine_removed(self):
         from chormanager.choraufstellung import qt_compat
-        assert hasattr(qt_compat, "FallbackGridEngine"), (
-            "qt_compat.FallbackGridEngine is missing"
+        assert not hasattr(qt_compat, "FallbackGridEngine"), (
+            "A2-FIX-A: FallbackGridEngine should be removed from qt_compat"
         )
-
-    def test_fallback_grid_engine_constructible(self):
-        from chormanager.choraufstellung.qt_compat import FallbackGridEngine
-        engine = FallbackGridEngine()
-        assert engine is not None
 
 
 class TestQtCompatExecQt:

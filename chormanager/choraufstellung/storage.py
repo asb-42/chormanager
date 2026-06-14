@@ -58,11 +58,21 @@ class FormationStorage:
             directory = os.path.dirname(target_path)
             if directory and not os.path.exists(directory):
                 os.makedirs(directory)
-            
+
+            # R-5 Fix: tmp-Cleanup bei Crash zwischen open() und os.replace().
+            # Sonst bleibt eine korrupte .tmp-Datei liegen.
             temp_path = target_path + ".tmp"
-            with open(temp_path, 'w', encoding='utf-8') as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
-            os.replace(temp_path, target_path)
+            try:
+                with open(temp_path, 'w', encoding='utf-8') as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+                os.replace(temp_path, target_path)
+            except Exception:
+                if os.path.exists(temp_path):
+                    try:
+                        os.remove(temp_path)
+                    except OSError:
+                        pass
+                raise
             return True
         except Exception as e:
             print(f"Error saving formation: {e}")
@@ -127,23 +137,27 @@ class FormationStorage:
         return backup_dir
 
     def save_autosave(self, data: dict, max_keep: int = 5) -> bool:
-        """Speichert Auto-Save mit Zeitstempel und Rotation."""
+        """Speichert Auto-Save mit Zeitstempel und Rotation.
+
+        C-5 Fix: Schreibt den Auto-Save als atomaren File (tmp + os.replace)
+        statt als Symlink. Funktioniert auf Windows (kein Admin nötig) und
+        ist race-frei. ``get_latest_autosave_path`` ermittelt den neuesten
+        ``autosave_<timestamp>.json``-File via ``os.listdir`` + mtime.
+        """
         try:
             backup_dir = self._get_backup_dir()
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"autosave_{timestamp}.json"
             filepath = os.path.join(backup_dir, filename)
-            
-            with open(filepath, 'w', encoding='utf-8') as f:
+
+            # Atomic write: tmp + os.replace (POSIX/Windows-kompatibel)
+            tmp_path = filepath + ".tmp"
+            with open(tmp_path, 'w', encoding='utf-8') as f:
                 json.dump(data, f, indent=2, ensure_ascii=False)
-            
-            latest_link = os.path.join(backup_dir, "latest_autosave.json")
-            if os.path.exists(latest_link):
-                os.remove(latest_link)
-            os.symlink(filename, latest_link)
-            
+            os.replace(tmp_path, filepath)
+
             self._rotate_backups(backup_dir, max_keep)
-            
+
             return True
         except IOError as e:
             print(f"Auto-save IO error: {e}")
@@ -170,16 +184,25 @@ class FormationStorage:
             print(f"Backup rotation error: {e}")
 
     def get_latest_autosave_path(self) -> Optional[str]:
-        """Gibt Pfad zum neuesten Auto-Save zurück."""
+        """Gibt Pfad zum neuesten Auto-Save zurück.
+
+        C-5 Fix: Liest die ``autosave_<timestamp>.json``-Files direkt
+        und returnt den mit der jüngsten mtime. Funktioniert ohne
+        Symlink und damit auch auf Windows.
+        """
         try:
             backup_dir = self._get_backup_dir()
-            latest_link = os.path.join(backup_dir, "latest_autosave.json")
-            if os.path.exists(latest_link):
-                target = os.readlink(latest_link)
-                full_path = os.path.join(backup_dir, target)
-                if os.path.exists(full_path):
-                    return full_path
-            return None
+            candidates = [
+                f for f in os.listdir(backup_dir)
+                if f.startswith("autosave_") and f.endswith(".json")
+            ]
+            if not candidates:
+                return None
+            candidates.sort(
+                key=lambda f: os.path.getmtime(os.path.join(backup_dir, f)),
+                reverse=True,
+            )
+            return os.path.join(backup_dir, candidates[0])
         except OSError:
             return None
 
@@ -191,16 +214,15 @@ class FormationStorage:
         return None
 
     def delete_latest_autosave(self) -> bool:
-        """Löscht den neuesten Auto-Save."""
+        """Löscht den neuesten Auto-Save.
+
+        C-5 Fix: Löscht den jüngsten ``autosave_<timestamp>.json``-File
+        statt einen (ehemaligen) Symlink.
+        """
         try:
-            backup_dir = self._get_backup_dir()
-            latest_link = os.path.join(backup_dir, "latest_autosave.json")
-            if os.path.exists(latest_link):
-                target = os.readlink(latest_link)
-                full_path = os.path.join(backup_dir, target)
-                if os.path.exists(full_path):
-                    os.remove(full_path)
-                os.remove(latest_link)
+            latest = self.get_latest_autosave_path()
+            if latest and os.path.exists(latest):
+                os.remove(latest)
             return True
         except OSError as e:
             print(f"Error deleting latest autosave: {e}")

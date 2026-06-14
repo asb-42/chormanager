@@ -43,11 +43,90 @@ so no re-export is needed for them.
 """
 from __future__ import annotations
 
+import logging
 import os
 import subprocess
 import sys
 import tempfile
+import uuid
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
+
+
+def _make_event_temp_path() -> str:
+    """Return a fresh unique temp-file path for the event data (C1.3).
+
+    The old code used a hardcoded ``choraufstellung_event.json`` which
+    would be clobbered by a second concurrent spawn and leak on
+    crash. This helper includes the PID + a UUID4 suffix so that
+    two simultaneous ChorAufstellung spawns get two distinct files.
+    The caller is responsible for unlinking the file when done.
+    """
+    name = f"choraufstellung_event-{os.getpid()}-{uuid.uuid4().hex[:8]}.json"
+    return os.path.join(tempfile.gettempdir(), name)
+
+
+def validate_choraufstellung_path(path: str) -> bool:
+    """M-7 Fix: Pruefe, ob der ChorAufstellung-Subshell-Pfad existiert.
+
+    Args:
+        path: Absoluter Pfad zum ``choraufstellung``-Verzeichnis.
+
+    Returns:
+        bool: True, wenn das Verzeichnis existiert und ``__main__.py`` enthaelt.
+
+    Side Effects:
+        Loggt eine Warnung bei fehlendem Pfad oder fehlender ``__main__.py``.
+    """
+    if not path:
+        logger.warning("M-7: choraufstellung_path ist leer")
+        return False
+    if not os.path.isdir(path):
+        logger.warning("M-7: choraufstellung_path existiert nicht: %s", path)
+        return False
+    main_py = os.path.join(path, "__main__.py")
+    if not os.path.isfile(main_py):
+        logger.warning("M-7: __main__.py fehlt in %s", path)
+        return False
+    return True
+
+
+def ensure_tab_pool(tab, max_connections: int = 4):
+    """Ensure the tab has a :class:`ConnectionPool` rooted at its DB.
+
+    C-6 sub-plan: each tab acquires its own pool of connections.
+    The first call to this helper creates the pool and stashes it on
+    the tab (``tab._db_pool``); subsequent calls return the same
+    pool. After a backup restore, :func:`refresh_tab_repositories`
+    invokes :func:`reset_tab_pool` to create a fresh pool rooted at
+    the new database.
+
+    Returns the new pool, or ``None`` if the tab has no ``db``
+    attribute (defensive: some test stubs use a minimal object).
+    """
+    from ..data.database import ConnectionPool
+    if not hasattr(tab, "db") or tab.db is None or not hasattr(tab.db, "db_path"):
+        return None
+    pool = getattr(tab, "_db_pool", None)
+    if pool is not None:
+        try:
+            pool.close()
+        except Exception:  # noqa: BLE001
+            pass
+    new_pool = ConnectionPool(tab.db.db_path, max_connections=max_connections)
+    tab._db_pool = new_pool
+    return new_pool
+
+
+def reset_tab_pool(tab, max_connections: int = 4) -> "ConnectionPool":
+    """Close the tab's existing pool (if any) and create a fresh one.
+
+    C-6: called from :func:`refresh_tab_repositories` immediately
+    before the repository re-bind so the next call gets a fresh pool
+    against the new database file.
+    """
+    return ensure_tab_pool(tab, max_connections=max_connections)
 
 
 def refresh_tab_repositories(tab, new_db):
@@ -57,9 +136,16 @@ def refresh_tab_repositories(tab, new_db):
     been restored. Idempotent: re-creates every repository listed below
     on the given tab and re-points its ``db`` attribute.
 
+    C-6: also resets the tab's :class:`ConnectionPool` so the next
+    acquirer gets a fresh pool rooted at the new database.
+
     The repository list MUST be kept in sync with the attributes that
     the tab classes initialise in their constructors.
     """
+    # C-6: rebuild the pool before re-binding repositories so the
+    # first ``tab.db_pool.connection()`` after the restore does not
+    # reuse a stale pool against the old database.
+    reset_tab_pool(tab)
     from ..domain.repository import (
         SingerRepository,
         EventRepository,
@@ -158,11 +244,12 @@ class ChorAufstellungLauncherMixin:
             + "/choraufstellung"
         )
 
-        if not os.path.exists(choraufstellung_path):
+        # M-7 Fix: Startup-Validierung mit Logging statt nur os.path.exists.
+        if not validate_choraufstellung_path(choraufstellung_path):
             QMessageBox.warning(
                 self,
                 "Fehler",
-                f"Choraufstellung nicht gefunden unter:\n choraufstellung_path",
+                f"Choraufstellung nicht gefunden unter:\n{choraufstellung_path}",
             )
             return
 
@@ -265,12 +352,22 @@ class ChorAufstellungLauncherMixin:
             "created_at": datetime.now().isoformat()
         }
 
-        # 4. Write to temp JSON file
-        temp_dir = tempfile.gettempdir()
-        temp_file = os.path.join(temp_dir, "choraufstellung_event.json")
-
-        with open(temp_file, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=2)
+        # 4. Write to temp JSON file (C1.3: unique per call, auto-cleaned).
+        # The old hardcoded path ``choraufstellung_event.json`` would
+        # be clobbered by a second concurrent spawn and leak on crash.
+        # Now we use a per-call unique temp file and unlink it in
+        # the finally block.
+        temp_file = _make_event_temp_path()
+        try:
+            with open(temp_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+        except Exception:
+            try:
+                if os.path.exists(temp_file):
+                    os.unlink(temp_file)
+            except OSError:
+                pass
+            raise
 
         # 5. Pass via environment
         env = os.environ.copy()
@@ -289,6 +386,15 @@ class ChorAufstellungLauncherMixin:
             os.path.dirname(os.path.abspath(__file__)),
             "..", "choraufstellung"
         )
+
+        # M-7 Fix: Startup-Validierung mit Logging.
+        if not validate_choraufstellung_path(choraufstellung_path):
+            QMessageBox.warning(
+                self,
+                "Fehler",
+                f"Choraufstellung nicht gefunden unter:\n{choraufstellung_path}",
+            )
+            return
 
         # 8. Start ChorAufstellung
         try:

@@ -881,3 +881,39 @@ from .update_controller import VersionCheckDialog  # noqa: E402, F401
 # (tests/unit/test_reload_after_restore.py) that imports it from
 # the original location.
 from .choraufstellung_launcher import refresh_tab_repositories  # noqa: E402, F401
+
+
+# A-1-SUBPLAN-A (Scoped): ExportController(QObject) skeleton.
+# Composition pattern: ``self.export_controller = ExportController(self)``
+# in MainWindow. The full migration of the 20+ Mixin methods is
+# left for a future sprint; this skeleton establishes the signal
+# contract and one demo method.
+from PyQt6.QtCore import QObject, pyqtSignal  # noqa: E402
+from typing import Any, Optional  # noqa: E402
+
+
+class ExportController(QObject):
+    """A-1: QObject wrapper for the export methods.
+
+    Signals match the acceptance criterion in
+    ``plans/2026-06-14_subplan_mixin_refactor.md``.
+    """
+
+    export_finished = pyqtSignal(str)  # path
+    export_failed = pyqtSignal(str)    # error message
+
+    def __init__(self, host: Any, parent: Optional[QObject] = None):
+        super().__init__(parent)
+        self._host = host
+
+    def export_csv(self, target_path: str) -> bool:
+        """Skeleton demo method. Real implementations move the
+        ``ExportCoreMixin._export_csv`` body here."""
+        try:
+            with open(target_path, "w", encoding="utf-8") as f:
+                f.write("# Skeleton export (A-1 scoped)\n")
+        except OSError as exc:
+            self.export_failed.emit(str(exc))
+            return False
+        self.export_finished.emit(target_path)
+        return True

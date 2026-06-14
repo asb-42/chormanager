@@ -51,9 +51,8 @@ class MainMenuBuilder:
         self._build_aufstellen(m)
         self._build_konfigurieren(m)
         self._build_ansicht(m)
-        # Optional: legend (was inline in the legacy method)
-        if hasattr(self._host, "_menu_legenda"):
-            self._host._menu_legenda()
+        # DEADCODE-FIX-A: _menu_legenda is gone; the legend is built
+        # by ``_build_legenda_widget`` elsewhere.
         self._build_hilfe(m)
 
     # ------------------------------------------------------------------

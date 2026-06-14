@@ -178,10 +178,12 @@ class TestCheckUserYesRestores:
         # _load_formation_data was called with the storage payload
         assert len(host._load_formation_data_calls) == 1
         assert host._load_formation_data_calls[0]["rows"] == 3
-        # file was updated and modified flag set
-        assert host.file == "/tmp/autosave.json"
+        # m-1 Fix: Nach Recovery ist die Datei "unbenannt" (None),
+        # damit ein "Speichern" als Save-As den Benutzer zwingt, einen
+        # expliziten Pfad zu waehlen, statt den Autosave-Pfad zu ueberschreiben.
+        assert host.file is None
         assert host._is_modified is True
-        # storage.load_formation was called
+        # storage.load_formation wurde aufgerufen
         assert storage.load_calls == ["/tmp/autosave.json"]
 
 

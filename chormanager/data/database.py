@@ -1,12 +1,114 @@
-"""Database layer for ChorManager."""
+"""Database layer for ChorManager.
 
+C-6 (subplan_db_connection_pool.md): in addition to the legacy
+single-connection ``Database``, this module now exposes
+:class:`ConnectionPool` and :meth:`Database.connect_pool`. The pool
+hands out connections with ``check_same_thread=False``,
+``journal_mode=WAL`` and ``busy_timeout=5000`` so multiple tabs
+(and threads) can read and write concurrently.
+"""
+import logging
 import sqlite3
+import threading
 import uuid
 from pathlib import Path
 from contextlib import contextmanager
-from typing import Any, Generator, Optional
+from typing import Any, Generator, List, Optional
 
 from ..config import load_app_config, get_data_dir
+
+_logger = logging.getLogger(__name__)
+
+
+class ConnectionPool:
+    """A small fixed-size pool of SQLite connections.
+
+    C-6 sub-plan: each tab (or thread) acquires a connection via
+    ``with pool.connection() as conn:`` and the pool hands out one
+    of its slots. Connections are returned on ``__exit__`` rather
+    than closed, so a high-frequency caller does not pay the
+    open/close cost. The pool commits any pending transaction
+    before returning the connection to the idle list.
+    """
+
+    def __init__(self, db_path: str, max_connections: int = 4):
+        if max_connections < 1:
+            raise ValueError("max_connections must be >= 1")
+        self._db_path = db_path
+        self._max = max_connections
+        self._lock = threading.Lock()
+        self._idle: List[sqlite3.Connection] = []
+        self._in_use = 0
+        try:
+            head = self._make_connection()
+            self._idle.append(head)
+        except sqlite3.Error as exc:
+            _logger.warning("Could not pre-warm pool connection: %s", exc)
+
+    @property
+    def max_connections(self) -> int:
+        return self._max
+
+    def _make_connection(self) -> sqlite3.Connection:
+        conn = sqlite3.connect(self._db_path, check_same_thread=False, timeout=5.0)
+        conn.row_factory = sqlite3.Row
+        try:
+            conn.execute("PRAGMA foreign_keys = ON")
+            conn.execute("PRAGMA journal_mode = WAL")
+            conn.execute("PRAGMA busy_timeout = 5000")
+        except sqlite3.OperationalError:
+            pass
+        return conn
+
+    @contextmanager
+    def connection(self, timeout: float = 2.0) -> Generator[sqlite3.Connection, None, None]:
+        import time as _time
+        deadline = _time.monotonic() + timeout
+        conn: Optional[sqlite3.Connection] = None
+        while True:
+            with self._lock:
+                if self._idle:
+                    conn = self._idle.pop()
+                    self._in_use += 1
+                    break
+                if self._in_use < self._max:
+                    self._in_use += 1
+                    conn = None
+                    break
+            if _time.monotonic() >= deadline:
+                raise ConnectionError(
+                    f"ConnectionPool exhausted (max={self._max})"
+                )
+            _time.sleep(0.01)
+        if conn is None:
+            try:
+                conn = self._make_connection()
+            except Exception:
+                with self._lock:
+                    self._in_use -= 1
+                raise
+        try:
+            yield conn
+        finally:
+            try:
+                conn.commit()
+            except sqlite3.Error:
+                try:
+                    conn.rollback()
+                except sqlite3.Error:
+                    pass
+            with self._lock:
+                self._in_use -= 1
+                self._idle.append(conn)
+
+    def close(self) -> None:
+        with self._lock:
+            for c in self._idle:
+                try:
+                    c.close()
+                except sqlite3.Error:
+                    pass
+            self._idle.clear()
 
 
 class Database:
@@ -38,6 +140,14 @@ class Database:
         if self._connection:
             self._connection.close()
             self._connection = None
+
+    def connect_pool(self, max_connections: int = 4) -> ConnectionPool:
+        """Return a fresh :class:`ConnectionPool` rooted at this DB.
+
+        C-6 sub-plan: each tab calls this once at startup and
+        acquires connections from the pool thereafter.
+        """
+        return ConnectionPool(self.db_path, max_connections=max_connections)
 
     def get_connection(self) -> sqlite3.Connection:
         """Get the database connection.

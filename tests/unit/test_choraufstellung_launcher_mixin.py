@@ -314,6 +314,10 @@ class TestOpenChoraufstellungFileNoSubshell:
 
         with patch.object(QMessageBox, "warning") as warn, patch(
             "os.path.exists", return_value=False
+        ), patch(
+            "os.path.isdir", return_value=False
+        ), patch(
+            "os.path.isfile", return_value=False
         ):
             stub_window._open_choraufstellung_file("/tmp/foo.json")
         assert warn.called, (
@@ -430,9 +434,14 @@ class TestOpenChoraufstellungForEvent:
         assert not warn.called
         env = captured["env"]
         # The temp file path is set as CHOR_EVENT_DATA
-        assert env.get("CHOR_EVENT_DATA", "").endswith(
-            "choraufstellung_event.json"
-        )
+        # (C1.3: now unique per call, see _make_event_temp_path)
+        assert env.get("CHOR_EVENT_DATA", "").endswith(".json")
+        # Filename pattern: choraufstellung_event-<pid>-<uuid8>.json
+        import re as _re
+        assert _re.search(
+            r"choraufstellung_event-\d+-\w+\.json$",
+            env.get("CHOR_EVENT_DATA", ""),
+        ), f"unexpected CHOR_EVENT_DATA: {env.get('CHOR_EVENT_DATA')!r}"
         # Legacy env vars
         assert env.get("CHOR_EVENT_NAME") == "Probe"
         assert env.get("CHOR_EVENT_ID") == "ev-1"

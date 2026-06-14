@@ -28,6 +28,29 @@ if TYPE_CHECKING:  # pragma: no cover - typing only
     pass
 
 
+# M5-FIX-A: bounds enforced for grid rows/cols.
+GRID_DIM_MIN: int = 1
+GRID_DIM_MAX: int = 50
+
+
+def _validate_dimensions(rows: Any, cols: Any) -> Tuple[int, int]:
+    """Return ``(rows, cols)`` if both lie in :data:`GRID_DIM_MIN`..:data:`GRID_DIM_MAX`.
+
+    Raises:
+        ValueError: when ``rows`` or ``cols`` is non-int or out of bounds.
+    """
+    for name, value in (("rows", rows), ("cols", cols)):
+        if not isinstance(value, int) or isinstance(value, bool):
+            raise ValueError(
+                f"{name} must be int, got {type(value).__name__}: {value!r}"
+            )
+        if value < GRID_DIM_MIN or value > GRID_DIM_MAX:
+            raise ValueError(
+                f"{name} must be in [{GRID_DIM_MIN}, {GRID_DIM_MAX}], got {value}"
+            )
+    return int(rows), int(cols)
+
+
 class FormationFileIO:
     """Encapsulates all read/write file operations for the formation."""
 
@@ -55,19 +78,21 @@ class FormationFileIO:
         return f"choraufstellung-{date_part}-version-{today}.json"
 
     def save_to_path(self, filepath: str, grid: Any, metadata: Optional[dict] = None) -> bool:
-        """Persist the formation to ``filepath`` via the storage layer.
-
-        Returns ``True`` on success, ``False`` if the storage backend
-        reports a failure. The atomic write (tmp + os.replace) is
-        handled by :class:`FormationStorage` itself.
-        """
-        placed = grid.get_placed_singers()
+        """Persist the formation to ``filepath`` via the storage layer."""
+        # Hotfix Sprint 2.4-Anhang: kwarg heisst placed_singers, nicht placed.
+        placed_singers = grid.get_placed_singers()
+        # host.singers enthaelt platzierte + unplatzierte; grid.singers nur platzierte.
+        host_singers = getattr(grid, "_host_singers", None)
+        if host_singers is None and hasattr(grid, "host"):
+            host_singers = getattr(grid.host, "singers", None)
+        if host_singers is None:
+            host_singers = list(getattr(grid, "singers", []))
         return self._storage.save_formation(
-            singers=getattr(grid, "_host_singers", None) or [],
+            singers=host_singers,
             rows=grid.rows,
             cols=grid.cols,
             filepath=filepath,
-            placed=placed,
+            placed_singers=placed_singers,
             staggered=grid.staggered,
             metadata=metadata,
         )
@@ -78,9 +103,15 @@ class FormationFileIO:
         Mutates ``host.singers``, ``host.grid.{rows,cols,staggered,singers}``,
         ``host.pool``, and resets ``host._is_modified`` to ``False``.
         Falls back to the existing defaults when keys are missing.
+        Raises:
+            ValueError: when ``rows`` or ``cols`` is outside the allowed range
+                (M5-FIX-A).
         """
-        rows = data.get("rows", 3)
-        cols = data.get("cols", 4)
+        # M5-FIX-A: enforce 1 <= value <= 50 BEFORE any mutation, so that
+        # out-of-bounds input leaves the host in its original state.
+        raw_rows = data.get("rows", 3)
+        raw_cols = data.get("cols", 4)
+        rows, cols = _validate_dimensions(raw_rows, raw_cols)
         staggered = data.get("staggered", False)
 
         # Re-hydrate singers via Singer.from_dict when available so that
@@ -217,23 +248,59 @@ class FormationFileIO:
     # private helpers
     # ------------------------------------------------------------------
 
-    def _rehydrate_singers(self, payloads: List[dict]) -> List[Any]:
-        """Re-hydrate singer dicts into :class:`Singer` instances.
+    def _rehydrate_singers(self, payloads: List[Any]) -> List[Any]:
+        """Re-hydrate singer payloads into :class:`Singer` instances.
 
-        Falls back to a generic object with the same attributes if the
-        :mod:`singer_model` module is unavailable (e.g. when only a
-        JSON payload is loaded without Qt).
+        Robust gegen Misch-Inputs:
+        * Hat ``p`` singer-typische Attribute (``.name``, ``.voice_group``,
+          ``.singer_id``, ``.row``, ``.col``), wird die Instanz
+          unveraendert durchgereicht.
+        * Ist ``p`` ein dict, wird ``Singer.from_dict(p)`` aufgerufen.
+        * Andernfalls (None, unerwarteter Typ) wird der Eintrag uebersprungen.
+
+        Hintergrund (Sprint-2-Hotfix): Der Aufrufer ``main._load_formation_data``
+        delegiert jetzt an :meth:`load_formation_data`, und der
+        ``data["singers"]``-Slot kann in manchen Pfaden bereits hydrierte
+        Sänger enthalten (z. B. aus dem Recovery-Pfad). Die alte Variante
+        ``Singer.from_dict(p)`` warf dann ``AttributeError: 'Singer' object
+        has no attribute 'get'``.
+
+        Wir nutzen hier bewusst Duck-Typing statt ``isinstance`` mit
+        ``from singer_model import Singer``, weil die ``Singer``-Klasse
+        aus zwei verschiedenen Modul-Pfaden geladen werden kann
+        (``chormanager.choraufstellung.singer_model.Singer`` vs.
+        ``singer_model.Singer`` relativ zum file_io-Modul), und das
+        wuerde sonst den isinstance-Check brechen.
         """
-        try:
-            from singer_model import Singer  # type: ignore
+        _SINGER_TYPICAL_ATTRS = ("name", "voice_group", "singer_id", "row", "col")
 
-            return [Singer.from_dict(p) for p in payloads]
-        except Exception:
-            # Build a duck-typed singer so the grid can read .row / .col / .affinity
-            out: List[Any] = []
-            for p in payloads:
+        out: List[Any] = []
+        for p in payloads or []:
+            if p is None:
+                continue
+            # Duck-Type: bereits hydrierter Sänger
+            if all(hasattr(p, attr) for attr in _SINGER_TYPICAL_ATTRS):
+                out.append(p)
+                continue
+            if isinstance(p, dict):
+                try:
+                    # Late import, da Singer.from_dict den vollen Singer braucht.
+                    from singer_model import Singer  # type: ignore
+
+                    out.append(Singer.from_dict(p))
+                    continue
+                except Exception:
+                    # Fallback unten
+                    pass
+            # Generischer Fallback: Anonymous-Singer mit allen Attributen.
+            # Wird nur ausgefuehrt, wenn das Objekt Mapping-Protokoll hat.
+            if not hasattr(p, "items"):
+                continue
+            try:
                 s = type("_AnonSinger", (), {})()
-                for k, v in (p or {}).items():
+                for k, v in p.items():
                     setattr(s, k, v)
                 out.append(s)
-            return out
+            except Exception:
+                continue
+        return out

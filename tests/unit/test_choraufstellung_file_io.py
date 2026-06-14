@@ -61,11 +61,12 @@ class _FakeStorage:
         self.load_data = load_data
         self.calls: List[dict] = []
 
-    def save_formation(self, singers, rows, cols, filepath, placed,
+    def save_formation(self, singers, rows, cols, filepath, placed_singers,
                        staggered, **kwargs) -> bool:
+        # Mirrors FormationStorage.save_formation signature (placed_singers kwarg).
         self.calls.append({
             "singers": singers, "rows": rows, "cols": cols,
-            "filepath": filepath, "placed": placed,
+            "filepath": filepath, "placed_singers": placed_singers,
             "staggered": staggered, "kwargs": kwargs,
         })
         return self.save_ok
@@ -234,3 +235,78 @@ class TestLoadFormationData:
         assert host.grid.rows == 3
         assert host.grid.cols == 4
         assert host.grid.staggered is False
+
+
+class TestValidateDimensions:
+    """M5-FIX-A: ``_validate_dimensions`` enforces 1 <= value <= 50."""
+
+    def _host(self):
+        class _Host:
+            def __init__(self):
+                self.singers: list = []
+                self.grid = _FakeGrid()
+                self.pool = types.SimpleNamespace(
+                    singers=[], placed_singer_ids=set(), update_singers=lambda *a, **k: None,
+                )
+                self._is_modified = True
+                self.update_grid_count = lambda: None
+                self.rs = None
+                self.cs = None
+        return _Host()
+
+    def test_valid_dimensions_pass(self):
+        from file_io import FormationFileIO, _validate_dimensions
+        # Should not raise
+        assert _validate_dimensions(1, 1) == (1, 1)
+        assert _validate_dimensions(50, 50) == (50, 50)
+        assert _validate_dimensions(3, 4) == (3, 4)
+
+    def test_rows_below_minimum_raises_value_error(self):
+        from file_io import _validate_dimensions
+        with pytest.raises(ValueError, match="rows"):
+            _validate_dimensions(0, 4)
+
+    def test_rows_above_maximum_raises_value_error(self):
+        from file_io import _validate_dimensions
+        with pytest.raises(ValueError, match="rows"):
+            _validate_dimensions(51, 4)
+
+    def test_cols_below_minimum_raises_value_error(self):
+        from file_io import _validate_dimensions
+        with pytest.raises(ValueError, match="cols"):
+            _validate_dimensions(3, 0)
+
+    def test_cols_above_maximum_raises_value_error(self):
+        from file_io import _validate_dimensions
+        with pytest.raises(ValueError, match="cols"):
+            _validate_dimensions(3, 51)
+
+    def test_negative_rows_raises_value_error(self):
+        from file_io import _validate_dimensions
+        with pytest.raises(ValueError, match="rows"):
+            _validate_dimensions(-1, 4)
+
+    def test_load_formation_data_rejects_out_of_bounds(self):
+        from file_io import FormationFileIO
+        fio = FormationFileIO(_FakeStorage())
+        host = self._host()
+        # Snapshot the host BEFORE the call (default _FakeGrid rows=3, cols=4).
+        original_rows = host.grid.rows
+        original_cols = host.grid.cols
+        data = {"rows": 100, "cols": 4, "singers": []}
+        with pytest.raises(ValueError, match="rows"):
+            fio.load_formation_data(host, data)
+        # host.grid must NOT have been mutated
+        assert host.grid.rows == original_rows
+        assert host.grid.cols == original_cols
+        assert host.singers == []
+        assert host._is_modified is True
+
+    def test_load_formation_data_accepts_boundary_values(self):
+        from file_io import FormationFileIO
+        fio = FormationFileIO(_FakeStorage())
+        host = self._host()
+        data = {"rows": 1, "cols": 50, "singers": []}
+        fio.load_formation_data(host, data)
+        assert host.grid.rows == 1
+        assert host.grid.cols == 50

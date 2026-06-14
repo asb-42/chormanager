@@ -1,6 +1,7 @@
 # TESTABLE: Arrangement algorithms - pure Python, no Qt dependencies
 from dataclasses import dataclass
 from typing import List, Callable, Optional, Tuple, Dict, Any
+from .grid_engine import GridEngine, GridConfig
 
 
 def get_voice_group_value(vg) -> str:
@@ -354,10 +355,16 @@ class AffinityRule(ArrangementRule):
         self.max_swaps = max_swaps
         self.max_iterations = max_iterations
 
-    def apply(self, singers: List[SingerRef], rows: int, cols: int, 
-              staggered: bool = False, 
+    def apply(self, singers: List[SingerRef], rows: int, cols: int,
+              staggered: bool = False,
               get_singer_at_fn: Optional[Callable] = None,
-              is_occupied_fn: Optional[Callable] = None) -> ArrangementResult:
+              is_occupied_fn: Optional[Callable] = None,
+              grid_engine: Optional[GridEngine] = None) -> ArrangementResult:
+        # R-1 Fix: GridEngine als Bounds-Gate verwenden, falls injiziert.
+        # Fallback: Eigene Bounds-Pruefung, wenn kein GridEngine vorhanden.
+        _engine = grid_engine
+        if _engine is None:
+            _engine = GridEngine(GridConfig(rows=rows, cols=cols, staggered=staggered))
         pairs = self._build_pairs(singers)
 
         if not pairs:
@@ -394,6 +401,13 @@ class AffinityRule(ArrangementRule):
                 for nr1, nc1 in neighbors1:
                     for nr2, nc2 in neighbors2:
                         if (nr1, nc1) == (nr2, nc2):
+                            continue
+
+                        # R-1 Fix: Bounds-Check via GridEngine BEVOR Singer-Positionen mutiert werden.
+                        # Out-of-bounds-Swaps werden komplett verworfen.
+                        if not _engine.is_valid_position(nr1, nc1):
+                            continue
+                        if not _engine.is_valid_position(nr2, nc2):
                             continue
 
                         occ1, occ2 = None, None
@@ -447,13 +461,33 @@ class AffinityRule(ArrangementRule):
         return ArrangementResult(success=True, singers=singers, swap_count=swapped, cost=final_cost)
 
     def _build_pairs(self, singers: List[SingerRef]) -> List[Tuple[SingerRef, SingerRef]]:
-        pairs = []
+        """Build affinity pairs with mutual agreement.
+
+        C4.2 (subplan_optimizer_perf.md): O(n) via a singer_id dict
+        instead of the previous O(n²) double-loop. Also de-duplicates
+        symmetric pairs (a->b and b->a both refer to the same pair).
+        """
+        singer_by_id = {s.singer_id: s for s in singers}
+        pairs: List[Tuple[SingerRef, SingerRef]] = []
+        seen: set = set()
         for s in singers:
-            if s.affinity:
-                for other in singers:
-                    if other.singer_id == s.affinity and other.affinity == s.singer_id:
-                        if (s.row >= 0 and s.col >= 0) and (other.row >= 0 and other.col >= 0):
-                            pairs.append((s, other))
+            if not s.affinity:
+                continue
+            if s.row < 0 or s.col < 0:
+                continue
+            partner = singer_by_id.get(s.affinity)
+            if partner is None:
+                continue
+            if partner.affinity != s.singer_id:
+                continue
+            if partner.row < 0 or partner.col < 0:
+                continue
+            # De-duplicate: only keep (a, b) where a.singer_id < b.singer_id.
+            key = tuple(sorted([s.singer_id, partner.singer_id]))
+            if key in seen:
+                continue
+            seen.add(key)
+            pairs.append((s, partner))
         return pairs
 
     def _get_neighbor_positions(self, singer: SingerRef, rows: int, cols: int, 
@@ -583,7 +617,11 @@ class VoiceGroupCohesionRule(ArrangementRule):
                         
                         s1 = group[i]
                         s2 = group[j]
-                        
+                        # R-2 Fix: Sanity-Check (doppelte Sänger vermeiden)
+                        assert s1.singer_id != s2.singer_id, (
+                            f"VoiceGroupCohesionRule: s1/s2 identisch (singer_id={s1.singer_id})"
+                        )
+
                         occupied = set()
                         for s in singers:
                             if s.row >= 0 and s.col >= 0:
@@ -617,6 +655,10 @@ class VoiceGroupCohesionRule(ArrangementRule):
                                 continue
                             if other.singer_id in (s1.singer_id, s2.singer_id):
                                 continue
+                            # R-2 Fix: Sanity-Check (doppelte Sänger vermeiden)
+                            assert s1.singer_id != other.singer_id, (
+                                f"VoiceGroupCohesionRule: s1/other identisch (singer_id={s1.singer_id})"
+                            )
                             
                             old_row2, old_col2 = s2.row, s2.col
                             old_other_row, old_other_col = other.row, other.col

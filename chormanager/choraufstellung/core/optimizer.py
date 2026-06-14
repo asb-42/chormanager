@@ -48,6 +48,11 @@ class OptimizeFormationCommand:
         self.grid.refresh_grid()
 
     def undo(self):
+        # R-3 Fix: tiles.clear() vor refresh_grid(), um stale-Tile-Referenzen
+        # zu vermeiden, falls die Singer-Objekte zwischen redo() und undo()
+        # ersetzt wurden (z. B. durch externes Reload).
+        if hasattr(self.grid, "tiles") and isinstance(self.grid.tiles, dict):
+            self.grid.tiles.clear()
         for s in self.grid.singers:
             if s.singer_id in self.old_positions:
                 s.row, s.col = self.old_positions[s.singer_id]
@@ -85,8 +90,12 @@ class FormationOptimizer:
                     filtered.append(rid)
             selected_rules = filtered
 
+        # C-2 Fix: cmd.redo() wird hier NICHT mehr explizit aufgerufen.
+        # ``grid.undo_stack.push(cmd)`` ruft ``cmd.redo()`` genau einmal auf
+        # (via QtUndoStack.push, das die QUndoStack-Konvention emuliert).
+        # Der frühere Doppel-Redo fuehrte zu swap_count=2*N und
+        # inkonsistenten old/new_positions.
         cmd = OptimizeFormationCommand(grid, selected_rules)
-        cmd.redo()
 
         if hasattr(grid, 'undo_stack') and grid.undo_stack:
             grid.undo_stack.push(cmd)

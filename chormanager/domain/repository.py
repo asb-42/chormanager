@@ -1,10 +1,40 @@
 """Repository layer for ChorManager."""
 
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Dict, Iterable, Any
 
 from ..data.database import Database
 from .models import Singer, Event, Availability, Project, Besetzung, Repertoire
+
+
+# --- NEW: S-1 Fix: SQL-Whitelist (S-1) ----------------------------
+# Verteidigung gegen Spalten-Injection via f-string-Interpolation in
+# INSERT/UPDATE-Statements. Unbekannte Spalten fuehren zu ValueError,
+# leise Drop-Attacken werden so unmöglich.
+def _whitelist_kwargs(kwargs: Dict[str, Any], allowed: Iterable[str]) -> Dict[str, Any]:
+    """Filtert kwargs gegen eine Spalten-Whitelist.
+
+    Args:
+        kwargs: Input-Keyword-Arguments (z. B. aus create(**kwargs)).
+        allowed: Erlaubte Spaltennamen (z. B. Klasse._COLS).
+
+    Returns:
+        Dict[str, Any]: Neues Dict, das nur erlaubte Spalten enthaelt
+        (Reihenfolge aus kwargs erhalten).
+
+    Raises:
+        ValueError: Wenn kwargs eine nicht erlaubte Spalte enthaelt.
+    """
+    allowed_set = set(allowed)
+    unknown = [k for k in kwargs.keys() if k not in allowed_set]
+    if unknown:
+        raise ValueError(
+            f"Unknown column(s) for INSERT/UPDATE: {unknown!r}. "
+            f"Allowed: {sorted(allowed_set)}"
+        )
+    # Reihenfolge beibehalten, aber gegen Whitelist filtern
+    return {k: v for k, v in kwargs.items() if k in allowed_set}
+# --- /S-1 Fix ------------------------------------------------------
 
 
 class SingerRepository:
@@ -61,12 +91,14 @@ class SingerRepository:
         kwargs["created_at"] = now
         kwargs["updated_at"] = now
 
-        columns = ", ".join(kwargs.keys())
-        placeholders = ", ".join(["?"] * len(kwargs))
+        # S-1 Fix: Whitelist-Filter vor Spalten-Interpolation
+        filtered = _whitelist_kwargs(kwargs, self._SINGER_COLS)
+        columns = ", ".join(filtered.keys())
+        placeholders = ", ".join(["?"] * len(filtered))
 
         self.db.execute(
             f"INSERT INTO singers ({columns}) VALUES ({placeholders})",
-            tuple(kwargs.values()),
+            tuple(filtered.values()),
         )
         self.db.commit()
 
@@ -121,22 +153,24 @@ class SingerRepository:
         """
         kwargs["updated_at"] = datetime.now().isoformat()
 
-        set_clause = ", ".join([f"{k} = ?" for k in kwargs.keys()])
+        # S-1 Fix: Whitelist-Filter vor Spalten-Interpolation
+        filtered = _whitelist_kwargs(kwargs, self._SINGER_COLS)
+        set_clause = ", ".join([f"{k} = ?" for k in filtered.keys()])
         old_affinity = None
-        if "affinity_uuid" in kwargs:
+        if "affinity_uuid" in filtered:
             singer_before = self.get_by_id(singer_id)
             if singer_before:
                 old_affinity = singer_before.affinity_uuid
 
         self.db.execute(
             f"UPDATE singers SET {set_clause} WHERE id = ?",
-            tuple(kwargs.values()) + (singer_id,),
+            tuple(filtered.values()) + (singer_id,),
         )
         self.db.commit()
 
         # Handle bidirectional affinity synchronization
-        if "affinity_uuid" in kwargs:
-            new_affinity = kwargs["affinity_uuid"]
+        if "affinity_uuid" in filtered:
+            new_affinity = filtered["affinity_uuid"]
             singer_after = self.get_by_id(singer_id)
             if singer_after:
                 # If there was an old affinity and it's different from new, clear the old partner's affinity
@@ -197,6 +231,18 @@ class SingerRepository:
 class EventRepository:
     """Repository for Event operations."""
 
+    _EVENT_COLS = [
+        "id",
+        "name",
+        "date",
+        "event_type",
+        "location",
+        "description",
+        "project_id",
+        "created_at",
+        "updated_at",
+    ]
+
     def __init__(self, db: Database):
         """Initialize repository.
 
@@ -221,12 +267,14 @@ class EventRepository:
         kwargs["created_at"] = now
         kwargs["updated_at"] = now
 
-        columns = ", ".join(kwargs.keys())
-        placeholders = ", ".join(["?"] * len(kwargs))
+        # S-1 Fix: Whitelist-Filter vor Spalten-Interpolation
+        filtered = _whitelist_kwargs(kwargs, self._EVENT_COLS)
+        columns = ", ".join(filtered.keys())
+        placeholders = ", ".join(["?"] * len(filtered))
 
         self.db.execute(
             f"INSERT INTO events ({columns}) VALUES ({placeholders})",
-            tuple(kwargs.values()),
+            tuple(filtered.values()),
         )
         self.db.commit()
 
@@ -261,11 +309,13 @@ class EventRepository:
         """Update an event."""
         kwargs["updated_at"] = datetime.now().isoformat()
 
-        set_clause = ", ".join([f"{k} = ?" for k in kwargs.keys()])
+        # S-1 Fix: Whitelist-Filter vor Spalten-Interpolation
+        filtered = _whitelist_kwargs(kwargs, self._EVENT_COLS)
+        set_clause = ", ".join([f"{k} = ?" for k in filtered.keys()])
 
         self.db.execute(
             f"UPDATE events SET {set_clause} WHERE id = ?",
-            tuple(kwargs.values()) + (event_id,),
+            tuple(filtered.values()) + (event_id,),
         )
         self.db.commit()
 
@@ -282,6 +332,15 @@ class EventRepository:
 class AvailabilityRepository:
     """Repository for Availability operations."""
 
+    _AVAILABILITY_COLS = [
+        "id",
+        "singer_id",
+        "event_id",
+        "status",
+        "created_at",
+        "updated_at",
+    ]
+
     def __init__(self, db: Database):
         """Initialize repository."""
         self.db = db
@@ -295,16 +354,18 @@ class AvailabilityRepository:
         kwargs["created_at"] = now
         kwargs["updated_at"] = now
 
-        columns = ", ".join(kwargs.keys())
-        placeholders = ", ".join(["?"] * len(kwargs))
+        # S-1 Fix: Whitelist-Filter vor Spalten-Interpolation
+        filtered = _whitelist_kwargs(kwargs, self._AVAILABILITY_COLS)
+        columns = ", ".join(filtered.keys())
+        placeholders = ", ".join(["?"] * len(filtered))
 
         self.db.execute(
             f"INSERT INTO availability ({columns}) VALUES ({placeholders})",
-            tuple(kwargs.values()),
+            tuple(filtered.values()),
         )
         self.db.commit()
 
-        return self.get_by_ids(kwargs["singer_id"], kwargs["event_id"])
+        return self.get_by_ids(filtered["singer_id"], filtered["event_id"])
 
     def get_by_ids(self, singer_id: str, event_id: str) -> Optional[Availability]:
         """Get availability by singer and event IDs."""
@@ -338,14 +399,29 @@ class AvailabilityRepository:
     def update(
         self, singer_id: str, event_id: str, status: str
     ) -> Optional[Availability]:
-        """Update availability status."""
+        """Update availability status.
+
+        m7-FIX-A: avoid ``ON CONFLICT ... DO UPDATE`` which would create
+        a new row (with a freshly generated ``id``) on conflict. Instead
+        run ``INSERT OR IGNORE`` first and then a separate ``UPDATE``
+        that targets the existing row by the (singer_id, event_id) key.
+        This keeps ``id`` stable across repeated calls.
+        """
         now = datetime.now().isoformat()
 
-        result = self.db.execute(
-            """INSERT INTO availability (id, singer_id, event_id, status, created_at, updated_at)
-               VALUES (?, ?, ?, ?, ?, ?)
-               ON CONFLICT(singer_id, event_id) DO UPDATE SET status = ?, updated_at = ?""",
-            (self.db.generate_id(), singer_id, event_id, status, now, now, status, now),
+        # Step 1: try to insert a fresh row (idempotent via OR IGNORE).
+        self.db.execute(
+            """INSERT OR IGNORE INTO availability
+                 (id, singer_id, event_id, status, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+            (self.db.generate_id(), singer_id, event_id, status, now, now),
+        )
+        # Step 2: update the existing row by key. The id stays untouched.
+        self.db.execute(
+            """UPDATE availability
+                  SET status = ?, updated_at = ?
+                WHERE singer_id = ? AND event_id = ?""",
+            (status, now, singer_id, event_id),
         )
         self.db.commit()
 
@@ -365,6 +441,16 @@ class AvailabilityRepository:
 class ProjectRepository:
     """Repository for Project operations."""
 
+    _PROJECT_COLS = [
+        "id",
+        "name",
+        "description",
+        "is_active",
+        "spielzeit",
+        "created_at",
+        "updated_at",
+    ]
+
     def __init__(self, db: Database):
         """Initialize repository."""
         self.db = db
@@ -378,12 +464,14 @@ class ProjectRepository:
         kwargs["created_at"] = now
         kwargs["updated_at"] = now
 
-        columns = ", ".join(kwargs.keys())
-        placeholders = ", ".join(["?"] * len(kwargs))
+        # S-1 Fix: Whitelist-Filter vor Spalten-Interpolation
+        filtered = _whitelist_kwargs(kwargs, self._PROJECT_COLS)
+        columns = ", ".join(filtered.keys())
+        placeholders = ", ".join(["?"] * len(filtered))
 
         self.db.execute(
             f"INSERT INTO projects ({columns}) VALUES ({placeholders})",
-            tuple(kwargs.values()),
+            tuple(filtered.values()),
         )
         self.db.commit()
 
@@ -416,20 +504,27 @@ class ProjectRepository:
         return Project(**dict(row))
 
     def set_active(self, project_id: str) -> None:
-        """Set a project as active."""
-        self.db.execute("UPDATE projects SET is_active = 0")
-        self.db.execute("UPDATE projects SET is_active = 1 WHERE id = ?", (project_id,))
-        self.db.commit()
+        """Set a project as active.
+
+        m6-FIX-A: both UPDATEs run inside ``db.transaction()`` so that
+        concurrent calls cannot leave the database in a state with zero
+        or two active projects.
+        """
+        with self.db.transaction():
+            self.db.execute("UPDATE projects SET is_active = 0")
+            self.db.execute("UPDATE projects SET is_active = 1 WHERE id = ?", (project_id,))
 
     def update(self, project_id: str, **kwargs) -> Optional[Project]:
         """Update a project."""
         kwargs["updated_at"] = datetime.now().isoformat()
 
-        set_clause = ", ".join([f"{k} = ?" for k in kwargs.keys()])
+        # S-1 Fix: Whitelist-Filter vor Spalten-Interpolation
+        filtered = _whitelist_kwargs(kwargs, self._PROJECT_COLS)
+        set_clause = ", ".join([f"{k} = ?" for k in filtered.keys()])
 
         self.db.execute(
             f"UPDATE projects SET {set_clause} WHERE id = ?",
-            tuple(kwargs.values()) + (project_id,),
+            tuple(filtered.values()) + (project_id,),
         )
         self.db.commit()
 
@@ -527,11 +622,13 @@ class BesetzungRepository:
         if "singer_ids" in kwargs and isinstance(kwargs["singer_ids"], list):
             kwargs["singer_ids"] = json.dumps(kwargs["singer_ids"])
 
-        set_clause = ", ".join([f"{k} = ?" for k in kwargs.keys()])
+        # S-1 Fix: Whitelist-Filter vor Spalten-Interpolation
+        filtered = _whitelist_kwargs(kwargs, self._BESETZUNG_COLS)
+        set_clause = ", ".join([f"{k} = ?" for k in filtered.keys()])
 
         self.db.execute(
             f"UPDATE besetzung SET {set_clause} WHERE id = ?",
-            tuple(kwargs.values()) + (besetzung_id,),
+            tuple(filtered.values()) + (besetzung_id,),
         )
         self.db.commit()
 
@@ -636,11 +733,13 @@ class RepertoireRepository:
     def update(self, repertoire_id: str, **kwargs) -> Optional[Repertoire]:
         kwargs["updated_at"] = datetime.now().isoformat()
 
-        set_clause = ", ".join([f"{k} = ?" for k in kwargs.keys()])
+        # S-1 Fix: Whitelist-Filter vor Spalten-Interpolation
+        filtered = _whitelist_kwargs(kwargs, self._REPERTOIRE_COLS)
+        set_clause = ", ".join([f"{k} = ?" for k in filtered.keys()])
 
         self.db.execute(
             f"UPDATE repertoire SET {set_clause} WHERE id = ?",
-            tuple(kwargs.values()) + (repertoire_id,),
+            tuple(filtered.values()) + (repertoire_id,),
         )
         self.db.commit()
 

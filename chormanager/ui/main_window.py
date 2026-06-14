@@ -1,4 +1,32 @@
-"""Main window for ChorManager."""
+"""Main window for ChorManager.
+
+Architecture note (A1-SUBPLAN-A, Sprint 4.5):
+-------------------------------------------------
+The :class:`MainWindow` class is currently 924 LOC. It mixes UI shell
+code with behaviour contributed by 4 mixins:
+
+* :class:`TabRouterMixin` (``chormanager.ui.tab_router``) — tab-routing
+* :class:`ChorAufstellungLauncherMixin` (``chormanager.ui.choraufstellung_launcher``)
+* :class:`ExportCoreMixin`, ``ExportJsonSyncMixin``, ``ExportTabSpecificMixin``
+  (``chormanager.ui.export_controller``) — export
+* :class:`VersionCheckDialog` (``chormanager.ui.update_controller``) — updates
+
+A1-SUBPLAN-A migrates these mixins to **composition** (``QObject``
+controllers owned by MainWindow). Sprint 4.4 introduced the first
+piece — :class:`chormanager.ui.tab_signals.TabSignals` — without
+breaking the mixin. Future sprints continue the migration:
+
+* Sprint 4.x: replace ``ChorAufstellungLauncherMixin`` with
+  :class:`ChorAufstellungTab` (composition).
+* Sprint 4.x: split ``export_controller.py`` (3 mixins, 883 LOC)
+  into ``ExportController(QObject)`` and per-format sub-controllers.
+* Sprint 4.x: collapse ``UpdateController`` into a non-mixin
+  :class:`UpdateWorker(QObject)`.
+
+Migration rule for new code: **do not add new methods to MainWindow
+or any of the mixins above.** Instead, subscribe to ``TabSignals``
+or instantiate a controller with ``MainWindow`` as host.
+"""
 
 import sys
 import json

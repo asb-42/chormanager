@@ -26,9 +26,12 @@ Public surface
 from __future__ import annotations
 
 import json
+import logging
 import os
 import sqlite3
 from typing import TYPE_CHECKING, Any, List, Optional
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:  # pragma: no cover
     pass
@@ -136,8 +139,10 @@ class ChorManagerBridge:
         try:
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-        except Exception as exc:  # noqa: BLE001 — never raise
-            print(f"Error reading event data file: {exc}")
+        except (OSError, json.JSONDecodeError, ValueError) as exc:
+            # M-2 Fix: Konkrete Exceptions statt breitem `except Exception`.
+            # Betroffene Fehlerklasse: Datei-I/O + JSON-Parse.
+            logger.error("Error reading event data file: %s", exc)
             return False
 
         event_info = data.get("event", {}) or {}
@@ -198,8 +203,10 @@ class ChorManagerBridge:
                 )
             rows = cur.fetchall()
             conn.close()
-        except Exception as exc:  # noqa: BLE001 — never raise
-            print(f"Error loading from chormanager: {exc}")
+        except (OSError, sqlite3.Error, ValueError) as exc:
+            # M-2 Fix: Konkrete Exceptions (sqlite3.Error deckt ProgrammingError,
+            # DatabaseError, OperationalError ab).
+            logger.error("Error loading from chormanager: %s", exc)
             return False
 
         if not rows:
@@ -253,5 +260,14 @@ class ChorManagerBridge:
     def _refresh_pool(self) -> None:
         """Push the new singer list into the pool and clear the modified flag."""
         self._host.pool.singers = self._host.singers
-        self._host.pool.update_singers(self._host.singers, set())
+        # R-6 Fix: placed_singer_ids aus dem Grid synchronisieren (nicht leeres Set).
+        # Nach einem Bridge-Load muss der Pool wissen, welche Sänger im Grid platziert sind.
+        # Defensive: falls _host.grid nicht existiert (z.B. in Tests/Mock-Umgebungen),
+        # verwende leeres Set als Fallback.
+        grid = getattr(self._host, "grid", None)
+        if grid is not None and hasattr(grid, "get_placed_singer_ids"):
+            placed_ids = grid.get_placed_singer_ids()
+        else:
+            placed_ids = set()
+        self._host.pool.update_singers(self._host.singers, placed_ids)
         self._host._is_modified = False
