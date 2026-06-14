@@ -19,6 +19,9 @@ from chormanager.core.response_matrix import (
     SingerRow,
     GroupBlock,
     ResponseCell,
+    RegisterSum,
+    REGISTERS,
+    REGISTER_VOICE_GROUPS,
     VOICE_GROUP_ORDER,
 )
 
@@ -287,3 +290,198 @@ def test_event_with_missing_date_has_empty_label():
     matrix = build_response_matrix([], events, [])
     # The date part is empty; the suffix may still be present
     assert matrix.columns[0].label == " Probe".strip() or matrix.columns[0].label == "Probe"
+
+
+# ===========================================================================
+# Register sums (Chorleiter-Wunsch): Sopran / Alt / Tenor / Bass
+# ===========================================================================
+# A "register" groups the two voice groups of a choral section, e.g.
+#   Sopran = Sopran 1 + Sopran 2
+#   Alt    = Alt 1 + Alt 2
+#   Tenor  = Tenor 1 + Tenor 2
+#   Bass   = Bass 1 + Bass 2
+#
+# The matrix must expose per-event counts of "yes" responses per register,
+# so the ODT/PDF renderers can draw one summary row per register between
+# the per-group subtotals and the grand total.
+
+
+# --- 13. RegisterSum dataclass exists and is well-formed ------------------
+def test_register_sum_dataclass_is_frozen():
+    """RegisterSum is a small immutable value object."""
+    rs = RegisterSum(register="Sopran", counts=[1, 2, 3])
+    assert rs.register == "Sopran"
+    assert rs.counts == [1, 2, 3]
+    # frozen: cannot mutate
+    with pytest.raises(Exception):
+        rs.register = "Alt"  # type: ignore[misc]
+
+
+# --- 14. REGISTERS constant has the four canonical names -----------------
+def test_registers_constant_has_four_entries_in_canonical_order():
+    """REGISTERS lists the four choral registers in display order."""
+    assert REGISTERS == ["Sopran", "Alt", "Tenor", "Bass"]
+
+
+def test_register_voice_groups_mapping_aggregates_two_voice_groups():
+    """Each register is the sum of exactly two voice groups."""
+    assert REGISTER_VOICE_GROUPS == {
+        "Sopran": ["Sopran 1", "Sopran 2"],
+        "Alt":    ["Alt 1", "Alt 2"],
+        "Tenor":  ["Tenor 1", "Tenor 2"],
+        "Bass":   ["Bass 1", "Bass 2"],
+    }
+
+
+# --- 15. Empty matrix still has the four register sum slots ------------
+def test_empty_matrix_has_four_register_sum_slots():
+    """The empty matrix must still expose the four register-sum rows
+    (with zero counts), so the renderer can draw a consistent table
+    shape even when no singers are present."""
+    matrix = build_response_matrix([], [], [])
+    assert hasattr(matrix, "register_sums")
+    assert [rs.register for rs in matrix.register_sums] == [
+        "Sopran", "Alt", "Tenor", "Bass",
+    ]
+    assert all(rs.counts == [] for rs in matrix.register_sums)
+
+
+# --- 16. Register sums computed for each event ----------------------------
+def test_register_sums_aggregates_per_voice_group_per_event():
+    """With 1 Sopran 1 'yes' and 1 Sopran 2 'yes' on e1, the Sopran register
+    sum for e1 must be 2."""
+    events = [_event("e1", "2026-05-15T18:00:00")]
+    singers = [
+        _singer("s_s1", "Eva", "Sopran 1"),
+        _singer("s_s2", "Anna", "Sopran 2"),
+        _singer("s_a1", "Maria", "Alt 1"),
+        _singer("s_b1", "Karl", "Bass 1"),
+    ]
+    avs = [
+        _avail("s_s1", "e1", "yes"),
+        _avail("s_s2", "e1", "yes"),
+        _avail("s_a1", "e1", "no"),
+        _avail("s_b1", "e1", "yes"),
+    ]
+    matrix = build_response_matrix(singers, events, avs)
+    # The register_sums must be in REGISTERS order: Sopran, Alt, Tenor, Bass
+    assert [rs.register for rs in matrix.register_sums] == [
+        "Sopran", "Alt", "Tenor", "Bass",
+    ]
+    by_name = {rs.register: rs.counts for rs in matrix.register_sums}
+    assert by_name["Sopran"] == [2]  # 1 from Sopran 1 + 1 from Sopran 2
+    assert by_name["Alt"]    == [0]  # 0 yes, 1 no
+    assert by_name["Tenor"]  == [0]
+    assert by_name["Bass"]   == [1]
+
+
+# --- 17. Register sums across multiple events -----------------------------
+def test_register_sums_per_event_columns():
+    """Each register has one count per event column."""
+    events = [
+        _event("e1", "2026-05-10T18:00:00", "Probe"),
+        _event("e2", "2026-05-15T18:00:00", "Probe"),
+    ]
+    singers = [
+        _singer("s_s1", "Eva",  "Sopran 1"),
+        _singer("s_s2", "Anna", "Sopran 2"),
+    ]
+    avs = [
+        _avail("s_s1", "e1", "yes"),
+        _avail("s_s2", "e1", "yes"),
+        _avail("s_s1", "e2", "yes"),
+        # s_s2 absent for e2
+    ]
+    matrix = build_response_matrix(singers, events, avs)
+    by_name = {rs.register: rs.counts for rs in matrix.register_sums}
+    assert by_name["Sopran"] == [2, 1]
+    # Other registers are 0 for both events
+    assert by_name["Alt"]    == [0, 0]
+    assert by_name["Tenor"]  == [0, 0]
+    assert by_name["Bass"]   == [0, 0]
+
+
+# --- 18. Register sum does NOT count 'no'/'maybe'/'conditional' ----------
+def test_register_sums_only_count_yes():
+    """Only 'yes' counts; 'no', 'maybe', 'conditional' must not contribute."""
+    events = [_event("e1", "2026-05-15T18:00:00")]
+    singers = [
+        _singer("s1", "A", "Sopran 1"),
+        _singer("s2", "B", "Sopran 1"),
+        _singer("s3", "C", "Sopran 2"),
+        _singer("s4", "D", "Sopran 2"),
+    ]
+    avs = [
+        _avail("s1", "e1", "yes"),
+        _avail("s2", "e1", "no"),
+        _avail("s3", "e1", "maybe"),
+        _avail("s4", "e1", "conditional"),
+    ]
+    matrix = build_response_matrix(singers, events, avs)
+    by_name = {rs.register: rs.counts for rs in matrix.register_sums}
+    assert by_name["Sopran"] == [1]
+
+
+# --- 19. Singer-filter applies to register sums too ----------------------
+def test_register_sums_with_singer_filter():
+    """When the matrix is filtered to a Besetzung, register sums must
+    reflect only the filtered singers."""
+    events = [_event("e1", "2026-05-15T18:00:00")]
+    singers = [
+        _singer("s1", "A", "Sopran 1"),
+        _singer("s2", "B", "Sopran 1"),
+        _singer("s3", "C", "Bass 1"),
+    ]
+    avs = [
+        _avail("s1", "e1", "yes"),
+        _avail("s2", "e1", "yes"),
+        _avail("s3", "e1", "yes"),
+    ]
+    matrix = build_response_matrix(
+        singers, events, avs, singer_filter_ids=["s1", "s3"]
+    )
+    by_name = {rs.register: rs.counts for rs in matrix.register_sums}
+    # s1 is Sopran 1 (yes), s3 is Bass 1 (yes) — s2 filtered out
+    assert by_name["Sopran"] == [1]
+    assert by_name["Bass"]   == [1]
+
+
+# --- 20. Sum of register sums equals grand total per event ---------------
+def test_register_sums_sum_equals_grand_total():
+    """Sanity: summing all four register counts per event must equal the
+    grand total per event (since the eight voice groups partition into
+    the four registers)."""
+    events = [
+        _event("e1", "2026-05-10T18:00:00"),
+        _event("e2", "2026-05-15T18:00:00"),
+    ]
+    singers = [
+        _singer("s1", "A", "Sopran 1"),
+        _singer("s2", "B", "Sopran 2"),
+        _singer("s3", "C", "Alt 1"),
+        _singer("s4", "D", "Alt 2"),
+        _singer("s5", "E", "Tenor 1"),
+        _singer("s6", "F", "Tenor 2"),
+        _singer("s7", "G", "Bass 1"),
+        _singer("s8", "H", "Bass 2"),
+    ]
+    avs = [
+        _avail("s1", "e1", "yes"),
+        _avail("s2", "e1", "yes"),
+        _avail("s3", "e1", "yes"),
+        _avail("s4", "e1", "no"),
+        _avail("s5", "e1", "yes"),
+        _avail("s6", "e1", "yes"),
+        _avail("s7", "e1", "yes"),
+        _avail("s8", "e1", "yes"),
+        # e2: only some say yes
+        _avail("s1", "e2", "yes"),
+        _avail("s3", "e2", "yes"),
+        _avail("s5", "e2", "yes"),
+        _avail("s7", "e2", "yes"),
+    ]
+    matrix = build_response_matrix(singers, events, avs)
+    by_name = {rs.register: rs.counts for rs in matrix.register_sums}
+    for col_idx in range(len(matrix.columns)):
+        reg_total = sum(by_name[r][col_idx] for r in REGISTERS)
+        assert reg_total == matrix.totals[col_idx]

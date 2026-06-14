@@ -36,6 +36,18 @@ from xml.sax.saxutils import escape
 from .response_matrix import GroupBlock, ResponseMatrix
 
 
+#: Display name for each register in the export table. The matrix-level
+#: canonical names ("Sopran", "Alt", "Tenor", "Bass") are neutral; the
+#: Chorleiter-Wunsch ("Summe Alti" etc.) requires the slightly different
+#: plural form for "Alt" only.
+REGISTER_DISPLAY_NAMES: dict = {
+    "Sopran": "Summe Sopran",
+    "Alt":    "Summe Alti",
+    "Tenor":  "Summe Tenor",
+    "Bass":   "Summe Bass",
+}
+
+
 # ---------------------------------------------------------------------------
 # ODT XML building blocks
 # ---------------------------------------------------------------------------
@@ -136,6 +148,19 @@ def _build_content_xml(matrix: ResponseMatrix) -> str:
             _cell(str(n), header=False) for n in group.subtotal
         )
         body_rows.append(_row(sub_cells))
+
+    # Register sum rows (Chorleiter-Wunsch): one row per canonical
+    # register, between the per-group subtotal rows and the grand total
+    # row. Each row has one numeric cell per event column.
+    for reg_sum in matrix.register_sums:
+        display = REGISTER_DISPLAY_NAMES.get(
+            reg_sum.register, f"Summe {reg_sum.register}"
+        )
+        reg_cells = [_cell(display, header=False)]
+        reg_cells.extend(
+            _cell(str(n), header=False) for n in reg_sum.counts
+        )
+        body_rows.append(_row(reg_cells))
 
     # Grand total row: "insgesamt" + matrix.totals per event
     grand_cells = [_cell("insgesamt", header=False)]

@@ -291,3 +291,142 @@ def test_body_is_wrapped_in_office_text(tmp_path):
     assert direct_paragraphs == [], (
         "<text:p> must not be a direct child of <office:body>"
     )
+
+
+# ===========================================================================
+# Register sum rows (Chorleiter-Wunsch)
+# ===========================================================================
+# Four additional summary rows must appear between the per-group subtotal
+# rows and the grand total row, one per choral register:
+#   Summe Sopran, Summe Alti, Summe Tenor, Summe Bass
+# Each row has one numeric cell per event column.
+
+
+def _build_register_matrix():
+    """Build a matrix with singers in all 8 canonical voice groups and
+    two events, with deterministic per-event yes counts per register."""
+    singers = [
+        _singer("s1", "A", "Sopran 1"),
+        _singer("s2", "B", "Sopran 2"),
+        _singer("s3", "C", "Alt 1"),
+        _singer("s4", "D", "Alt 2"),
+        _singer("s5", "E", "Tenor 1"),
+        _singer("s6", "F", "Tenor 2"),
+        _singer("s7", "G", "Bass 1"),
+        _singer("s8", "H", "Bass 2"),
+    ]
+    events = [
+        _event("e1", "2026-05-10T18:00:00", "Probe"),
+        _event("e2", "2026-05-15T18:00:00", "Konzert"),
+    ]
+    avs = [
+        _avail("s1", "e1", "yes"),
+        _avail("s2", "e1", "yes"),
+        _avail("s3", "e1", "yes"),
+        _avail("s4", "e1", "no"),
+        _avail("s5", "e1", "yes"),
+        _avail("s6", "e1", "yes"),
+        _avail("s7", "e1", "yes"),
+        _avail("s8", "e1", "yes"),
+        # e2: Sopran=1, Alt=1, Tenor=1, Bass=1
+        _avail("s1", "e2", "yes"),
+        _avail("s3", "e2", "yes"),
+        _avail("s5", "e2", "yes"),
+        _avail("s7", "e2", "yes"),
+    ]
+    return build_response_matrix(singers, events, avs, title="Register-Test")
+
+
+def _get_table_rows(odt):
+    """Return all <table:table-row> elements in document order."""
+    return odt["content"].findall(".//table:table-row", NS)
+
+
+def _row_text(row):
+    """Return the text of the FIRST cell in the row (the label cell)."""
+    cells = row.findall("table:table-cell", NS)
+    if not cells:
+        return ""
+    return "".join(
+        t.text or "" for t in cells[0].iter() if t.text
+    ).strip()
+
+
+# --- 11. ODT contains all four register sum labels ---------------------
+def test_odt_contains_all_four_register_sum_labels(tmp_path):
+    matrix = _build_register_matrix()
+    out = tmp_path / "regs.odt"
+    render_response_matrix_odt(matrix, out)
+    odt = _open_odt(out)
+    rows = _get_table_rows(odt)
+    label_set = {_row_text(r) for r in rows}
+    for label in ("Summe Sopran", "Summe Alti", "Summe Tenor", "Summe Bass"):
+        assert label in label_set, (
+            f"{label!r} row not found in ODT table. Found: {sorted(label_set)}"
+        )
+
+
+# --- 12. Register sum rows appear before the grand total row ----------
+def test_odt_register_sums_appear_before_grand_total(tmp_path):
+    matrix = _build_register_matrix()
+    out = tmp_path / "regs.odt"
+    render_response_matrix_odt(matrix, out)
+    odt = _open_odt(out)
+    rows = _get_table_rows(odt)
+    first_texts = [_row_text(r) for r in rows]
+    pos_sopran = first_texts.index("Summe Sopran")
+    pos_alto   = first_texts.index("Summe Alti")
+    pos_tenor  = first_texts.index("Summe Tenor")
+    pos_bass   = first_texts.index("Summe Bass")
+    pos_total  = first_texts.index("insgesamt")
+    assert pos_sopran < pos_total
+    assert pos_alto   < pos_total
+    assert pos_tenor  < pos_total
+    assert pos_bass   < pos_total
+    # Canonical order: Sopran < Alt < Tenor < Bass
+    assert pos_sopran < pos_alto < pos_tenor < pos_bass
+
+
+# --- 13. Register sum counts match per-event yes counts ---------------
+def test_odt_register_sum_counts_per_event(tmp_path):
+    matrix = _build_register_matrix()
+    out = tmp_path / "regs.odt"
+    render_response_matrix_odt(matrix, out)
+    odt = _open_odt(out)
+    rows = _get_table_rows(odt)
+    expected = {
+        "Summe Sopran": ["2", "1"],
+        "Summe Alti":   ["1", "1"],
+        "Summe Tenor":  ["2", "1"],
+        "Summe Bass":   ["2", "1"],
+    }
+    for row in rows:
+        first = _row_text(row)
+        if first in expected:
+            cells = row.findall("table:table-cell", NS)
+            numbers = [
+                "".join(t.text or "" for t in c.iter() if t.text).strip()
+                for c in cells[1:]
+            ]
+            assert numbers == expected[first], (
+                f"{first}: expected counts {expected[first]}, got {numbers}"
+            )
+            expected.pop(first)
+    assert expected == {}, f"Some register rows not found: {list(expected)}"
+
+
+# --- 14. Empty matrix still has the four register sum rows (all 0) ----
+def test_odt_register_sums_render_zero_for_empty_register(tmp_path):
+    matrix = build_response_matrix(
+        singers=[_singer("s1", "A", "Sopran 1")],
+        events=[_event("e1", "2026-05-15T18:00:00")],
+        availabilities=[_avail("s1", "e1", "yes")],
+        title="Nur Sopran",
+    )
+    out = tmp_path / "only-sopran.odt"
+    render_response_matrix_odt(matrix, out)
+    odt = _open_odt(out)
+    rows = _get_table_rows(odt)
+    label_set = {_row_text(r) for r in rows}
+    for label in ("Summe Sopran", "Summe Alti", "Summe Tenor", "Summe Bass"):
+        assert label in label_set

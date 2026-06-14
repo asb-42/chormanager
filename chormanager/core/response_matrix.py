@@ -55,6 +55,23 @@ VOICE_GROUP_ORDER: List[str] = [
 ]
 
 
+#: Canonical choral registers, in display order. Each register is the
+#: union of two voice groups from :data:`VOICE_GROUP_ORDER`. Unknown
+#: voice groups are not aggregated into any register.
+REGISTERS: List[str] = ["Sopran", "Alt", "Tenor", "Bass"]
+
+
+#: Mapping ``register -> [voice_group, voice_group]`` describing which
+#: two voice groups are summed into a given register. Used by
+#: :func:`build_response_matrix` to compute :attr:`ResponseMatrix.register_sums`.
+REGISTER_VOICE_GROUPS: dict = {
+    "Sopran": ["Sopran 1", "Sopran 2"],
+    "Alt":    ["Alt 1", "Alt 2"],
+    "Tenor":  ["Tenor 1", "Tenor 2"],
+    "Bass":   ["Bass 1", "Bass 2"],
+}
+
+
 # Status -> short label for the matrix cell.
 _STATUS_LABELS = {
     "yes": "X",
@@ -107,6 +124,19 @@ class GroupBlock:
     subtotal: List[int] = field(default_factory=list)
 
 
+@dataclass(frozen=True)
+class RegisterSum:
+    """Per-register aggregate of "yes" responses.
+
+    A register (e.g. ``"Sopran"``) is the union of two voice groups
+    (e.g. ``"Sopran 1"`` + ``"Sopran 2"``). The :attr:`counts` list
+    contains one integer per event column — the number of singers in
+    that register who responded "yes" to that event.
+    """
+    register: str
+    counts: List[int]
+
+
 @dataclass
 class ResponseMatrix:
     """The full aggregated response matrix."""
@@ -114,6 +144,7 @@ class ResponseMatrix:
     columns: List[EventColumn]
     groups: List[GroupBlock]
     totals: List[int]  # one grand total per event column
+    register_sums: List[RegisterSum] = field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
@@ -268,9 +299,27 @@ def build_response_matrix(
         block.subtotal = subtotal
         groups.append(block)
 
+    # 7) Build register sums (Chorleiter-Wunsch): for each canonical
+    #    register, count "yes" responses per event column, summing the
+    #    per-event subtotals of the two voice groups that belong to it.
+    register_sums: List[RegisterSum] = []
+    for register in REGISTERS:
+        vg_list = REGISTER_VOICE_GROUPS.get(register, [])
+        # Map voice_group -> its group block (or None if absent)
+        vg_to_block = {g.voice_group: g for g in groups}
+        per_event = [0] * len(columns)
+        for vg in vg_list:
+            block = vg_to_block.get(vg)
+            if block is None:
+                continue
+            for col_idx, n in enumerate(block.subtotal):
+                per_event[col_idx] += n
+        register_sums.append(RegisterSum(register=register, counts=per_event))
+
     return ResponseMatrix(
         title=title,
         columns=columns,
         groups=groups,
         totals=grand_totals,
+        register_sums=register_sums,
     )

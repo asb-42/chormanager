@@ -25,6 +25,18 @@ from reportlab.platypus import (
     TableStyle,
 )
 
+
+#: Display name for each register in the export table. The matrix-level
+#: canonical names ("Sopran", "Alt", "Tenor", "Bass") are neutral; the
+#: Chorleiter-Wunsch ("Summe Alti" etc.) requires the slightly different
+#: plural form for "Alt" only.
+REGISTER_DISPLAY_NAMES: dict = {
+    "Sopran": "Summe Sopran",
+    "Alt":    "Summe Alti",
+    "Tenor":  "Summe Tenor",
+    "Bass":   "Summe Bass",
+}
+
 from .response_matrix import GroupBlock, ResponseMatrix
 
 
@@ -99,6 +111,21 @@ def _build_table_data(matrix: ResponseMatrix):
         )
         style_cmds.append(
             ("BACKGROUND", (0, row_idx), (-1, row_idx), colors.lightgrey)
+        )
+        row_idx += 1
+
+    # Register sum rows (Chorleiter-Wunsch: Summe Sopran / Summe Alti /
+    # Summe Tenor / Summe Bass). These are drawn between the per-group
+    # subtotal rows and the grand total row.
+    for reg_sum in matrix.register_sums:
+        display = REGISTER_DISPLAY_NAMES.get(reg_sum.register, f"Summe {reg_sum.register}")
+        reg_row = [display] + [str(n) for n in reg_sum.counts]
+        body.append(reg_row)
+        style_cmds.append(
+            ("FONTNAME", (0, row_idx), (-1, row_idx), "Helvetica-Bold")
+        )
+        style_cmds.append(
+            ("BACKGROUND", (0, row_idx), (-1, row_idx), colors.lightyellow),
         )
         row_idx += 1
 
