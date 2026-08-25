@@ -3,14 +3,15 @@
 ## Inhalt
 1. [Installation](#1-installation)
 2. [Oberfläche](#2-oberfläche)
-3. [Projekte verwalten](#3-projekte-verwalten)
-4. [Sänger verwalten](#4-sänger-verwalten)
-5. [Besetzungen](#5-besetzungen)
-6. [Termine und Verfügbarkeit](#6-termine-und-verfugbarkeit)
-7. [Choraufstellung](#7-choraufstellung)
-8. [Repertoire](#8-repertoire)
-9. [Daten exportieren](#9-daten-exportieren)
-10. [Einstellungen](#10-einstellungen)
+3. [Aufgaben – Schritt für Schritt](#3-aufgaben--schritt-für-schritt)
+4. [Projekte verwalten](#4-projekte-verwalten)
+5. [Sänger verwalten](#5-sanger-verwalten)
+6. [Besetzungen](#6-besetzungen)
+7. [Termine und Verfügbarkeit](#7-termine-und-verfugbarkeit)
+8. [Choraufstellung](#8-choraufstellung)
+9. [Repertoire](#9-repertoire)
+10. [Daten exportieren](#10-daten-exportieren)
+11. [Einstellungen](#11-einstellungen)
 
 ---
 
@@ -31,17 +32,16 @@ Beim ersten Start wird automatisch:
 
 Sie möchten die Daten auf einem USB-Stick speichern?
 
-1. Menü: **Extras → Einstellungen**
+1. Menü: **Konfiguration → Einstellungen**
 2. "Datenpfad" auf Ihren USB-Stick ändern
 3. Fertig - alle Daten werden dort gespeichert
-
----
 
 ## 2. Oberfläche
 
 ### Seitenleiste (links)
 
 Klicken Sie auf einen Menüpunkt, um den Tab zu wechseln:
+- **Aufgaben** - Geführte Assistenten für häufige Arbeiten (Startseite)
 - **Projekte** - Projektverwaltung
 - **Sänger** - Sängerdaten
 - **Besetzungen** - Sänger-Lineups
@@ -72,7 +72,46 @@ Viele Tabellen können sortiert werden:
 
 ---
 
-## 3. Projekte verwalten
+## 3. Aufgaben – Schritt für Schritt
+
+Die **Aufgaben**-Ansicht ist Ihre Startseite. Sie zeigt Karten für die
+häufigsten Arbeiten – in gewöhnlicher Sprache, ohne Fachbegriffe:
+
+- **Eine Aufstellung für einen Auftritt planen**
+- **Einen neuen Termin eintragen**
+- **Zusagen und Absagen für einen Termin erfassen**
+- **Ein Chormitglied aufnehmen**
+
+Jede Karte zeigt vorab, welche Vorbedingungen schon erfüllt sind
+(✓) und welche noch fehlen (○).
+
+### So funktioniert es
+
+1. Klicken Sie auf einer Karte auf **Jetzt starten**.
+2. Ein Assistent öffnet sich und führt Sie durch alle nötigen Schritte.
+3. Für jeden Schritt wird das passende Formular geöffnet
+   (z. B. "Neues Projekt" oder "Sänger auswählen").
+4. Am Ende – z. B. bei der Aufstellungsplanung – öffnet sich automatisch
+   der Sitzplan-Editor mit allen Sängern, die zugesagt haben.
+
+Sie müssen sich also nicht merken, was zuerst kommen muss: Der
+Assistent erkennt fehlende Vorbedingungen selbst und erledigt sie
+gleich mit.
+
+### Beispiel: Aufstellung planen
+
+Der Assistent prüft der Reihe nach:
+1. Gibt es ein aktives Projekt?
+2. Gibt es einen Termin (Konzert/Auftritt) im Projekt?
+3. Gibt es eine Besetzung?
+4. Liegen mindestens eine Zusage vor?
+
+Was fehlt, wird direkt im Assistenten nachgeholt – was schon da ist,
+wird übersprungen.
+
+---
+
+## 4. Projekte verwalten
 
 Ein Projekt fasst alles zusammen, was zu einer Produktion gehört (z.B. "Hoffmann OKO 2026").
 
@@ -116,7 +155,7 @@ Das aktive Projekt filtert automatisch:
 
 ---
 
-## 4. Sänger verwalten
+## 5. Sänger verwalten
 
 ### Sänger hinzufügen
 
@@ -165,7 +204,7 @@ Oben in der Toolbar können Sie sortieren:
 
 ---
 
-## 5. Besetzungen
+## 6. Besetzungen
 
 Eine Besetzung ist eine feste Liste von Sängern für ein Projekt.
 
@@ -198,7 +237,7 @@ Die aktive Besetzung wird an anderen Stellen verwendet:
 
 ---
 
-## 6. Termine und Verfügbarkeit
+## 7. Termine und Verfügbarkeit
 
 ### Termin erstellen
 
@@ -260,7 +299,7 @@ Im Verfügbarkeits-Dialog:
 
 ---
 
-## 7. Choraufstellung
+## 8. Choraufstellung
 
 Die Choraufstellung ist ein separates Plugin zur Planung der Sängerpositionen.
 
@@ -297,7 +336,7 @@ Die Choraufstellung ist ein separates Plugin zur Planung der Sängerpositionen.
 
 ---
 
-## 8. Repertoire
+## 9. Repertoire
 
 Verwalten Sie Ihr Notenarchiv.
 
@@ -349,7 +388,7 @@ Oben in der Toolbar können Sie sortieren:
 
 ---
 
-## 9. Daten exportieren
+## 10. Daten exportieren
 
 ### CSV-Export
 
@@ -387,7 +426,7 @@ Exportiert Daten im JSON-Format für die Choraufstellung-App:
 - Vor kritischen Speicheroperationen
 
 **Manuell:**
-1. Menü: **Extras → Backup erstellen**
+1. Menü: **Datei → Backup & Restore...**
 2. ZIP-Datei wird erstellt mit:
     - `chor.db` (Datenbank)
     - `config/` (Einstellungen)
@@ -398,23 +437,23 @@ Exportiert Daten im JSON-Format für die Choraufstellung-App:
 
 ### Daten importieren (von USB/anderem PC)
 
-1. Menü: **Extras → Backup wiederherstellen**
+1. Menü: **Datei → Backup & Restore...**
 2. ZIP-Backupdatei auswählen
 3. Alle Daten werden überschrieben
 
 ---
 
-## 10. Einstellungen
+## 11. Einstellungen
 
 ### Theme ändern
 
-1. Menü: **Extras → Einstellungen**
+1. Menü: **Konfiguration → Einstellungen**
 2. **Theme**: Hell oder Dunkel wählen
 3. Oberfläche wird sofort umgeschaltet
 
 ### Datenpfad ändern
 
-1. Menü: **Extras → Einstellungen**
+1. Menü: **Konfiguration → Einstellungen**
 2. **Datenpfad**: Neuen Ordner wählen (z.B. USB-Stick)
 3. Alle Daten werden dorthin verschoben
 
@@ -468,7 +507,7 @@ Beim ersten Start wird automatisch eine neue Datenbank erstellt.
 
 ### Update-Check schlägt fehl / TLS / MITM-Proxy (S2-FIX-A)
 
-Der eingebaute Versions-Check (`Extras → Auf Update prüfen`) ruft die
+Der eingebaute Versions-Check (Hilfe → Version prüfen) ruft die
 GitHub-API via `urllib.request.urlopen` auf und nutzt dabei den
 **System-Cert-Store**. Konsequenzen:
 
@@ -499,7 +538,7 @@ GitHub-API via `urllib.request.urlopen` auf und nutzt dabei den
 
 ### Backup wiederherstellen
 
-1. Menü: **Extras → Backup wiederherstellen**
+1. Menü: **Datei → Backup & Restore...**
 2. Backup-Datei (.zip) auswählen
 3. App wird neu gestartet
 

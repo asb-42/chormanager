@@ -1,0 +1,49 @@
+# AGENTS.md — chormanager/domain/taskflow/
+
+## Purpose
+**Task flow domain core**: models end-user tasks ("plan a
+formation", "record availability") as ordered step chains and
+evaluates their prerequisites against the repositories. This powers
+the Aufgaben view + TaskWizard in ``chormanager/ui/``.
+
+## Ownership
+Owned by the domain layer. Depends only on
+``chormanager/domain/repository.py`` and the stdlib — **Qt imports
+are forbidden here** (enforced by review; the whole point of the
+split is headless testability and future front-end reuse).
+
+## Local Contracts
+
+* **Checks are pure predicates.** A ``TaskStep.check`` receives the
+  :class:`~.models.TaskContext` and must not mutate anything.
+  Repositories are instantiated inside the predicate from
+  ``context.db``.
+* **Context pinning beats auto-detection.** When
+  ``context.project/event/besetzung`` is set, checks must evaluate
+  against the pinned entity, never re-detect one.
+* **Action steps have no check.** ``check=None`` means the step is
+  completed by executing it in the wizard, never by DB state.
+* **Stable ids.** Step ids (``projekt_waehlen``, …) are part of the
+  UI contract: the wizard's executor map and pin targets key on them.
+
+## Work Guidance
+
+* New tasks go into ``catalog.py`` as a builder function plus an id
+  in ``TASK_IDS``; reuse the shared predicates from ``checker.py``
+  instead of writing new ones where possible.
+* New predicates belong in ``checker.py`` so both catalog and UI can
+  reuse them.
+* Friendly German titles/subtitles are a hard requirement — this
+  package exists because choir directors are non-technical users.
+
+## Verification
+
+```bash
+QT_QPA_PLATFORM=offscreen python3 -m pytest \
+    tests/unit/test_taskflow_models_checker.py \
+    tests/unit/test_taskflow_catalog.py -q
+```
+
+## Child DOX Index
+
+*(This folder is a leaf in the DOX tree. No children.)*

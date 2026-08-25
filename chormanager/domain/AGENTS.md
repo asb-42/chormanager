@@ -56,4 +56,6 @@ QT_QPA_PLATFORM=offscreen python3 -m pytest \
 
 ## Child DOX Index
 
-*(This folder is a leaf in the DOX tree. No children.)*
+| Child | Owns | Local AGENTS.md |
+|---|---|---|
+| ``taskflow/`` | Qt-free task chains + dependency checker for the Aufgaben view/wizard. | [chormanager/domain/taskflow/AGENTS.md](chormanager/domain/taskflow/AGENTS.md) |

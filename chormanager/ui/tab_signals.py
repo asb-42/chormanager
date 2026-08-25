@@ -27,6 +27,9 @@ TAB_BESETZUNG = 2
 TAB_EVENTS = 3
 TAB_AUFSTELLUNG = 4
 TAB_REPERTOIRE = 5
+#: Aufgaben view (task cards + wizard). Lives at a NEW index so the
+#: stable indices above never shift.
+TAB_TASKS = 6
 
 
 @dataclass(frozen=True)
@@ -38,6 +41,7 @@ class TabDescriptor:
 
 
 DEFAULT_TABS: List[TabDescriptor] = [
+    TabDescriptor(TAB_TASKS, "Aufgaben", "Au"),
     TabDescriptor(TAB_PROJECTS, "Projekte", "Pr"),
     TabDescriptor(TAB_SINGERS, "Sänger", "Sä"),
     TabDescriptor(TAB_BESETZUNG, "Besetzungen", "Be"),

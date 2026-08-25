@@ -138,6 +138,7 @@ contract, update both the child and this index.
 | ``chormanager/choraufstellung/widgets/`` | Legacy widgets (drag/drop, context-menu). | [chormanager/choraufstellung/widgets/AGENTS.md](chormanager/choraufstellung/widgets/AGENTS.md) |
 | ``chormanager/data/`` | SQLite layer with ``ConnectionPool`` (C-6). | [chormanager/data/AGENTS.md](chormanager/data/AGENTS.md) |
 | ``chormanager/domain/`` | Domain models + repositories (Singer, Event, Project, ...). | [chormanager/domain/AGENTS.md](chormanager/domain/AGENTS.md) |
+| ``chormanager/domain/taskflow/`` | Qt-free task chains + dependency checker for the Aufgaben view/wizard. | [chormanager/domain/taskflow/AGENTS.md](chormanager/domain/taskflow/AGENTS.md) |
 | ``chormanager/ui/`` | ChorManager's Qt MainWindow + controllers + dialogs. | [chormanager/ui/AGENTS.md](chormanager/ui/AGENTS.md) |
 | ``chormanager/backup/`` | Backup service. | [chormanager/backup/AGENTS.md](chormanager/backup/AGENTS.md) |
 | ``chormanager/export/`` | Export modules (CSV, JSON, sync). | [chormanager/export/AGENTS.md](chormanager/export/AGENTS.md) |

@@ -15,6 +15,9 @@ Owned by the project. Views are tab-panes inside
 * **One view per repository.** ``SingersTab`` wraps
   ``SingerRepository``; ``EventsTab`` wraps ``EventRepository``;
   etc. Do not cross-couple views.
+  (Exception: ``tasks_view.py`` is read-only across repositories —
+  all evaluation lives in the Qt-free
+  ``chormanager/domain/taskflow/`` package.)
 * **TableModel + QTableView.** Views expose data through
   ``QAbstractTableModel`` subclasses (not direct
   ``QTableWidgetItem`` items, which scale poorly).

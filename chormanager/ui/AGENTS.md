@@ -18,9 +18,13 @@ and the dialog / view sub-folders.
   as a ``QObject`` member on MainWindow, NOT as a mixin. The
   legacy mixins (TabRouterMixin, ExportCoreMixin, ...) remain
   in place; the A-1 sub-plan migrates them incrementally.
+  Example: ``task_flow_controller.py:TaskFlowController`` owns the
+  Aufgaben-view → TaskWizard → Choraufstellung-launch flow.
 * **TabSignals is the signal bus.** Tab-level events flow through
   ``chormanager/ui/tab_signals.py``. Do not add per-tab
   ``pyqtSignal`` to the widgets; emit through TabSignals.
+  (Exception: pre-existing per-view signals stay where they are;
+  ``TAB_TASKS = 6`` is defined there.)
 * **SubprocessRunner is the async primitive.** Any
   ``subprocess.run`` should go through
   ``chormanager/ui/subprocess_runner.py:SubprocessRunner`` (M-1)
