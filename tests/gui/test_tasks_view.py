@@ -39,10 +39,16 @@ class TestTasksView:
         assert titles[0] == expected_first
 
     def test_progress_label_reflects_empty_db(self, view):
+        """Fresh DB: nothing exists -> all 4 prerequisites missing.
+        The label must speak of Vorbedingungen, never of completed
+        steps (regression: '4 von 5 Schritten erledigt' right after
+        program start)."""
         card = view.cards[0]
-        assert "0 von 5" in card.progress_label.text()
+        assert "Vorbedingungen" in card.progress_label.text()
+        assert "4 von 4" in card.progress_label.text()
+        assert "erledigt" not in card.progress_label.text()
 
-    def test_progress_updates_after_prerequisites_met(self, view, db):
+    def test_progress_label_all_prerequisites_met(self, view, db):
         from chormanager.domain.repository import (
             BesetzungRepository,
             EventRepository,
@@ -72,9 +78,21 @@ class TestTasksView:
 
         view.refresh()
 
-        # projekt + termin + besetzung + verfuegbarkeit done;
-        # final action step stays open.
-        assert "4 von 5" in view.cards[0].progress_label.text()
+        # All 4 prerequisites exist in the DB -> ready to start; the
+        # final action (Aufstellung erstellen) is still the user's job.
+        label = view.cards[0].progress_label.text()
+        assert "Alle Vorbedingungen erf" in label
+        assert "erledigt" not in label
+
+    def test_task_without_prerequisites_is_instant(self, view):
+        label = view.cards[3].progress_label.text()  # mitglied_aufnehmen
+        assert "Sofort startbar" in label
+        assert "Vorbedingungen" not in label
+
+    def test_checklist_marks_use_present_missing_semantics(self, view):
+        """✓/○ must mean 'vorhanden/fehlt', not 'erledigt'."""
+        card = view.cards[0]
+        assert "bereits vorhanden" in card.checklist_label.toolTip()
 
     def test_start_button_emits_task_started(self, qtbot, view):
         card = view.cards[0]

@@ -471,7 +471,7 @@ class _IntroPage(QWizardPage):
         lines = [""]
         for step, status in evaluate_task(task, context):
             mark = "\u2713" if status is StepStatus.DONE else "\u25cb"
-            suffix = " (bereits erledigt)" if mark == "\u2713" else ""
+            suffix = " (bereits vorhanden)" if mark == "\u2713" else ""
             lines.append(f"{mark} {step.title}{suffix}")
         lines.append("")
         lines.append(
@@ -561,9 +561,9 @@ class _StepPage(QWizardPage):
     def _detected_text(self) -> str:
         entity = self._detected_entity()
         if entity is None:
-            return "\u2713 Bereits erledigt."
+            return "\u2713 Bereits vorhanden."
         name = getattr(entity, "name", None) or str(entity)
-        return f"\u2713 Bereits erledigt: {name}"
+        return f"\u2713 Bereits vorhanden: {name}"
 
     def _refresh_mode(self) -> None:
         if self._executed:

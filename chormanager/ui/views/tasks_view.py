@@ -124,24 +124,45 @@ class TaskCard(QFrame):
         self.setStyleSheet(card_stylesheet(theme))
 
     def update_status(self, context: TaskContext) -> None:
-        """Re-evaluate the checklist against ``context``."""
+        """Re-evaluate the checklist against ``context``.
+
+        The card speaks of *Vorbedingungen* (present/missing), never
+        of completed steps: satisfied prerequisites are confirmed
+        inside the wizard, so nothing is "erledigt" before the user
+        actually ran the task.
+        """
         rows = evaluate_task(self.task, context)
-        done, total = 0, len(rows)
+        prereq_total = 0
+        prereq_present = 0
         marks = []
         for step, status in rows:
             mark = _STATUS_DONE if status is StepStatus.DONE else _STATUS_OPEN
             marks.append(f"{mark} {step.title}")
-            if status is StepStatus.DONE:
-                done += 1
+            if step.check is not None:
+                prereq_total += 1
+                if status is StepStatus.DONE:
+                    prereq_present += 1
 
         self.checklist_label.setText("   \u00b7   ".join(marks))
-        self.progress_label.setText(
-            f"{done} von {total} Schritten erledigt"
+        self.checklist_label.setToolTip(
+            "\u2713 = bereits vorhanden   \u00b7   "
+            "\u25cb = fehlt noch (der Assistent fragt es ab)"
         )
+        missing = prereq_total - prereq_present
+        if prereq_total == 0:
+            self.progress_label.setText("Sofort startbar")
+        elif missing == 0:
+            self.progress_label.setText(
+                "Alle Vorbedingungen erf\u00fcllt \u2013 bereit zum Start"
+            )
+        else:
+            self.progress_label.setText(
+                f"Noch offen: {missing} von {prereq_total} Vorbedingungen"
+            )
         self.start_button.setToolTip(
             "Führt Sie durch die fehlenden Schritte."
-            if done < total
-            else "Alle Vorbedingungen sind erfüllt."
+            if missing > 0
+            else "Bestätigt die vorhandenen Daten Schritt für Schritt."
         )
 
 
@@ -169,8 +190,8 @@ class TasksView(QWidget):
 
         intro = QLabel(
             "Wählen Sie eine Aufgabe aus – Sie werden Schritt für Schritt "
-            "durchgeführt. Fehlende Vorbedingungen werden automatisch "
-            "erkannt und gleich mit erledigt."
+            "durchgeführt. Vorhandene Daten (✓) bestätigen Sie dabei mit "
+            "einem Klick, Fehlendes (○) wird gleich mit angelegt."
         )
         intro.setWordWrap(True)
         # No hardcoded text color: the theme stylesheet decides.
