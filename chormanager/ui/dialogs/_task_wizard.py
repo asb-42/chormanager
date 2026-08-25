@@ -48,6 +48,7 @@ from ...domain.taskflow import (
     TaskStep,
     evaluate_task,
 )
+from ..theme_manager import accent_color
 from . import (
     EventAvailabilityDialog,
     EventDialog,
@@ -106,7 +107,7 @@ class EventPickDialog(QDialog):
         layout.addWidget(self.combo)
 
         self.error_label = QLabel("")
-        self.error_label.setStyleSheet("color: #b00020;")
+        self.error_label.setStyleSheet(f"color: {accent_color('error')};")
         layout.addWidget(self.error_label)
 
         buttons = QHBoxLayout()
@@ -193,7 +194,7 @@ class BesetzungPickDialog(QDialog):
         layout.addWidget(self.combo)
 
         self.error_label = QLabel("")
-        self.error_label.setStyleSheet("color: #b00020;")
+        self.error_label.setStyleSheet(f"color: {accent_color('error')};")
         layout.addWidget(self.error_label)
 
         buttons = QHBoxLayout()
@@ -415,7 +416,9 @@ class _StepPage(QWizardPage):
         layout.addWidget(description)
 
         self.status_label = QLabel("")
-        self.status_label.setStyleSheet("color: #2e7d32;")
+        self.status_label.setStyleSheet(
+                f"color: {accent_color('success')};"
+            )
         layout.addWidget(self.status_label)
 
         row = QHBoxLayout()
@@ -431,6 +434,9 @@ class _StepPage(QWizardPage):
     def initializePage(self) -> None:  # noqa: N802 (Qt naming)
         """Refresh the satisfied-state right before showing."""
         if self.isComplete():
+            self.status_label.setStyleSheet(
+                f"color: {accent_color('success')};"
+            )
             self.status_label.setText(
                 "\u2713 Bereits erledigt \u2013 Sie können weitergehen."
             )
@@ -441,7 +447,9 @@ class _StepPage(QWizardPage):
         """Invoke the step's executor, pin its result, record success."""
         executor = self._host._executors.get(self.step.id)
         if executor is None:
-            self.status_label.setStyleSheet("color: #b00020;")
+            self.status_label.setStyleSheet(
+                f"color: {accent_color('error')};"
+            )
             self.status_label.setText("Interner Fehler: kein Ablauf hinterlegt.")
             return
         result = executor(self._host.context)
@@ -450,7 +458,9 @@ class _StepPage(QWizardPage):
             if target is not None and not isinstance(result, bool):
                 setattr(self._host.context, target, result)
             self._executed = True
-            self.status_label.setStyleSheet("color: #2e7d32;")
+            self.status_label.setStyleSheet(
+                f"color: {accent_color('success')};"
+            )
             self.status_label.setText("\u2713 Erledigt.")
             self.completeChanged.emit()
 

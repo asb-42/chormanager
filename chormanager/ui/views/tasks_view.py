@@ -43,20 +43,18 @@ class TaskCard(QFrame):
         super().__init__(parent)
         self.task = task
         self.setObjectName("taskCard")
+        # Theme-aware: palette roles follow the window-wide light/dark
+        # stylesheet; no hardcoded hex colors here (dark-mode fix).
         self.setStyleSheet(
             """
             QFrame#taskCard {
-                background-color: #ffffff;
-                border: 1px solid #d0d7de;
+                background-color: palette(base);
+                border: 1px solid palette(mid);
                 border-radius: 8px;
             }
             QFrame#taskCard QLabel#cardTitle {
                 font-size: 13pt;
                 font-weight: bold;
-                color: #2c3e50;
-            }
-            QFrame#taskCard QLabel {
-                color: #555555;
             }
             """
         )
@@ -139,7 +137,8 @@ class TasksView(QWidget):
             "erkannt und gleich mit erledigt."
         )
         intro.setWordWrap(True)
-        intro.setStyleSheet("color: #666;")
+        # No hardcoded text color: the theme stylesheet decides.
+        self.intro_label = intro
         layout.addWidget(intro)
 
         body = QWidget()
@@ -173,3 +172,11 @@ class TasksView(QWidget):
         """Refresh automatically whenever the view becomes visible."""
         super().showEvent(event)
         self.refresh()
+
+    def changeEvent(self, event) -> None:  # noqa: N802 (Qt naming)
+        """Re-evaluate cards when the theme (stylesheet) changes."""
+        super().changeEvent(event)
+        from PyQt6.QtCore import QEvent
+
+        if event.type() == QEvent.Type.StyleChange:
+            self.refresh()

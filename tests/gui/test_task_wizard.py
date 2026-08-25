@@ -105,6 +105,28 @@ class TestTaskWizardExecution:
 
         assert not page.isComplete()
 
+    def test_success_color_follows_dark_theme(self, qtbot, db, monkeypatch):
+        import chormanager.ui.theme_manager as tm
+        from chormanager.ui.theme_manager import accent_color
+
+        monkeypatch.setattr(tm, "get_theme", lambda: "dark")
+        executors = {
+            "projekt_waehlen": lambda ctx: object(),
+            "termin_waehlen": lambda ctx: None,
+            "besetzung_waehlen": lambda ctx: None,
+            "verfuegbarkeit_erfassen": lambda ctx: None,
+            "aufstellung_oeffnen": lambda ctx: True,
+        }
+
+        wizard = self._wizard(qtbot, db, executors)
+        page = wizard.step_pages["projekt_waehlen"]
+        page.run_executor()
+
+        assert page.status_label.text().startswith("\u2713")
+        sheet = page.status_label.styleSheet()
+        assert accent_color("success", "dark") in sheet
+        assert "#2e7d32" not in sheet
+
     def test_accept_emits_task_completed_with_context(self, qtbot, db):
         sentinel_project = object()
         executors = {

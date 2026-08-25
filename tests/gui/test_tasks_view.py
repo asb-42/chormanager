@@ -86,3 +86,38 @@ class TestTasksView:
         view.refresh()
         view.refresh()
         assert len(view.cards) == 4
+
+
+class TestDarkThemeSupport:
+    """The Aufgaben view must respect the app's dark theme.
+
+    Regression: the card stylesheet hardcoded light-theme hex colors
+    which override the window-wide dark stylesheet.
+    """
+
+    def test_card_stylesheet_uses_palette_roles_not_hex_colors(self, view):
+        sheet = view.cards[0].styleSheet()
+        assert "palette(base)" in sheet
+        assert "#ffffff" not in sheet
+        assert "#2c3e50" not in sheet
+        assert "#555555" not in sheet
+
+    def test_intro_label_has_no_hardcoded_text_color(self, view):
+        intro_sheet = view.intro_label.styleSheet()
+        # Only layout hints allowed; text color must come from theme.
+        assert "color" not in intro_sheet.lower()
+
+    def test_style_change_event_triggers_refresh(self, view):
+        from PyQt6.QtCore import QEvent
+
+        calls = []
+        original = view.refresh
+
+        def counting_refresh():
+            calls.append(1)
+            original()
+
+        view.refresh = counting_refresh  # type: ignore[method-assign]
+        view.changeEvent(QEvent(QEvent.Type.StyleChange))
+
+        assert len(calls) == 1
