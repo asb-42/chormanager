@@ -48,7 +48,9 @@ class TestTasksView:
         assert "4 von 4" in card.progress_label.text()
         assert "erledigt" not in card.progress_label.text()
 
-    def test_progress_label_all_prerequisites_met(self, view, db):
+    def test_progress_label_all_prerequisites_met(self, view, db,
+                                                   monkeypatch):
+        import chormanager.config as config_module
         from chormanager.domain.repository import (
             BesetzungRepository,
             EventRepository,
@@ -58,6 +60,11 @@ class TestTasksView:
         project_repo = ProjectRepository(db)
         project = project_repo.create(name="Testprojekt")
         project_repo.set_active(project.id)
+        monkeypatch.setattr(
+            config_module,
+            "get_last_active_project_id",
+            lambda: project.id,
+        )
 
         event = EventRepository(db).create(
             name="Konzert", date="2026-09-01",

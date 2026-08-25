@@ -35,7 +35,38 @@ def db(tmp_path):
     database.close()
 
 
+@pytest.fixture
+def make_active_project(monkeypatch):
+    """Factory: create a project AND make it the UI's active project.
+
+    The UI's "Aktives Projekt" lives in the config key
+    ``last_active_project_id`` (that is what the info bar shows), so
+    tests must patch that key — the legacy DB flag alone must NOT
+    make a project count as active.
+    """
+    import chormanager.config as config_module
+    from chormanager.domain.repository import ProjectRepository
+
+    def _make(db, name="Hoffmann 2026"):
+        repo = ProjectRepository(db)
+        project = repo.create(name=name)
+        repo.set_active(project.id)  # DB-Flag synchron halten
+        monkeypatch.setattr(
+            config_module,
+            "get_last_active_project_id",
+            lambda: project.id,
+        )
+        return project
+
+    return _make
+
+
 def _seed_project(db, name="Hoffmann 2026", active=True):
+    """Create a project row; only sets the legacy DB flag.
+
+    NOTE: this does NOT make the project 'active' for the checker —
+    use ``make_active_project`` for that.
+    """
     from chormanager.domain.repository import ProjectRepository
 
     repo = ProjectRepository(db)
@@ -149,16 +180,18 @@ class TestAufstellungPlanenChain:
         assert statuses == [StepStatus.OPEN] * 5
         assert progress(task, TaskContext(db=db)) == (0, 5)
 
-    def test_active_project_satisfies_first_step(self, db, task):
-        project = _seed_project(db)
+    def test_active_project_satisfies_first_step(self, db, task,
+                                                  make_active_project):
+        project = make_active_project(db)
         context = TaskContext(db=db)
         rows = evaluate_task(task, context)
 
         assert rows[0] == (task.steps[0], StepStatus.DONE)
         assert next_open_step(task, context).id == task.steps[1].id
 
-    def test_event_must_belong_to_project(self, db, task):
-        project = _seed_project(db)
+    def test_event_must_belong_to_project(self, db, task,
+                                           make_active_project):
+        project = make_active_project(db)
         other = _seed_project(db, name="Anderes Projekt", active=False)
         _seed_event(db, project_id=other.id)
 
@@ -169,8 +202,9 @@ class TestAufstellungPlanenChain:
         rows = evaluate_task(task, TaskContext(db=db))
         assert rows[1][1] is StepStatus.DONE
 
-    def test_besetzung_must_belong_to_project(self, db, task):
-        project = _seed_project(db)
+    def test_besetzung_must_belong_to_project(self, db, task,
+                                               make_active_project):
+        project = make_active_project(db)
         _seed_event(db, project_id=project.id)
         other = _seed_project(db, name="Fremd", active=False)
         _seed_besetzung(db, other.id, [])
@@ -182,8 +216,9 @@ class TestAufstellungPlanenChain:
         rows = evaluate_task(task, TaskContext(db=db))
         assert rows[2][1] is StepStatus.DONE
 
-    def test_availability_counts_yes_and_conditional(self, db, task):
-        project = _seed_project(db)
+    def test_availability_counts_yes_and_conditional(self, db, task,
+                                                      make_active_project):
+        project = make_active_project(db)
         event = _seed_event(db, project_id=project.id)
         _seed_besetzung(db, project.id, [])
         singer = _seed_singer(db)
@@ -196,8 +231,9 @@ class TestAufstellungPlanenChain:
         rows = evaluate_task(task, TaskContext(db=db))
         assert rows[3][1] is StepStatus.DONE
 
-    def test_contextual_event_beats_auto_detection(self, db, task):
-        project = _seed_project(db)
+    def test_contextual_event_beats_auto_detection(self, db, task,
+                                                    make_active_project):
+        project = make_active_project(db)
         old_event = _seed_event(db, project_id=project.id,
                                 date="2026-01-01")
         new_event = _seed_event(db, project_id=project.id,
@@ -216,6 +252,16 @@ class TestAufstellungPlanenChain:
         rows = evaluate_task(task, unpinned)
         assert rows[3][1] is StepStatus.DONE
 
+    def test_legacy_db_flag_alone_is_not_active(self, db, task):
+        """Regression: the wizard said 'Projekt bereits vorhanden'
+        while the info bar showed 'Keines'. The legacy
+        ``projects.is_active`` DB flag must NOT count as active —
+        only the UI's config key does."""
+        _seed_project(db)  # sets only the DB flag
+
+        rows = evaluate_task(task, TaskContext(db=db))
+        assert rows[0][1] is StepStatus.OPEN
+
     def test_final_step_stays_open_until_executed(self, db, task):
         """The last step is an action performed by the wizard; it has
         no DB-side completion condition."""
@@ -227,12 +273,12 @@ class TestAufstellungPlanenChain:
 class TestOtherTasks:
     """Chain tests for the three smaller tasks."""
 
-    def test_termin_anlegen_requires_project(self, db):
+    def test_termin_anlegen_requires_project(self, db, make_active_project):
         task = get_task("termin_anlegen")
         rows = evaluate_task(task, TaskContext(db=db))
         assert [s for _, s in rows] == [StepStatus.OPEN, StepStatus.OPEN]
 
-        _seed_project(db)
+        make_active_project(db)
         rows = evaluate_task(task, TaskContext(db=db))
         assert [s for _, s in rows][:2] == [StepStatus.DONE, StepStatus.OPEN]
 

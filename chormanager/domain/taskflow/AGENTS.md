@@ -38,6 +38,13 @@ split is headless testability and future front-end reuse).
 * **Context pinning beats auto-detection.** When
   ``context.project/event/besetzung`` is set, checks must evaluate
   against the pinned entity, never re-detect one.
+* **"Aktives Projekt" = config key, not the DB flag.**
+  ``resolve_project`` reads ``last_active_project_id`` (the same
+  source the info bar shows); the legacy ``projects.is_active``
+  column is ignored by the checker and must be kept in sync by
+  writers (see ``_task_wizard._sync_active_project``). The
+  TaskFlowController pre-pins the wizard context from the current
+  UI state so wizard and info bar can never diverge.
 * **Action steps have no check.** ``check=None`` means the step is
   completed by executing it in the wizard, never by DB state.
 * **Stable ids.** Step ids (``projekt_waehlen``, …) are part of the

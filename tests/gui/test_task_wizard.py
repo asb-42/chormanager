@@ -33,13 +33,21 @@ class TestTaskWizardStructure:
         assert wizard.page_count() == 1 + len(task.steps)
         assert set(wizard.step_pages) == set(task.step_ids())
 
-    def test_satisfied_step_is_not_silently_skipped(self, qtbot, db):
+    def test_satisfied_step_is_not_silently_skipped(self, qtbot, db,
+                                                     monkeypatch):
         from chormanager.domain.repository import ProjectRepository
         from chormanager.ui.dialogs._task_wizard import TaskWizard
+
+        import chormanager.config as config_module
 
         repo = ProjectRepository(db)
         project = repo.create(name="Hoffmann OKO")
         repo.set_active(project.id)
+        monkeypatch.setattr(
+            config_module,
+            "get_last_active_project_id",
+            lambda: project.id,
+        )
 
         task = get_task("termin_anlegen")
         wizard = TaskWizard(db, task)
@@ -162,12 +170,19 @@ class TestTaskWizardExecution:
 class TestSatisfiedStepConfirmation:
     """Satisfied prerequisites need an explicit user confirmation."""
 
-    def _seed_active_project(self, db, name="Hoffmann OKO"):
+    def _seed_active_project(self, db, monkeypatch, name="Hoffmann OKO"):
+        import chormanager.config as config_module
         from chormanager.domain.repository import ProjectRepository
 
         repo = ProjectRepository(db)
         project = repo.create(name=name)
         repo.set_active(project.id)
+        # The UI's active project lives in the config key (info bar).
+        monkeypatch.setattr(
+            config_module,
+            "get_last_active_project_id",
+            lambda: project.id,
+        )
         return project
 
     def _executors(self, overrides=None):
@@ -182,10 +197,10 @@ class TestSatisfiedStepConfirmation:
         base.update(overrides or {})
         return base
 
-    def test_confirm_detected_pins_entity(self, qtbot, db):
+    def test_confirm_detected_pins_entity(self, qtbot, db, monkeypatch):
         from chormanager.ui.dialogs._task_wizard import TaskWizard
 
-        project = self._seed_active_project(db)
+        project = self._seed_active_project(db, monkeypatch)
         task = get_task("termin_anlegen")
         wizard = TaskWizard(db, task,
                             executors=self._executors())
@@ -200,10 +215,11 @@ class TestSatisfiedStepConfirmation:
         # get_active() re-reads the row -> compare by id, not identity.
         assert wizard.context.project.id == project.id
 
-    def test_alternative_executor_replaces_detection(self, qtbot, db):
+    def test_alternative_executor_replaces_detection(self, qtbot, db,
+                                                      monkeypatch):
         from chormanager.ui.dialogs._task_wizard import TaskWizard
 
-        self._seed_active_project(db, name="Alt")
+        self._seed_active_project(db, monkeypatch, name="Alt")
         replacement = object()
 
         wizard = TaskWizard(
@@ -236,10 +252,11 @@ class TestSatisfiedStepConfirmation:
 
         assert page.isComplete()
 
-    def test_use_button_confirms_detected_entity(self, qtbot, db):
+    def test_use_button_confirms_detected_entity(self, qtbot, db,
+                                                  monkeypatch):
         from chormanager.ui.dialogs._task_wizard import TaskWizard
 
-        project = self._seed_active_project(db)
+        project = self._seed_active_project(db, monkeypatch)
         wizard = TaskWizard(
             db, get_task("termin_anlegen"),
             executors=self._executors(),
@@ -484,6 +501,93 @@ class TestDefaultExecutors:
 
 
 class TestPickDialogs:
+    def test_project_pick_dialog_lists_and_returns_selection(
+        self, qtbot, db
+    ):
+        from PyQt6.QtWidgets import QDialog
+
+        from chormanager.domain.repository import ProjectRepository
+        from chormanager.ui.dialogs._task_wizard import ProjectPickDialog
+
+        repo = ProjectRepository(db)
+        p_a = repo.create(name="Altprojekt")
+        p_b = repo.create(name="Hoffmann OKO 2026")
+
+        dialog = ProjectPickDialog(db)
+        qtbot.addWidget(dialog)
+
+        assert dialog.combo.count() == 2
+        dialog.combo.setCurrentIndex(1)  # alphabetical: Hoffmann second
+        dialog.accept()
+
+        assert dialog.result() == QDialog.DialogCode.Accepted
+        assert dialog.get_project().id == p_b.id
+        assert p_a is not None
+
+    def test_project_pick_dialog_empty_refuses_accept(self, qtbot, db):
+        from chormanager.ui.dialogs._task_wizard import ProjectPickDialog
+
+        dialog = ProjectPickDialog(db)
+        qtbot.addWidget(dialog)
+
+        dialog._on_accept()
+        assert dialog.result() != dialog.DialogCode.Accepted
+        assert "Projekt" in dialog.error_label.text()
+
+    def test_do_project_syncs_active_project_sources(
+        self, qtbot, db, monkeypatch
+    ):
+        """Regression: the wizard previously wrote only the legacy DB
+        flag, so the info bar stayed at 'Keines' while the checker
+        claimed 'bereits vorhanden'."""
+        import chormanager.config as config_module
+
+        from chormanager.domain.repository import ProjectRepository
+        from chormanager.domain.taskflow import TaskContext
+        from chormanager.ui.dialogs._task_wizard import (
+            build_default_executors,
+        )
+
+        existing = ProjectRepository(db).create(name="Hoffmann OKO")
+
+        captured = {}
+
+        class FakePick:
+            def __init__(self, db=None, parent=None):
+                pass
+
+            def exec(self):
+                from PyQt6.QtWidgets import QDialog
+
+                return QDialog.DialogCode.Accepted
+
+            def get_project(self):
+                return existing
+
+        monkeypatch.setattr(
+            __import__(
+                "chormanager.ui.dialogs._task_wizard",
+                fromlist=["ProjectPickDialog"],
+            ),
+            "ProjectPickDialog",
+            FakePick,
+        )
+        monkeypatch.setattr(
+            config_module,
+            "set_last_active_project_id",
+            lambda pid: captured.setdefault("config", pid),
+        )
+
+        context = TaskContext(db=db)
+        result = build_default_executors(db, parent=None)[
+            "projekt_waehlen"
+        ](context)
+
+        assert result is existing
+        assert captured["config"] == existing.id
+        # Legacy DB flag kept in sync.
+        assert ProjectRepository(db).get_active().id == existing.id
+
     def test_event_pick_dialog_returns_selection(self, qtbot, db):
         from PyQt6.QtWidgets import QDialog
 

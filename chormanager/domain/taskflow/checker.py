@@ -28,12 +28,25 @@ _POSITIVE_STATUSES = ("yes", "conditional")
 # ----------------------------------------------------------------------
 
 def resolve_project(context: TaskContext) -> Optional[Any]:
-    """Return the pinned project or the currently active one."""
+    """Return the pinned project or the UI's active project.
+
+    The single source of truth for "Aktives Projekt" is the config
+    key ``last_active_project_id`` — exactly what the info bar shows.
+    The legacy ``projects.is_active`` DB flag is deliberately ignored:
+    it is written by different code paths and can diverge from the UI
+    (which produced "bereits vorhanden" while the info bar said
+    "Keines").
+    """
     if context.project is not None:
         return context.project
     if context.db is None:
         return None
-    return ProjectRepository(context.db).get_active()
+    from ... import config as app_config
+
+    project_id = app_config.get_last_active_project_id()
+    if not project_id:
+        return None
+    return ProjectRepository(context.db).get_by_id(project_id)
 
 
 def check_project(context: TaskContext) -> bool:

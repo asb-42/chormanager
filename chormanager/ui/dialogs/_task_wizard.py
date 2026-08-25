@@ -187,6 +187,108 @@ class EventPickDialog(QDialog):
         return self.combo.currentData()
 
 
+class ProjectPickDialog(QDialog):
+    """Pick an existing project or create a new one inline.
+
+    Mirrors :class:`EventPickDialog`/:class:`BesetzungPickDialog` so
+    the wizard's project step works for users whose project exists
+    but is not currently the active one.
+    """
+
+    def __init__(self, db, parent=None):
+        super().__init__(parent)
+        self.db = db
+        self.project_repo = ProjectRepository(db)
+        self.setWindowTitle("Projekt auswählen")
+        self.setMinimumWidth(420)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(
+            QLabel("Für welches Projekt wird geplant? "
+                   "Oder legen Sie ein neues an.")
+        )
+
+        self.combo = QComboBox()
+        layout.addWidget(self.combo)
+
+        self.error_label = QLabel("")
+        self.error_label.setStyleSheet("color: #b00020;")
+        layout.addWidget(self.error_label)
+
+        buttons = QHBoxLayout()
+        new_button = QPushButton("Neues Projekt anlegen \u2026")
+        new_button.clicked.connect(self._create_new_project)
+        buttons.addWidget(new_button)
+        buttons.addStretch()
+
+        ok_button = QPushButton("Übernehmen")
+        ok_button.setDefault(True)
+        ok_button.clicked.connect(self._on_accept)
+        cancel_button = QPushButton("Abbrechen")
+        cancel_button.clicked.connect(self.reject)
+        buttons.addWidget(ok_button)
+        buttons.addWidget(cancel_button)
+        layout.addLayout(buttons)
+
+        self._load_projects()
+
+    def _load_projects(self) -> None:
+        self.combo.clear()
+        for project in self.project_repo.get_all():
+            label = project.name or project.id
+            if project.spielzeit:
+                label = f"{label} ({project.spielzeit})"
+            self.combo.addItem(label, project)
+        if self.combo.count() > 0:
+            self.combo.setCurrentIndex(0)
+
+    def _create_new_project(self) -> None:
+        """Open the existing ProjectDialog and add the new project."""
+        from ..views.projects_tab import ProjectDialog
+
+        dialog = ProjectDialog(self.db, parent=self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        data = dialog.get_data()
+        if not data.get("name"):
+            return
+        project = self.project_repo.create(**data)
+        self.combo.addItem(project.name, project)
+        self.combo.setCurrentIndex(self.combo.count() - 1)
+
+    def _on_accept(self) -> None:
+        if self.combo.currentData() is None:
+            self.error_label.setText(
+                "Bitte zuerst ein Projekt ausw\u00e4hlen oder anlegen."
+            )
+            return
+        self.accept()
+
+    def get_project(self):
+        """Return the selected (or freshly created) project."""
+        return self.combo.currentData()
+
+
+def _sync_active_project(db, project, parent) -> None:
+    """Make ``project`` the UI's active project (both sources).
+
+    Updates the config key (info bar, tab filters) via
+    ``projects_tab.set_current_project`` when a MainWindow is
+    reachable, and keeps the legacy ``projects.is_active`` flag in
+    sync. Regression guard for the "Keines vs. bereits vorhanden"
+    divergence.
+    """
+    main_window = parent.window() if parent is not None else None
+    projects_tab = getattr(main_window, "projects_tab", None)
+    if projects_tab is not None:
+        projects_tab.set_current_project(project)
+    else:
+        from ...config import set_last_active_project_id
+
+        set_last_active_project_id(project.id)
+    ProjectRepository(db).set_active(project.id)
+
+
 class BesetzungPickDialog(QDialog):
     """Pick an existing besetzung or assemble a new one inline."""
 
@@ -305,19 +407,15 @@ def build_default_executors(
     result into the shared :class:`TaskContext`.
     """
     def do_project(context: TaskContext):
-        # Lazy import avoids a views<->dialogs import cycle at module
-        # load time (ProjectDialog lives in ui/views/projects_tab.py).
-        from ..views.projects_tab import ProjectDialog
-
-        dialog = ProjectDialog(db, parent=parent)
+        # Pick an existing project or create one; then make it the
+        # UI's active project (config + info bar + DB flag in sync).
+        dialog = ProjectPickDialog(db, parent=parent)
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return None
-        data = dialog.get_data()
-        if not data.get("name"):
+        project = dialog.get_project()
+        if project is None:
             return None
-        repo = ProjectRepository(db)
-        project = repo.create(**data)
-        repo.set_active(project.id)
+        _sync_active_project(db, project, parent)
         return project
 
     def do_termin(context: TaskContext):
@@ -476,7 +574,7 @@ class _IntroPage(QWizardPage):
         lines.append("")
         lines.append(
             "Die Schritte werden nun nacheinander abgefragt. Bereits "
-            "erledigte Vorbedingungen bestätigen Sie mit einem Klick "
+            "vorhandene Vorbedingungen bestätigen Sie mit einem Klick "
             "– oder wählen etwas anderes."
         )
 

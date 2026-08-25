@@ -40,13 +40,33 @@ class TaskFlowController(QObject):
     def start_task(self, task_id: str) -> None:
         """Open the wizard for ``task_id``.
 
+        The wizard context is pre-pinned from the CURRENT UI state
+        (active project / active termin / active besetzung) so the
+        confirm pages show exactly what the info bar shows — no
+        divergence between "the app's state" and the wizard.
+
         Args:
             task_id: One of :data:`chormanager.domain.taskflow.TASK_IDS`.
         """
         window = self._window
-        from ..domain.taskflow import get_task
+        from ..domain.taskflow import TaskContext, get_task
 
-        wizard = TaskWizard(window.db, get_task(task_id), parent=window)
+        context = TaskContext(db=window.db)
+        context.project = getattr(window.projects_tab, "current_project",
+                                  None)
+        context.event = getattr(window, "current_event", None)
+
+        from ..config import get_last_active_besetzung_id
+        from ..domain.repository import BesetzungRepository
+
+        saved_besetzung_id = get_last_active_besetzung_id()
+        if saved_besetzung_id:
+            context.besetzung = BesetzungRepository(
+                window.db
+            ).get_by_id(saved_besetzung_id)
+
+        wizard = TaskWizard(window.db, get_task(task_id), parent=window,
+                            context=context)
         wizard.task_completed.connect(self._on_task_completed)
         wizard.show()
         wizard.raise_()
