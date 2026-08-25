@@ -21,30 +21,35 @@ def db(tmp_path):
 
 
 class TestTaskWizardStructure:
-    def test_intro_page_plus_one_page_per_open_step(self, qtbot, db):
+    def test_intro_page_plus_one_page_per_step(self, qtbot, db):
         from chormanager.ui.dialogs._task_wizard import TaskWizard
 
         task = get_task("aufstellung_planen")
         wizard = TaskWizard(db, task)
         qtbot.addWidget(wizard)
 
-        # Empty DB: all 5 steps are open -> intro + 5 step pages.
+        # Every step gets a page (satisfied ones become confirm
+        # pages) -- nothing may be silently skipped.
         assert wizard.page_count() == 1 + len(task.steps)
+        assert set(wizard.step_pages) == set(task.step_ids())
 
-    def test_satisfied_prerequisites_are_skipped(self, qtbot, db):
+    def test_satisfied_step_is_not_silently_skipped(self, qtbot, db):
         from chormanager.domain.repository import ProjectRepository
         from chormanager.ui.dialogs._task_wizard import TaskWizard
 
         repo = ProjectRepository(db)
-        project = repo.create(name="P")
+        project = repo.create(name="Hoffmann OKO")
         repo.set_active(project.id)
 
         task = get_task("termin_anlegen")
         wizard = TaskWizard(db, task)
         qtbot.addWidget(wizard)
 
-        # projekt done at build time -> only the action page remains.
-        assert wizard.page_count() == 1 + 1
+        page = wizard.step_pages["projekt_waehlen"]
+        # Regression: the page must exist AND require an explicit
+        # confirmation even though a project is already active.
+        assert not page.isComplete()
+        assert "Hoffmann OKO" in page.detected_label.text()
 
     def test_intro_page_lists_all_steps(self, qtbot, db):
         from chormanager.ui.dialogs._task_wizard import TaskWizard
@@ -152,6 +157,182 @@ class TestTaskWizardExecution:
         task_id, context = results[0]
         assert task_id == "aufstellung_planen"
         assert context.project is sentinel_project
+
+
+class TestSatisfiedStepConfirmation:
+    """Satisfied prerequisites need an explicit user confirmation."""
+
+    def _seed_active_project(self, db, name="Hoffmann OKO"):
+        from chormanager.domain.repository import ProjectRepository
+
+        repo = ProjectRepository(db)
+        project = repo.create(name=name)
+        repo.set_active(project.id)
+        return project
+
+    def _executors(self, overrides=None):
+        base = {
+            "projekt_waehlen": lambda ctx: None,
+            "termin_waehlen": lambda ctx: None,
+            "besetzung_waehlen": lambda ctx: None,
+            "verfuegbarkeit_erfassen": lambda ctx: None,
+            "aufstellung_oeffnen": lambda ctx: True,
+            "termin_anlegen": lambda ctx: True,
+        }
+        base.update(overrides or {})
+        return base
+
+    def test_confirm_detected_pins_entity(self, qtbot, db):
+        from chormanager.ui.dialogs._task_wizard import TaskWizard
+
+        project = self._seed_active_project(db)
+        task = get_task("termin_anlegen")
+        wizard = TaskWizard(db, task,
+                            executors=self._executors())
+        qtbot.addWidget(wizard)
+
+        page = wizard.step_pages["projekt_waehlen"]
+        assert not page.isComplete()
+
+        page.confirm_detected()
+
+        assert page.isComplete()
+        # get_active() re-reads the row -> compare by id, not identity.
+        assert wizard.context.project.id == project.id
+
+    def test_alternative_executor_replaces_detection(self, qtbot, db):
+        from chormanager.ui.dialogs._task_wizard import TaskWizard
+
+        self._seed_active_project(db, name="Alt")
+        replacement = object()
+
+        wizard = TaskWizard(
+            db, get_task("termin_anlegen"),
+            executors=self._executors(
+                {"projekt_waehlen": lambda ctx: replacement}
+            ),
+        )
+        qtbot.addWidget(wizard)
+
+        page = wizard.step_pages["projekt_waehlen"]
+        page.run_executor()
+
+        assert page.isComplete()
+        assert wizard.context.project is replacement
+
+    def test_satisfied_availability_step_confirms_without_pin(
+        self, qtbot, db
+    ):
+        from chormanager.ui.dialogs._task_wizard import TaskWizard
+
+        wizard = TaskWizard(
+            db, get_task("aufstellung_planen"),
+            executors=self._executors(),
+        )
+        qtbot.addWidget(wizard)
+
+        page = wizard.step_pages["verfuegbarkeit_erfassen"]
+        page.confirm_detected()
+
+        assert page.isComplete()
+
+    def test_use_button_confirms_detected_entity(self, qtbot, db):
+        from chormanager.ui.dialogs._task_wizard import TaskWizard
+
+        project = self._seed_active_project(db)
+        wizard = TaskWizard(
+            db, get_task("termin_anlegen"),
+            executors=self._executors(),
+        )
+        qtbot.addWidget(wizard)
+        qtbot.addWidget  # noqa: B018 (keep qtbot tracking explicit)
+
+        page = wizard.step_pages["projekt_waehlen"]
+        page.use_button.click()
+
+        assert page.isComplete()
+        assert wizard.context.project.id == project.id
+
+
+class TestDefaultExecutors:
+    def test_termin_anlegen_is_not_the_noop_executor(self):
+        from chormanager.ui.dialogs._task_wizard import (
+            build_default_executors,
+        )
+
+        executors = build_default_executors(db=None, parent=None)
+        assert executors["termin_anlegen"] is not (
+            executors["aufstellung_oeffnen"]
+        )
+
+    def test_termin_anlegen_creates_event_via_dialog(
+        self, qtbot, db, monkeypatch
+    ):
+        from PyQt6.QtWidgets import QDialog
+
+        import chormanager.ui.dialogs._task_wizard as tw
+        from chormanager.domain.repository import EventRepository
+        from chormanager.ui.dialogs._task_wizard import (
+            build_default_executors,
+        )
+
+        captured = {}
+
+        class FakeEventDialog:
+            def __init__(self, db=None, parent=None,
+                         prefilled_project_id=None):
+                captured["prefilled"] = prefilled_project_id
+
+            def exec(self):
+                return QDialog.DialogCode.Accepted
+
+            @staticmethod
+            def get_data():
+                return {
+                    "name": "Herbstkonzert",
+                    "date": "2026-11-15",
+                    "event_type": "konzert",
+                    "project_id": None,
+                }
+
+        monkeypatch.setattr(tw, "EventDialog", FakeEventDialog)
+
+        context = TaskContextStub = None  # noqa: F841 (readability)
+        from chormanager.domain.taskflow import TaskContext
+
+        context = TaskContext(db=db)
+        event = build_default_executors(db, parent=None)[
+            "termin_anlegen"
+        ](context)
+
+        assert event is not None
+        assert event.name == "Herbstkonzert"
+        assert EventRepository(db).get_by_id(event.id) is not None
+        assert captured["prefilled"] is None
+
+    def test_termin_anlegen_cancel_returns_none(self, qtbot, db,
+                                                monkeypatch):
+        from PyQt6.QtWidgets import QDialog
+
+        import chormanager.ui.dialogs._task_wizard as tw
+        from chormanager.domain.taskflow import TaskContext
+        from chormanager.ui.dialogs._task_wizard import (
+            build_default_executors,
+        )
+
+        class CancelledDialog:
+            def __init__(self, **kwargs):
+                pass
+
+            def exec(self):
+                return QDialog.DialogCode.Rejected
+
+        monkeypatch.setattr(tw, "EventDialog", CancelledDialog)
+
+        result = build_default_executors(db, parent=None)[
+            "termin_anlegen"
+        ](TaskContext(db=db))
+        assert result is None
 
 
 class TestPickDialogs:

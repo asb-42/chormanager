@@ -18,6 +18,11 @@ split is headless testability and future front-end reuse).
   :class:`~.models.TaskContext` and must not mutate anything.
   Repositories are instantiated inside the predicate from
   ``context.db``.
+* **Resolvers mirror checks.** Every auto-detectable prerequisite has
+  a public ``resolve_*`` helper (``resolve_project``,
+  ``resolve_event``, ``resolve_besetzung``) returning the detected
+  entity. The wizard shows these on confirm pages and pins them into
+  the context when the user accepts.
 * **Context pinning beats auto-detection.** When
   ``context.project/event/besetzung`` is set, checks must evaluate
   against the pinned entity, never re-detect one.

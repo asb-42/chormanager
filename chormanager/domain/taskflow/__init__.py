@@ -18,7 +18,9 @@ from .checker import (
     evaluate_task,
     next_open_step,
     progress,
+    resolve_besetzung,
     resolve_event,
+    resolve_project,
 )
 from .catalog import TASK_IDS, get_all_tasks, get_task
 from .models import StepStatus, TaskContext, TaskDefinition, TaskStep
@@ -37,7 +39,9 @@ __all__ = [
     "evaluate_task",
     "next_open_step",
     "progress",
+    "resolve_besetzung",
     "resolve_event",
+    "resolve_project",
     # catalog
     "TASK_IDS",
     "get_all_tasks",

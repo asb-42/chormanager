@@ -95,8 +95,10 @@ Jede Karte zeigt vorab, welche Vorbedingungen schon erfüllt sind
    der Sitzplan-Editor mit allen Sängern, die zugesagt haben.
 
 Sie müssen sich also nicht merken, was zuerst kommen muss: Der
-Assistent erkennt fehlende Vorbedingungen selbst und erledigt sie
-gleich mit.
+Assistent erkennt fehlende Vorbedingungen selbst. Was schon vorhanden
+ist (z. B. Ihr aktives Projekt), wird angezeigt – Sie bestätigen es
+mit einem Klick oder wählen etwas anderes. Nichts wird automatisch
+abgehakt.
 
 ### Beispiel: Aufstellung planen
 
@@ -107,7 +109,7 @@ Der Assistent prüft der Reihe nach:
 4. Liegen mindestens eine Zusage vor?
 
 Was fehlt, wird direkt im Assistenten nachgeholt – was schon da ist,
-wird übersprungen.
+zeigen Sie per Klick an oder tauschen es aus.
 
 ---
 

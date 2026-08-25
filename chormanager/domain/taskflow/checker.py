@@ -27,7 +27,7 @@ _POSITIVE_STATUSES = ("yes", "conditional")
 # shared predicates (used by catalog.py)
 # ----------------------------------------------------------------------
 
-def _resolve_project(context: TaskContext) -> Optional[Any]:
+def resolve_project(context: TaskContext) -> Optional[Any]:
     """Return the pinned project or the currently active one."""
     if context.project is not None:
         return context.project
@@ -38,14 +38,14 @@ def _resolve_project(context: TaskContext) -> Optional[Any]:
 
 def check_project(context: TaskContext) -> bool:
     """True when an active (or pinned) project exists."""
-    return _resolve_project(context) is not None
+    return resolve_project(context) is not None
 
 
 def check_termin(context: TaskContext) -> bool:
     """True when an event is pinned or the project has any event."""
     if context.event is not None:
         return True
-    project = _resolve_project(context)
+    project = resolve_project(context)
     if project is None or context.db is None:
         return False
     events = EventRepository(context.db).get_all()
@@ -56,7 +56,7 @@ def check_besetzung(context: TaskContext) -> bool:
     """True when a besetzung is pinned or the project has one."""
     if context.besetzung is not None:
         return True
-    project = _resolve_project(context)
+    project = resolve_project(context)
     if project is None or context.db is None:
         return False
     besetzungen = BesetzungRepository(context.db).get_by_project(project.id)
@@ -65,7 +65,7 @@ def check_besetzung(context: TaskContext) -> bool:
 
 def _latest_project_event(context: TaskContext) -> Optional[Any]:
     """Return the newest event of the resolved project, if any."""
-    project = _resolve_project(context)
+    project = resolve_project(context)
     if project is None or context.db is None:
         return None
     events = [
@@ -84,6 +84,17 @@ def resolve_event(context: TaskContext) -> Optional[Any]:
     if context.event is not None:
         return context.event
     return _latest_project_event(context)
+
+
+def resolve_besetzung(context: TaskContext) -> Optional[Any]:
+    """Return the pinned besetzung or the project's first one."""
+    if context.besetzung is not None:
+        return context.besetzung
+    project = resolve_project(context)
+    if project is None or context.db is None:
+        return None
+    besetzungen = BesetzungRepository(context.db).get_by_project(project.id)
+    return besetzungen[0] if besetzungen else None
 
 
 def check_availability(context: TaskContext) -> bool:

@@ -47,6 +47,9 @@ from ...domain.taskflow import (
     TaskDefinition,
     TaskStep,
     evaluate_task,
+    resolve_besetzung,
+    resolve_event,
+    resolve_project,
 )
 from ..theme_manager import accent_color
 from . import (
@@ -71,7 +74,16 @@ _BUTTON_OVERRIDES = {
 _PIN_TARGETS = {
     "projekt_waehlen": "project",
     "termin_waehlen": "event",
+    "termin_anlegen": "event",
     "besetzung_waehlen": "besetzung",
+}
+
+#: Step-id -> resolver for auto-detected entities shown on confirm
+#: pages ("bereits erledigt: <entity>").
+_DETECTED_RESOLVERS = {
+    "projekt_waehlen": resolve_project,
+    "termin_waehlen": resolve_event,
+    "besetzung_waehlen": resolve_besetzung,
 }
 
 
@@ -354,13 +366,28 @@ def build_default_executors(
         # task_completed handler; this only completes the wizard.
         return True
 
+    def do_termin_neu(context: TaskContext):
+        """Create a NEW termin via the existing EventDialog."""
+        prefilled = context.project.id if context.project else None
+        dialog = EventDialog(
+            db=db, parent=parent, prefilled_project_id=prefilled
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return None
+        data = {
+            k: v for k, v in dialog.get_data().items() if v is not None
+        }
+        if not data.get("name"):
+            return None
+        return EventRepository(db).create(**data)
+
     return {
         "projekt_waehlen": do_project,
         "termin_waehlen": do_termin,
+        "termin_anlegen": do_termin_neu,
         "besetzung_waehlen": do_besetzung,
         "verfuegbarkeit_erfassen": do_verfuegbarkeit,
         "mitglied_anlegen": do_mitglied,
-        "termin_anlegen": do_aufstellung_oeffnen,
         "aufstellung_oeffnen": do_aufstellung_oeffnen,
     }
 
@@ -389,7 +416,9 @@ class _IntroPage(QWizardPage):
             lines.append(f"{mark} {step.title}{suffix}")
         lines.append("")
         lines.append(
-            "Die offenen Schritte werden nun nacheinander abgefragt."
+            "Die Schritte werden nun nacheinander abgefragt. Bereits "
+            "erledigte Vorbedingungen bestätigen Sie mit einem Klick "
+            "– oder wählen etwas anderes."
         )
 
         self.summary_label = QLabel("\n".join(lines))
@@ -399,7 +428,16 @@ class _IntroPage(QWizardPage):
 
 
 class _StepPage(QWizardPage):
-    """Interactive page for one open step; runs its executor."""
+    """Interactive page for one step.
+
+    Two modes:
+
+    * **Open step** – a single action button runs the executor.
+    * **Satisfied step** – shows *what* was auto-detected and requires
+      an explicit confirmation ("Diese Auswahl verwenden") or offers
+      "Anderes auswählen …" (runs the executor). Nothing is ever
+      silently pre-checked.
+    """
 
     def __init__(self, wizard_host: "TaskWizard", step: TaskStep,
                  parent=None):
@@ -415,13 +453,25 @@ class _StepPage(QWizardPage):
         description.setWordWrap(True)
         layout.addWidget(description)
 
+        self.detected_label = QLabel("")
+        self.detected_label.setWordWrap(True)
+        self.detected_label.setStyleSheet(
+            f"color: {accent_color('success')};"
+        )
+        layout.addWidget(self.detected_label)
+
         self.status_label = QLabel("")
+        self.status_label.setWordWrap(True)
         self.status_label.setStyleSheet(
-                f"color: {accent_color('success')};"
-            )
+            f"color: {accent_color('success')};"
+        )
         layout.addWidget(self.status_label)
 
         row = QHBoxLayout()
+        self.use_button = QPushButton("Diese Auswahl verwenden")
+        self.use_button.clicked.connect(self.confirm_detected)
+        row.addWidget(self.use_button)
+
         self.action_button = QPushButton(
             _BUTTON_OVERRIDES.get(step.id, "Jetzt erledigen \u2026")
         )
@@ -431,17 +481,73 @@ class _StepPage(QWizardPage):
         layout.addLayout(row)
         layout.addStretch()
 
+        self._refresh_mode()
+
+    # ------------------------------------------------------------------
+    # mode handling
+    # ------------------------------------------------------------------
+
+    def _is_satisfied(self) -> bool:
+        return self.step.is_done(self._host.context)
+
+    def _detected_entity(self):
+        resolver = _DETECTED_RESOLVERS.get(self.step.id)
+        if resolver is None:
+            return None
+        try:
+            return resolver(self._host.context)
+        except Exception:
+            return None
+
+    def _detected_text(self) -> str:
+        entity = self._detected_entity()
+        if entity is None:
+            return "\u2713 Bereits erledigt."
+        name = getattr(entity, "name", None) or str(entity)
+        return f"\u2713 Bereits erledigt: {name}"
+
+    def _refresh_mode(self) -> None:
+        if self._executed:
+            self.status_label.setText("\u2713 Erledigt.")
+            return
+        if self._is_satisfied():
+            self.detected_label.setText(self._detected_text())
+            self.use_button.setVisible(True)
+            self.action_button.setText(
+                _BUTTON_OVERRIDES.get(self.step.id,
+                                      "Anderes ausw\u00e4hlen \u2026")
+            )
+        else:
+            self.detected_label.setText("")
+            self.use_button.setVisible(False)
+            self.action_button.setText(
+                _BUTTON_OVERRIDES.get(self.step.id,
+                                      "Jetzt erledigen \u2026")
+            )
+
     def initializePage(self) -> None:  # noqa: N802 (Qt naming)
-        """Refresh the satisfied-state right before showing."""
-        if self.isComplete():
-            self.status_label.setStyleSheet(
-                f"color: {accent_color('success')};"
-            )
-            self.status_label.setText(
-                "\u2713 Bereits erledigt \u2013 Sie können weitergehen."
-            )
-            self.action_button.setVisible(False)
-            self.completeChanged.emit()
+        """Refresh the detected-state right before showing."""
+        self._refresh_mode()
+
+    # ------------------------------------------------------------------
+    # actions
+    # ------------------------------------------------------------------
+
+    def confirm_detected(self) -> None:
+        """Accept the auto-detected entity and complete the step."""
+        if self._executed:
+            return
+        target = _PIN_TARGETS.get(self.step.id)
+        if target is not None:
+            entity = self._detected_entity()
+            if entity is not None:
+                setattr(self._host.context, target, entity)
+        self._executed = True
+        self.use_button.setVisible(False)
+        self.action_button.setVisible(False)
+        self.detected_label.setText("")
+        self.status_label.setText("\u2713 Erledigt.")
+        self.completeChanged.emit()
 
     def run_executor(self) -> None:
         """Invoke the step's executor, pin its result, record success."""
@@ -450,7 +556,9 @@ class _StepPage(QWizardPage):
             self.status_label.setStyleSheet(
                 f"color: {accent_color('error')};"
             )
-            self.status_label.setText("Interner Fehler: kein Ablauf hinterlegt.")
+            self.status_label.setText(
+                "Interner Fehler: kein Ablauf hinterlegt."
+            )
             return
         result = executor(self._host.context)
         if result:
@@ -458,16 +566,15 @@ class _StepPage(QWizardPage):
             if target is not None and not isinstance(result, bool):
                 setattr(self._host.context, target, result)
             self._executed = True
-            self.status_label.setStyleSheet(
-                f"color: {accent_color('success')};"
-            )
+            self.use_button.setVisible(False)
             self.status_label.setText("\u2713 Erledigt.")
             self.completeChanged.emit()
 
     def isComplete(self) -> bool:  # noqa: N802 (Qt naming)
-        if self._executed:
-            return True
-        return self.step.is_done(self._host.context)
+        # Deliberately NOT satisfied-check based: an auto-detected
+        # prerequisite stays incomplete until the user confirms or
+        # replaces it (no silent pre-checking).
+        return self._executed
 
 
 # ----------------------------------------------------------------------
@@ -515,9 +622,9 @@ class TaskWizard(QWizard):
         self.intro_label = intro.summary_label
         self.addPage(intro)
 
+        # Every step gets a page: open steps show an action button,
+        # satisfied steps become confirm pages. Nothing is skipped.
         for step in task.steps:
-            if step.is_done(self.context):
-                continue
             page = _StepPage(self, step)
             self.step_pages[step.id] = page
             self.addPage(page)
