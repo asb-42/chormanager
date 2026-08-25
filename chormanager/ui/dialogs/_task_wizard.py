@@ -48,6 +48,7 @@ from ...domain.taskflow import (
     TaskStep,
     evaluate_task,
     resolve_besetzung,
+    resolve_besetzung_for_event,
     resolve_event,
     resolve_project,
 )
@@ -67,6 +68,7 @@ _BUTTON_OVERRIDES = {
     "verfuegbarkeit_erfassen": "Rückmeldungen öffnen",
     "aufstellung_oeffnen": "Aufstellung öffnen",
     "mitglied_anlegen": "Mitglied anlegen",
+    "besetzung_pruefen": "Besetzung wählen \u2026",
 }
 
 #: Step-id -> TaskContext attribute the wizard pins automatically when
@@ -76,6 +78,7 @@ _PIN_TARGETS = {
     "termin_waehlen": "event",
     "termin_anlegen": "event",
     "besetzung_waehlen": "besetzung",
+    "besetzung_pruefen": "besetzung",
 }
 
 #: Step-id -> resolver for auto-detected entities shown on confirm
@@ -84,6 +87,7 @@ _DETECTED_RESOLVERS = {
     "projekt_waehlen": resolve_project,
     "termin_waehlen": resolve_event,
     "besetzung_waehlen": resolve_besetzung,
+    "besetzung_pruefen": resolve_besetzung_for_event,
 }
 
 
@@ -333,7 +337,32 @@ def build_default_executors(
             set_last_active_besetzung_id(besetzung.id)
         return besetzung
 
+    def do_besetzung_pruefen(context: TaskContext):
+        """Confirm/choose the besetzung matching the pinned termin."""
+        event = context.event
+        if event is None:
+            return None
+        if not event.project_id:
+            QMessageBox.information(
+                parent,
+                "Termin ohne Projekt",
+                "Der Termin gehört zu keinem Projekt. Im nächsten "
+                "Schritt werden alle aktiven Sänger angezeigt.",
+            )
+            return True
+        project = ProjectRepository(db).get_by_id(event.project_id)
+        dialog = BesetzungPickDialog(db, project, parent=parent)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return None
+        besetzung = dialog.get_besetzung()
+        if besetzung is not None:
+            from ...config import set_last_active_besetzung_id
+
+            set_last_active_besetzung_id(besetzung.id)
+        return besetzung
+
     def do_verfuegbarkeit(context: TaskContext):
+        from ...config import get_last_active_besetzung_id
         from ...domain.taskflow import resolve_event
 
         event = resolve_event(context)
@@ -344,7 +373,36 @@ def build_default_executors(
                 "Bitte zuerst einen Termin festlegen.",
             )
             return None
-        dialog = EventAvailabilityDialog(db, event, parent)
+
+        # Mirror events_tab: filter the dialog to the besetzung that
+        # was pinned/confirmed earlier in the wizard (fallback: the
+        # last active besetzung), so only the right singers appear.
+        besetzung = context.besetzung
+        if besetzung is None and context.db is not None:
+            from ...domain.repository import BesetzungRepository
+
+            saved_id = get_last_active_besetzung_id()
+            if saved_id:
+                besetzung = BesetzungRepository(context.db).get_by_id(
+                    saved_id
+                )
+
+        besetzung_ids = None
+        besetzung_name = None
+        besetzung_count = 0
+        if besetzung is not None:
+            besetzung_ids = besetzung.get_singer_ids()
+            besetzung_name = besetzung.name
+            besetzung_count = len(besetzung_ids)
+
+        dialog = EventAvailabilityDialog(
+            db,
+            event,
+            parent,
+            besetzung_ids=besetzung_ids,
+            besetzung_name=besetzung_name,
+            besetzung_count=besetzung_count,
+        )
         if dialog.exec() != QDialog.DialogCode.Accepted:
             return None
         return True
@@ -386,6 +444,7 @@ def build_default_executors(
         "termin_waehlen": do_termin,
         "termin_anlegen": do_termin_neu,
         "besetzung_waehlen": do_besetzung,
+        "besetzung_pruefen": do_besetzung_pruefen,
         "verfuegbarkeit_erfassen": do_verfuegbarkeit,
         "mitglied_anlegen": do_mitglied,
         "aufstellung_oeffnen": do_aufstellung_oeffnen,

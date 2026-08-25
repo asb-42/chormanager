@@ -332,7 +332,155 @@ class TestDefaultExecutors:
         result = build_default_executors(db, parent=None)[
             "termin_anlegen"
         ](TaskContext(db=db))
+
         assert result is None
+
+    def test_besetzung_pruefen_pins_besetzung_of_event_project(
+        self, qtbot, db, monkeypatch
+    ):
+        from PyQt6.QtWidgets import QDialog
+
+        import chormanager.ui.dialogs._task_wizard as tw
+        from chormanager.domain.repository import (
+            BesetzungRepository,
+            EventRepository,
+            ProjectRepository,
+        )
+        from chormanager.domain.taskflow import TaskContext
+        from chormanager.ui.dialogs._task_wizard import (
+            build_default_executors,
+        )
+
+        project = ProjectRepository(db).create(name="P")
+        event = EventRepository(db).create(
+            name="E", date="2026-10-01", event_type="konzert",
+            project_id=project.id,
+        )
+        besetzung = BesetzungRepository(db).create(
+            name="B", project_id=project.id, singer_ids=["s1"]
+        )
+
+        captured = {}
+
+        class FakePick:
+            def __init__(self, db=None, project=None, parent=None):
+                captured["project_id"] = project.id if project else None
+
+            def exec(self):
+                return QDialog.DialogCode.Accepted
+
+            def get_besetzung(self):
+                return besetzung
+
+        monkeypatch.setattr(tw, "BesetzungPickDialog", FakePick)
+
+        import chormanager.config as config_module
+
+        monkeypatch.setattr(
+            config_module,
+            "set_last_active_besetzung_id",
+            lambda bid: captured.setdefault("active", bid),
+        )
+
+        context = TaskContext(db=db, event=event)
+        result = build_default_executors(db, parent=None)[
+            "besetzung_pruefen"
+        ](context)
+
+        assert result is besetzung
+        assert captured["project_id"] == project.id
+
+    def test_verfuegbarkeit_passes_besetzung_filter(
+        self, qtbot, db, monkeypatch
+    ):
+        from PyQt6.QtWidgets import QDialog
+
+        import chormanager.ui.dialogs._task_wizard as tw
+        from chormanager.domain.repository import (
+            BesetzungRepository,
+            EventRepository,
+            ProjectRepository,
+        )
+        from chormanager.domain.taskflow import TaskContext
+        from chormanager.ui.dialogs._task_wizard import (
+            build_default_executors,
+        )
+
+        project = ProjectRepository(db).create(name="P")
+        event = EventRepository(db).create(
+            name="E", date="2026-10-01", event_type="konzert",
+            project_id=project.id,
+        )
+        besetzung = BesetzungRepository(db).create(
+            name="B", project_id=project.id, singer_ids=["s1", "s2"]
+        )
+
+        captured = {}
+
+        class FakeAvailDialog:
+            def __init__(self, db=None, event=None, parent=None,
+                         besetzung_ids=None, besetzung_name=None,
+                         besetzung_count=0):
+                captured.update(
+                    besetzung_ids=besetzung_ids,
+                    besetzung_name=besetzung_name,
+                    besetzung_count=besetzung_count,
+                )
+
+            def exec(self):
+                return QDialog.DialogCode.Accepted
+
+        monkeypatch.setattr(tw, "EventAvailabilityDialog", FakeAvailDialog)
+
+        context = TaskContext(db=db, event=event, besetzung=besetzung)
+        result = build_default_executors(db, parent=None)[
+            "verfuegbarkeit_erfassen"
+        ](context)
+
+        assert result is True
+        assert captured["besetzung_ids"] == ["s1", "s2"]
+        assert captured["besetzung_name"] == "B"
+        assert captured["besetzung_count"] == 2
+
+    def test_verfuegbarkeit_without_besetzung_shows_all(
+        self, qtbot, db, monkeypatch
+    ):
+        from PyQt6.QtWidgets import QDialog
+
+        import chormanager.ui.dialogs._task_wizard as tw
+        from chormanager.domain.repository import EventRepository
+        from chormanager.domain.taskflow import TaskContext
+        from chormanager.ui.dialogs._task_wizard import (
+            build_default_executors,
+        )
+
+        event = EventRepository(db).create(
+            name="E", date="2026-10-01", event_type="konzert",
+        )
+
+        captured = {}
+
+        class FakeAvailDialog:
+            def __init__(self, db=None, event=None, parent=None,
+                         besetzung_ids=None, besetzung_name=None,
+                         besetzung_count=0):
+                captured.update(
+                    besetzung_ids=besetzung_ids,
+                    besetzung_count=besetzung_count,
+                )
+
+            def exec(self):
+                return QDialog.DialogCode.Accepted
+
+        monkeypatch.setattr(tw, "EventAvailabilityDialog", FakeAvailDialog)
+
+        context = TaskContext(db=db, event=event)
+        build_default_executors(db, parent=None)[
+            "verfuegbarkeit_erfassen"
+        ](context)
+
+        assert captured["besetzung_ids"] is None
+        assert captured["besetzung_count"] == 0
 
 
 class TestPickDialogs:

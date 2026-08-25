@@ -236,36 +236,80 @@ class TestOtherTasks:
         rows = evaluate_task(task, TaskContext(db=db))
         assert [s for _, s in rows][:2] == [StepStatus.DONE, StepStatus.OPEN]
 
-    def test_verfuegbarkeit_erfassen_needs_any_event(self, db):
+    def test_verfuegbarkeit_termin_step_needs_explicit_pick(self, db):
+        """Regression: 'Termin auswählen' is THE decision of this task
+        and must never be auto-detected as done."""
         task = get_task("verfuegbarkeit_erfassen")
-        rows = evaluate_task(task, TaskContext(db=db))
-        assert [s for _, s in rows] == [StepStatus.OPEN, StepStatus.OPEN]
-
         _seed_event(db, project_id=_seed_project(db).id)
+
         rows = evaluate_task(task, TaskContext(db=db))
+        assert rows[0][1] is StepStatus.OPEN
+
+        from chormanager.domain.repository import EventRepository
+        pinned = EventRepository(db).get_all()[0]
+        rows = evaluate_task(task, TaskContext(db=db, event=pinned))
         assert rows[0][1] is StepStatus.DONE
 
-    def test_verfuegbarkeit_prefers_pinned_event(self, db):
-        """A pinned event must be the availability target even when an
-        older event would be auto-detected."""
+    def test_verfuegbarkeit_besetzung_step_matches_event_project(
+        self, db
+    ):
+        """The besetzung must belong to the termin's project."""
         task = get_task("verfuegbarkeit_erfassen")
-        project_id = _seed_project(db).id
-        old_event = _seed_event(db, project_id=project_id, date="2026-01-01")
-        new_event = _seed_event(db, project_id=project_id, date="2026-12-31")
-        singer = _seed_singer(db)
-        _seed_availability(db, singer.id, old_event.id, status="yes")
+        project = _seed_project(db)
+        other = _seed_project(db, name="Fremd", active=False)
+        event = _seed_event(db, project_id=project.id)
+        _seed_besetzung(db, other.id, [])
 
-        # Auto-detection (no pin) picks the newest event -> no replies.
-        rows = evaluate_task(task, TaskContext(db=db))
-        assert rows[0][1] is StepStatus.DONE
+        context = TaskContext(db=db, event=event)
+        rows = evaluate_task(task, context)
+        assert rows[1][1] is StepStatus.OPEN
 
-        # Pinning the old event keeps the user's conscious choice.
-        rows = evaluate_task(task, TaskContext(db=db, event=old_event))
-        assert rows[0][1] is StepStatus.DONE
-        assert new_event is not None  # both events exist side by side
+        _seed_besetzung(db, project.id, [])
+        rows = evaluate_task(task, context)
+        assert rows[1][1] is StepStatus.DONE
+
+    def test_verfuegbarkeit_besetzung_step_skipped_without_project(
+        self, db
+    ):
+        """A termin without project has no besetzung linkage; the step
+        counts as satisfied (all active singers will be shown)."""
+        task = get_task("verfuegbarkeit_erfassen")
+        event = _seed_event(db, project_id=None)
+
+        rows = evaluate_task(task, TaskContext(db=db, event=event))
+        assert rows[1][1] is StepStatus.DONE
 
     def test_mitglied_aufnehmen_has_no_prerequisites(self, db):
         task = get_task("mitglied_aufnehmen")
         assert len(task.steps) >= 1
         rows = evaluate_task(task, TaskContext(db=db))
         assert all(status is StepStatus.OPEN for _, status in rows)
+
+
+class TestBesetzungResolverForEvent:
+    """resolve_besetzung_for_event mirrors the event's project."""
+
+    def test_prefers_pinned_besetzung_of_same_project(self, db):
+        from chormanager.domain.taskflow import resolve_besetzung_for_event
+
+        project = _seed_project(db)
+        event = _seed_event(db, project_id=project.id)
+        besetzung = _seed_besetzung(db, project.id, [])
+
+        context = TaskContext(db=db, event=event, besetzung=besetzung)
+        assert resolve_besetzung_for_event(context) is besetzung
+
+    def test_detects_first_besetzung_of_event_project(self, db):
+        from chormanager.domain.taskflow import resolve_besetzung_for_event
+
+        project = _seed_project(db)
+        event = _seed_event(db, project_id=project.id)
+        besetzung = _seed_besetzung(db, project.id, [])
+
+        context = TaskContext(db=db, event=event)
+        assert resolve_besetzung_for_event(context).id == besetzung.id
+
+    def test_none_without_event(self, db):
+        from chormanager.domain.taskflow import resolve_besetzung_for_event
+
+        assert resolve_besetzung_for_event(TaskContext(db=db)) is None

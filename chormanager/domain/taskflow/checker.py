@@ -86,6 +86,46 @@ def resolve_event(context: TaskContext) -> Optional[Any]:
     return _latest_project_event(context)
 
 
+def check_event_pinned(context: TaskContext) -> bool:
+    """True only when the wizard context pins a concrete event.
+
+    Used for steps where picking the termin IS the user's decision
+    (e.g. recording availability) — such steps are never auto-done.
+    """
+    return context.event is not None
+
+
+def resolve_besetzung_for_event(context: TaskContext) -> Optional[Any]:
+    """Return the besetzung matching the pinned event's project.
+
+    Prefers the pinned besetzung; falls back to the first besetzung of
+    the event's project. Returns ``None`` when no event is pinned or
+    the project has none.
+    """
+    if context.besetzung is not None:
+        return context.besetzung
+    event = context.event
+    if event is None or context.db is None or not event.project_id:
+        return None
+    besetzungen = BesetzungRepository(context.db).get_by_project(
+        event.project_id
+    )
+    return besetzungen[0] if besetzungen else None
+
+
+def check_besetzung_for_event(context: TaskContext) -> bool:
+    """True when the termin's project has a (pinned) besetzung.
+
+    A termin without project has no besetzung linkage at all — the
+    step counts as satisfied (the availability dialog will then show
+    all active singers).
+    """
+    if resolve_besetzung_for_event(context) is not None:
+        return True
+    event = context.event
+    return event is not None and not event.project_id
+
+
 def resolve_besetzung(context: TaskContext) -> Optional[Any]:
     """Return the pinned besetzung or the project's first one."""
     if context.besetzung is not None:

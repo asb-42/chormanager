@@ -185,30 +185,20 @@ class EventAvailabilityDialog(QDialog):
 
         logger = logging.getLogger(__name__)
 
-        trace_file = "/tmp/chormanager_trace.txt"
-        with open(trace_file, "a") as f:
-            f.write(f"Dialog _load_availability called\n")
-            f.write(
-                f"besetzung_ids: {len(self.besetzung_ids) if self.besetzung_ids else None}\n"
-            )
-
         singers = self.singer_repo.get_active()
         logger.info(f"_load_availability: loaded {len(singers)} active singers")
 
         if self.besetzung_ids is not None:
-            singers_filtered = [s for s in singers if s.id in self.besetzung_ids]
-            with open(trace_file, "a") as f:
-                f.write(
-                    f"Filtered from {len(singers)} to {len(singers_filtered)} singers\n"
-                )
+            singers = [s for s in singers if s.id in self.besetzung_ids]
             logger.info(
-                f"_load_availability: filtered to {len(singers_filtered)} singers (besetzung_ids has {len(self.besetzung_ids)} IDs)"
+                f"_load_availability: filtered to {len(singers)} singers "
+                f"(besetzung_ids has {len(self.besetzung_ids)} IDs)"
             )
-            singers = singers_filtered
         else:
-            with open(trace_file, "a") as f:
-                f.write("No filter applied (besetzung_ids is None)\n")
-            logger.info("_load_availability: no filter applied (besetzung_ids is None)")
+            logger.info(
+                "_load_availability: no besetzung filter applied "
+                "(showing all active singers)"
+            )
 
         search_text = self.search_box.text().strip().lower()
         voice_filter = self.voice_filter.currentData()

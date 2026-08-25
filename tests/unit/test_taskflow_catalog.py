@@ -56,3 +56,12 @@ class TestCatalog:
             "verfuegbarkeit_erfassen",
             "aufstellung_oeffnen",
         ]
+
+    def test_verfuegbarkeit_chain_order(self):
+        """Pick termin -> check besetzung -> record replies."""
+        steps = get_task("verfuegbarkeit_erfassen").steps
+        assert [s.id for s in steps] == [
+            "termin_waehlen",
+            "besetzung_pruefen",
+            "verfuegbarkeit_erfassen",
+        ]

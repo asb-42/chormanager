@@ -13,12 +13,15 @@ The package must stay free of Qt imports.
 from .checker import (
     check_availability,
     check_besetzung,
+    check_besetzung_for_event,
+    check_event_pinned,
     check_project,
     check_termin,
     evaluate_task,
     next_open_step,
     progress,
     resolve_besetzung,
+    resolve_besetzung_for_event,
     resolve_event,
     resolve_project,
 )
@@ -34,12 +37,15 @@ __all__ = [
     # checker
     "check_availability",
     "check_besetzung",
+    "check_besetzung_for_event",
+    "check_event_pinned",
     "check_project",
     "check_termin",
     "evaluate_task",
     "next_open_step",
     "progress",
     "resolve_besetzung",
+    "resolve_besetzung_for_event",
     "resolve_event",
     "resolve_project",
     # catalog

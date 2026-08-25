@@ -20,9 +20,21 @@ split is headless testability and future front-end reuse).
   ``context.db``.
 * **Resolvers mirror checks.** Every auto-detectable prerequisite has
   a public ``resolve_*`` helper (``resolve_project``,
-  ``resolve_event``, ``resolve_besetzung``) returning the detected
-  entity. The wizard shows these on confirm pages and pins them into
-  the context when the user accepts.
+  ``resolve_event``, ``resolve_besetzung``,
+  ``resolve_besetzung_for_event``) returning the detected entity. The
+  wizard shows these on confirm pages and pins them into the context
+  when the user accepts.
+* **Selection steps are pinned-only.** Steps whose entire purpose is
+  a user decision (``termin_waehlen`` in the availability task) use
+  ``check_event_pinned`` and are NEVER auto-detected — auto-detect is
+  only for convenience prerequisites the user can confirm/replace on
+  the wizard page.
+* **Besetzung links singers to projects.** The data model has no
+  direct singer↔project relation; ``besetzung.singer_ids`` (JSON,
+  no FK) is the only link, and availability ignores besetzung. The
+  ``besetzung_pruefen`` step exists to make that implicit chain
+  explicit in the wizard (it sets the active-besetzung config key
+  that the availability dialog filters by).
 * **Context pinning beats auto-detection.** When
   ``context.project/event/besetzung`` is set, checks must evaluate
   against the pinned entity, never re-detect one.

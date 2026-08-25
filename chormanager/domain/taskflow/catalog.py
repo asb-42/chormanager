@@ -12,6 +12,8 @@ from typing import Dict, List
 from .checker import (
     check_availability,
     check_besetzung,
+    check_besetzung_for_event,
+    check_event_pinned,
     check_project,
     check_termin,
 )
@@ -132,7 +134,16 @@ def _verfuegbarkeit_erfassen() -> TaskDefinition:
                     "Wählen Sie den Termin aus, für den Rückmeldungen "
                     "erfasst werden sollen."
                 ),
-                check=check_termin,
+                check=check_event_pinned,
+            ),
+            TaskStep(
+                id="besetzung_pruefen",
+                title="Besetzung prüfen",
+                description=(
+                    "Wer soll antworten? Ohne passende Besetzung werden "
+                    "alle aktiven Sänger angezeigt."
+                ),
+                check=check_besetzung_for_event,
             ),
             TaskStep(
                 id="verfuegbarkeit_erfassen",
