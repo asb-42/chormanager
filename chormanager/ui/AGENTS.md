@@ -25,12 +25,16 @@ and the dialog / view sub-folders.
   ``pyqtSignal`` to the widgets; emit through TabSignals.
   (Exception: pre-existing per-view signals stay where they are;
   ``TAB_TASKS = 6`` is defined there.)
-* **Theme-aware styling.** Never hardcode light-theme hex colors in
-  widget stylesheets — they override the window-wide dark stylesheet.
-  Use Qt palette roles (``palette(base)``, ``palette(mid)``, …) for
-  surfaces/text and ``theme_manager.accent_color("success"/"error")``
-  for semantic status colors. Widgets reacting to live theme switches
-  re-render on ``changeEvent(StyleChange)``.
+* **Theme-aware styling.** This app themes via a window-wide
+  stylesheet ONLY — no dark ``QPalette`` is ever installed, so
+  ``palette(...)`` roles in widget QSS resolve to the *light* system
+  palette and break the dark theme. Never use them. Instead: explicit
+  per-theme colors via ``config.get_theme()`` (see
+  ``views/tasks_view.py:card_stylesheet``) and semantic accents via
+  ``theme_manager.accent_color("success"/"error")``. Widgets must
+  re-apply styling on ``changeEvent(StyleChange)``; child labels need
+  ``background: transparent`` so the global ``QWidget`` rule does not
+  paint boxes over custom surfaces.
 * **SubprocessRunner is the async primitive.** Any
   ``subprocess.run`` should go through
   ``chormanager/ui/subprocess_runner.py:SubprocessRunner`` (M-1)

@@ -21,6 +21,7 @@ from PyQt6.QtWidgets import (
     QWidget,
 )
 
+from ...config import get_theme
 from ...data.database import Database
 from ...domain.taskflow import (
     StepStatus,
@@ -33,6 +34,51 @@ from ...domain.taskflow import (
 _STATUS_DONE = "\u2713"   # ✓
 _STATUS_OPEN = "\u25CB"   # ○
 
+# Per-theme card styling. IMPORTANT: this app themes via a window-wide
+# stylesheet only and never installs a dark QPalette, so palette()
+# roles resolve to the *light* system palette. Cards therefore carry
+# explicit colors per theme. Labels inside the card must be
+# transparent, otherwise the global "QWidget { background-color }"
+# rule paints dark boxes over the card surface.
+_CARD_THEMES = {
+    "light": {
+        "surface": "#ffffff",
+        "border": "#d0d7de",
+        "title": "#2c3e50",
+        "muted": "#555555",
+    },
+    "dark": {
+        "surface": "#2d2d2d",
+        "border": "#404040",
+        "title": "#ffffff",
+        "muted": "#b0b0b0",
+    },
+}
+
+
+def card_stylesheet(theme: str) -> str:
+    """Return the TaskCard QSS for ``theme`` (``"light"``/``"dark"``).
+
+    Unknown themes fall back to ``"light"``.
+    """
+    colors = _CARD_THEMES.get(theme, _CARD_THEMES["light"])
+    return f"""
+            QFrame#taskCard {{
+                background-color: {colors["surface"]};
+                border: 1px solid {colors["border"]};
+                border-radius: 8px;
+            }}
+            QFrame#taskCard QLabel {{
+                background: transparent;
+                color: {colors["muted"]};
+            }}
+            QFrame#taskCard QLabel#cardTitle {{
+                font-size: 13pt;
+                font-weight: bold;
+                color: {colors["title"]};
+            }}
+            """
+
 
 class TaskCard(QFrame):
     """One clickable card representing a single task definition."""
@@ -43,21 +89,7 @@ class TaskCard(QFrame):
         super().__init__(parent)
         self.task = task
         self.setObjectName("taskCard")
-        # Theme-aware: palette roles follow the window-wide light/dark
-        # stylesheet; no hardcoded hex colors here (dark-mode fix).
-        self.setStyleSheet(
-            """
-            QFrame#taskCard {
-                background-color: palette(base);
-                border: 1px solid palette(mid);
-                border-radius: 8px;
-            }
-            QFrame#taskCard QLabel#cardTitle {
-                font-size: 13pt;
-                font-weight: bold;
-            }
-            """
-        )
+        self.apply_theme("light")
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 12, 16, 12)
@@ -86,6 +118,10 @@ class TaskCard(QFrame):
         self.start_button.clicked.connect(lambda: self.started.emit(self.task))
         bottom_row.addWidget(self.start_button)
         layout.addLayout(bottom_row)
+
+    def apply_theme(self, theme: str) -> None:
+        """Apply the card stylesheet for ``theme``."""
+        self.setStyleSheet(card_stylesheet(theme))
 
     def update_status(self, context: TaskContext) -> None:
         """Re-evaluate the checklist against ``context``."""
@@ -163,9 +199,14 @@ class TasksView(QWidget):
         self.task_started.emit(task.id)
 
     def refresh(self) -> None:
-        """Update every card's checklist from the current database."""
+        """Update card theming and checklists from the current state."""
+        try:
+            theme = get_theme()
+        except Exception:
+            theme = "light"
         context = TaskContext(db=self.db)
         for card in self.cards:
+            card.apply_theme(theme)
             card.update_status(context)
 
     def showEvent(self, event) -> None:  # noqa: N802 (Qt naming)

@@ -91,21 +91,50 @@ class TestTasksView:
 class TestDarkThemeSupport:
     """The Aufgaben view must respect the app's dark theme.
 
-    Regression: the card stylesheet hardcoded light-theme hex colors
+    Regression 1: the card stylesheet hardcoded light-theme hex colors
     which override the window-wide dark stylesheet.
+    Regression 2: palette() roles do NOT work in this app — the dark
+    theme is stylesheet-only and no dark QPalette is ever installed,
+    so palette(base) resolves to the light system palette (white
+    cards) and labels inherit the global dark QWidget background
+    (black boxes). Cards must therefore carry explicit per-theme QSS.
     """
 
-    def test_card_stylesheet_uses_palette_roles_not_hex_colors(self, view):
-        sheet = view.cards[0].styleSheet()
-        assert "palette(base)" in sheet
-        assert "#ffffff" not in sheet
-        assert "#2c3e50" not in sheet
-        assert "#555555" not in sheet
+    def test_dark_card_uses_dark_surface(self):
+        from chormanager.ui.views.tasks_view import card_stylesheet
 
-    def test_intro_label_has_no_hardcoded_text_color(self, view):
-        intro_sheet = view.intro_label.styleSheet()
-        # Only layout hints allowed; text color must come from theme.
-        assert "color" not in intro_sheet.lower()
+        sheet = card_stylesheet("dark")
+        assert "background-color: #2d2d2d" in sheet
+        assert "palette(" not in sheet
+
+    def test_light_card_uses_white_surface(self):
+        from chormanager.ui.views.tasks_view import card_stylesheet
+
+        sheet = card_stylesheet("light")
+        assert "background-color: #ffffff" in sheet
+        assert "palette(" not in sheet
+
+    def test_card_labels_are_transparent_in_both_themes(self):
+        """Labels must not paint the global QWidget background over
+        the card surface (the 'black boxes' bug)."""
+        from chormanager.ui.views.tasks_view import card_stylesheet
+
+        for theme in ("light", "dark"):
+            assert "transparent" in card_stylesheet(theme), theme
+
+    def test_unknown_theme_falls_back_to_light(self):
+        from chormanager.ui.views.tasks_view import card_stylesheet
+
+        assert card_stylesheet("gibtsnicht") == card_stylesheet("light")
+
+    def test_refresh_applies_configured_theme(self, view, monkeypatch):
+        import chormanager.ui.theme_manager as tm
+        from chormanager.ui.views import tasks_view
+
+        monkeypatch.setattr(tasks_view, "get_theme", lambda: "dark")
+        view.refresh()
+
+        assert "#2d2d2d" in view.cards[0].styleSheet()
 
     def test_style_change_event_triggers_refresh(self, view):
         from PyQt6.QtCore import QEvent
