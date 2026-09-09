@@ -18,6 +18,14 @@ module they cover: e.g. tests for
   in any order. Module-level fixtures are allowed; global
   state (e.g. ``os.environ``) must be restored in the fixture's
   teardown.
+* **No test touches the repo-local ``data/state.json``** (PR-Review
+  R2, 2026-09-09). The root ``tests/conftest.py`` autouse fixture
+  ``isolated_state_file`` redirects
+  ``chormanager.config.get_state_file`` to a per-test temp file for
+  ALL tiers (unit leaks via ``ProjectsTab.set_current_project`` were
+  found too). Tests needing a pre-seeded state monkey-patch
+  ``config.get_state_file`` themselves — the later (inner) patch
+  wins.
 * **Headless execution.** All Qt tests run with
   ``QT_QPA_PLATFORM=offscreen``. The CI does not provide a
   display server.

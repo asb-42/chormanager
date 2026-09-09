@@ -71,8 +71,18 @@ def save_state(state: dict):
 
     Args:
         state: State dictionary to save.
+
+    Raises:
+        OSError: If the parent directory cannot be created or the
+            write fails despite the atomic-write fallback below.
     """
     state_file = get_state_file()
+    # PR-Review R1 (2026-09-09): On a pristine checkout ``data/`` may
+    # not exist yet (nothing ran the Database constructor). Creating
+    # the parent here keeps every early state write -- e.g.
+    # ``EventsTab._restore_active_event`` dropping a stale event id
+    # on first launch -- from raising FileNotFoundError.
+    state_file.parent.mkdir(parents=True, exist_ok=True)
     tmp_file = str(state_file) + ".tmp"
     try:
         with open(tmp_file, "w", encoding="utf-8") as f:
