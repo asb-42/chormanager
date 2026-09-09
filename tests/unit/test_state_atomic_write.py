@@ -82,3 +82,31 @@ def test_save_state_uses_os_replace(tmp_path: Path, monkeypatch):
     config.save_state({"x": 2})
     assert replaced["count"] == 1
     assert json.loads(state_file.read_text(encoding="utf-8")) == {"x": 2}
+
+
+def test_save_state_creates_missing_parent_directory(tmp_path: Path, monkeypatch):
+    """PR-Review R1 (2026-09-09, fresh-clone failure):
+
+    On a pristine checkout ``data/`` does not exist yet. Any code path
+    that persists state *before* the Database constructor ran (e.g.
+    ``EventsTab._restore_active_event`` dropping a stale event id)
+    hit ``FileNotFoundError`` on ``data/state.json.tmp`` because
+    ``save_state`` never created the parent directory.
+
+    Contract: ``save_state`` must create missing parent directories
+    instead of raising, so the first state write on a fresh clone
+    succeeds.
+    """
+    from chormanager import config
+
+    # Two missing levels (data/ and a nested sub-structure) prove
+    # parents=True handling, not just a single mkdir.
+    state_file = tmp_path / "noch" / "nicht" / "da" / "state.json"
+    monkeypatch.setattr(config, "get_state_file", lambda: state_file)
+
+    config.save_state({"theme": "dark"})
+
+    assert state_file.parent.is_dir()
+    assert json.loads(state_file.read_text(encoding="utf-8")) == {"theme": "dark"}
+    # Atomicity contract stays intact: no leftover tmp file.
+    assert not Path(str(state_file) + ".tmp").exists()

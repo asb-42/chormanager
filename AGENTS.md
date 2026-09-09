@@ -41,7 +41,7 @@
 - py_compile + pytest würden lokal durchlaufen?
 - Keine Platzhalter, kein "TODO", keine Globalen?
 - Undo/Redo via QUndoCommand für State-Changes?
-- XDG-Pfade & atomic I/O bei Dateien?
+- Atom­ic I/O bei Dateien (tmp + ``os.replace``, Eltern-Verzeichnis ``mkdir(parents=True)``)?
 
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence

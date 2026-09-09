@@ -16,6 +16,35 @@ if _choraufstellung_path not in sys.path:
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
 
 
+@pytest.fixture(autouse=True)
+def isolated_state_file(tmp_path, monkeypatch):
+    """Redirect ``config.get_state_file`` to a per-test temp file.
+
+    PR-Review R2 (2026-09-09): widgets persist UI state via
+    ``chormanager.config.save_state`` (``set_last_active_*``, theme
+    switches). Unpatched tests wrote silently to the developer's real
+    ``data/state.json`` -- e.g. ``ProjectsTab.set_current_project``
+    leaked ``last_active_project_id`` from unit tests.
+
+    ``get_state_file`` is resolved *inside* ``chormanager.config`` by
+    ``load_state``/``save_state``, so redirecting it here isolates
+    every consumer. Tests that seed a specific state monkey-patch
+    ``config.get_state_file`` again -- the later (inner) patch wins.
+
+    Args:
+        tmp_path: pytest per-test temporary directory.
+        monkeypatch: pytest monkeypatch fixture.
+
+    Returns:
+        pathlib.Path: the isolated state file path (no state yet).
+    """
+    from chormanager import config
+
+    state_file = tmp_path / "state.json"
+    monkeypatch.setattr(config, "get_state_file", lambda: state_file)
+    return state_file
+
+
 @pytest.fixture
 def temp_dir():
     """Provides a temporary directory that is cleaned up after the test."""
