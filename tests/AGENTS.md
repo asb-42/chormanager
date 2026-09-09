@@ -26,6 +26,17 @@ module they cover: e.g. tests for
   found too). Tests needing a pre-seeded state monkey-patch
   ``config.get_state_file`` themselves — the later (inner) patch
   wins.
+* **No test reads the developer's real ChorAufstellung autosaves**
+  (PR #4 follow-up, 2026-09-10). The sub-app resolves its data dir
+  in ``choraufstellung/storage.py:_get_data_dir`` AND
+  ``choraufstellung/config.py:get_data_dir``, each module existing
+  twice (top-level + package) due to the ``__init__.py`` sys.path
+  shim. The autouse fixture ``isolated_choraufstellung_data_dir``
+  (root ``tests/conftest.py``) imports both instances eagerly and
+  redirects them to a per-test temp dir. Without it a real
+  ``MainWindow`` under test ran recovery against genuine user
+  autosaves in ``choraufstellung/data/backups`` and the modal
+  restore dialog hung the offscreen suite.
 * **Headless execution.** All Qt tests run with
   ``QT_QPA_PLATFORM=offscreen``. The CI does not provide a
   display server.

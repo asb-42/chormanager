@@ -45,6 +45,62 @@ def isolated_state_file(tmp_path, monkeypatch):
     return state_file
 
 
+@pytest.fixture(autouse=True)
+def isolated_choraufstellung_data_dir(tmp_path, monkeypatch):
+    """Redirect ChorAufstellung's data dir to a per-test temp dir.
+
+    PR #4 follow-up (2026-09-10): the choraufstellung sub-app resolves
+    its data directory in TWO places --
+    * ``choraufstellung/config.py:get_data_dir`` (imported by main.py)
+    * ``choraufstellung/storage.py:_get_data_dir`` (own definition,
+      used by FormationStorage for autosaves/backups)
+    and, due to the ``sys.path`` shim in
+    ``choraufstellung/__init__.py``, each module exists TWICE (top
+    level ``storage`` and ``chormanager.choraufstellung.storage``).
+
+    Unpatched, a real ``MainWindow`` under test ran its recovery flow
+    against the developer's REAL autosaves in
+    ``choraufstellung/data/backups`` and the modal "Wiederherstellen?"
+    dialog blocked the offscreen suite forever (unit test
+    ``test_choraufstellung_close_event_modified.py`` hung whenever
+    genuine user autosaves existed).
+
+    Args:
+        tmp_path: pytest per-test temporary directory.
+        monkeypatch: pytest monkeypatch fixture.
+
+    Returns:
+        pathlib.Path: the isolated choraufstellung data dir (empty).
+    """
+    import importlib
+    import sys
+
+    ca_data_dir = tmp_path / "choraufstellung-data"
+
+    # Import both module instances eagerly: on a fresh session the
+    # choraufstellung package may not be loaded yet when the first
+    # test runs, and patching sys.modules-only would silently miss.
+    for mod_name in (
+        "storage", "chormanager.choraufstellung.storage",
+        "config", "chormanager.choraufstellung.config",
+    ):
+        try:
+            mod = importlib.import_module(mod_name)
+        except ImportError:
+            continue
+        target_attr = (
+            "_get_data_dir" if hasattr(mod, "_get_data_dir")
+            else "get_data_dir" if hasattr(mod, "get_data_dir")
+            else None
+        )
+        if target_attr is not None:
+            monkeypatch.setattr(
+                mod, target_attr, lambda _d=ca_data_dir: str(_d)
+            )
+
+    return ca_data_dir
+
+
 @pytest.fixture
 def temp_dir():
     """Provides a temporary directory that is cleaned up after the test."""
