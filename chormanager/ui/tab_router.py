@@ -416,7 +416,15 @@ class TabRouterMixin:
         self._update_context_toolbar(tab_index, selection)
 
     def _update_info_labels(self):
-        """Update the info labels in the info bar."""
+        """Update the info labels in the info bar.
+
+        Bug 4 fix (2026-09 audit): the besetzung label is now part of
+        the regular refresh, not only of the ``active_besetzung_changed``
+        signal handler. It resolves the saved ``last_active_besetzung_id``
+        through the repository, so a restart or project switch shows
+        the same value the wizard/tabs set — and "Keine" when the id
+        is missing or stale.
+        """
         # Update project info label
         if self.projects_tab.current_project:
             project = self.projects_tab.current_project
@@ -430,6 +438,50 @@ class TabRouterMixin:
             self.event_info_label.setText(f"{event.name} ({event.date[:10]})")
         else:
             self.event_info_label.setText("Keiner")
+
+        # Update besetzung info label (bug 4)
+        self._update_besetzung_info_label()
+
+    def _update_besetzung_info_label(self) -> None:
+        """Show the saved active besetzung in the info bar.
+
+        Resolves ``last_active_besetzung_id`` against the database:
+        a missing or stale id shows "Keine" instead of silently
+        keeping a stale name from a previous project. A besetzung
+        that belongs to a DIFFERENT project than the currently active
+        one is likewise hidden (bug 4: stale label after a project
+        switch).
+        """
+        from ..config import get_last_active_besetzung_id
+
+        besetzung = None
+        saved_id = get_last_active_besetzung_id()
+        if saved_id and getattr(self, "db", None) is not None:
+            from ..domain.repository import BesetzungRepository
+
+            try:
+                besetzung = BesetzungRepository(self.db).get_by_id(saved_id)
+            except Exception:
+                besetzung = None
+
+        # Invalidate a besetzung that belongs to another project than
+        # the one the UI currently shows.
+        if besetzung is not None and getattr(besetzung, "project_id", None):
+            current_project = getattr(
+                getattr(self, "projects_tab", None), "current_project", None
+            )
+            if (
+                current_project is not None
+                and besetzung.project_id != current_project.id
+            ):
+                besetzung = None
+
+        if besetzung is not None:
+            self.besetzung_info_label.setText(f"<b>{besetzung.name}</b>")
+            self.besetzung_info_label.setVisible(True)
+        else:
+            self.besetzung_info_label.setText("Keine")
+            self.besetzung_info_label.setVisible(False)
 
     def _on_project_changed(self):
         """Handle project selection change."""

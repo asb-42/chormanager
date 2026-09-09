@@ -16,8 +16,6 @@ except ImportError:
     from PyQt5.QtGui import QFont, QColor, QPainter, QPixmap
     from PyQt5.QtPrintSupport import QPrinter, QPrintDialog
 
-from qt_compat import exec_qt
-
 
 class PrintPreviewDialog(QDialog):
     """Preview dialog for printing/exporting choir formations."""
@@ -59,7 +57,7 @@ class PrintPreviewDialog(QDialog):
         scroll.setWidgetResizable(True)
         
         self.preview_label = QLabel()
-        self.preview_label.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        self.preview_label.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
         scroll.setWidget(self.preview_label)
         layout.addWidget(scroll)
         
@@ -139,11 +137,11 @@ class PrintPreviewDialog(QDialog):
                     painter.setPen(QColor("black"))
                     font = QFont("Sans", 10, QFont.Weight.Bold)
                     painter.setFont(font)
-                    painter.drawText(x + 5, y + 15, cell_width - 10, 30, Qt.AlignLeft | Qt.AlignTop, singer.name)
+                    painter.drawText(x + 5, y + 15, cell_width - 10, 30, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, singer.name)
                     
                     font = QFont("Sans", 7)
                     painter.setFont(font)
-                    painter.drawText(x + 5, y + 40, cell_width - 10, 20, Qt.AlignLeft | Qt.AlignTop, vg)
+                    painter.drawText(x + 5, y + 40, cell_width - 10, 20, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, vg)
         
         painter.end()
         self.preview_label.setPixmap(pixmap)

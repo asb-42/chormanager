@@ -1,8 +1,9 @@
 """Events tab view for ChorManager."""
 
-from PyQt6.QtCore import Qt, pyqtSignal
 from datetime import datetime
 
+from PyQt6.QtCore import Qt, QDate, pyqtSignal
+from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -15,8 +16,6 @@ from PyQt6.QtWidgets import (
     QLabel,
     QHeaderView,
 )
-from PyQt6.QtCore import Qt, QDate
-from PyQt6.QtGui import QAction
 
 from ...data.database import Database
 from ...domain.repository import (
@@ -48,13 +47,28 @@ class EventsTab(QWidget):
         self._load_events()
 
     def _restore_active_event(self):
-        """Restore previously active event from config."""
-        last_active_id = get_last_active_event_id()
-        if last_active_id:
-            event = self.event_repo.get_by_id(last_active_id)
-            if event:
-                self.event_selected.emit(event)
+        """Restore previously active event from config.
 
+        Robustness (bug 1, 2026-09): the row-selection loop may only
+        run when an event was actually resolved. A missing stored id
+        (first launch) or a deleted event must simply skip the
+        restore instead of raising ``UnboundLocalError`` on a
+        populated table.
+        """
+        last_active_id = get_last_active_event_id()
+        if not last_active_id:
+            return
+        event = self.event_repo.get_by_id(last_active_id)
+        if event is None:
+            # Referenced event was deleted — drop the stale id so the
+            # info bar consistently shows "Keiner" instead of a
+            # restore that silently disappears on the next start.
+            from ...config import set_last_active_event_id
+
+            set_last_active_event_id(None)
+            return
+
+        self.event_selected.emit(event)
         for row in range(self.table.rowCount()):
             item = self.table.item(row, 0)
             if item and item.data(Qt.ItemDataRole.UserRole) == event.id:
@@ -302,6 +316,12 @@ class EventsTab(QWidget):
 
         if reply == QMessageBox.StandardButton.Yes:
             self.event_repo.delete(event_id)
+            # Bug 2 (2026-09 Audit): Beim Löschen des zuletzt aktiven
+            # Termins die gespeicherte ID aufräumen, sonst verwaiset
+            # sie und das Restore beim nächsten Start verwirft sie
+            # still ("Aktiv-Parameter verschwinden").
+            if get_last_active_event_id() == event_id:
+                set_last_active_event_id(None)
             self._load_events()
 
     def _manage_availability(self):

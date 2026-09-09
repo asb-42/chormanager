@@ -164,7 +164,7 @@ def grid_config_staggered():
 @pytest.fixture
 def mock_qapp():
     """Provides a mock QApplication for headless testing."""
-    from PyQt5.QtWidgets import QApplication
+    from PyQt6.QtWidgets import QApplication
     app = QApplication.instance()
     if app is None:
         app = QApplication([])

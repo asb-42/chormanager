@@ -65,11 +65,8 @@ class TestStorageAutosaveRotation:
 class TestStorageCorruptionHandling:
     def test_load_invalid_json(self, temp_dir):
         """Should handle invalid JSON gracefully."""
-        from dependencies import get_storage_fallback
-        storage = get_storage_fallback()
-        
-        if storage is None:
-            pytest.skip("Storage not available")
+        from storage import FormationStorage
+        storage = FormationStorage()
         
         filepath = os.path.join(temp_dir, "corrupt.json")
         with open(filepath, 'w') as f:
@@ -80,11 +77,8 @@ class TestStorageCorruptionHandling:
 
     def test_load_empty_json(self, temp_dir):
         """Should handle empty JSON file gracefully."""
-        from dependencies import get_storage_fallback
-        storage = get_storage_fallback()
-        
-        if storage is None:
-            pytest.skip("Storage not available")
+        from storage import FormationStorage
+        storage = FormationStorage()
         
         filepath = os.path.join(temp_dir, "empty.json")
         with open(filepath, 'w') as f:

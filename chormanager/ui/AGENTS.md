@@ -18,9 +18,23 @@ and the dialog / view sub-folders.
   as a ``QObject`` member on MainWindow, NOT as a mixin. The
   legacy mixins (TabRouterMixin, ExportCoreMixin, ...) remain
   in place; the A-1 sub-plan migrates them incrementally.
+  Example: ``task_flow_controller.py:TaskFlowController`` owns the
+  Aufgaben-view → TaskWizard → Choraufstellung-launch flow.
 * **TabSignals is the signal bus.** Tab-level events flow through
   ``chormanager/ui/tab_signals.py``. Do not add per-tab
   ``pyqtSignal`` to the widgets; emit through TabSignals.
+  (Exception: pre-existing per-view signals stay where they are;
+  ``TAB_TASKS = 6`` is defined there.)
+* **Theme-aware styling.** This app themes via a window-wide
+  stylesheet ONLY — no dark ``QPalette`` is ever installed, so
+  ``palette(...)`` roles in widget QSS resolve to the *light* system
+  palette and break the dark theme. Never use them. Instead: explicit
+  per-theme colors via ``config.get_theme()`` (see
+  ``views/tasks_view.py:card_stylesheet``) and semantic accents via
+  ``theme_manager.accent_color("success"/"error")``. Widgets must
+  re-apply styling on ``changeEvent(StyleChange)``; child labels need
+  ``background: transparent`` so the global ``QWidget`` rule does not
+  paint boxes over custom surfaces.
 * **SubprocessRunner is the async primitive.** Any
   ``subprocess.run`` should go through
   ``chormanager/ui/subprocess_runner.py:SubprocessRunner`` (M-1)

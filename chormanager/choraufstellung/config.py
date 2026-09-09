@@ -73,7 +73,12 @@ VOICE_GROUPS_CONFIG_FILE = os.path.join(_config_dir, "config", "voice_groups.jso
 
 
 def load_voice_groups_config() -> list:
-    """Lädt die Stimmgruppen-Konfiguration mit Theme-Unterstützung."""
+    """Lädt die Stimmgruppen-Konfiguration mit Theme-Unterstützung.
+
+    .. deprecated::
+        Use ``chormanager.config.get_voice_group_color()`` for colors
+        and ``chormanager.config.load_voice_groups()`` for group lists.
+    """
     global _cached_colors, _current_theme
     
     current_theme = load_settings().get("theme", "light")

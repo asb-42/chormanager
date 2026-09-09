@@ -13,14 +13,14 @@ class RotatedParagraph(Paragraph):
         self.angle = angle
         self._text = text
         self._style = style
-    
+
     def draw(self):
         self.canv.saveState()
         font_name = self._style.fontName
         font_size = self._style.fontSize
         self.canv.setFont(font_name, font_size)
         text_width = self.canv.stringWidth(self._text, font_name, font_size)
-        
+
         if self.angle == 90:
             x = self.width / 2 + font_size / 2
             y = (self.height - text_width) / 2
@@ -29,9 +29,9 @@ class RotatedParagraph(Paragraph):
             self.canv.drawCentredString(0, 0, self._text)
         else:
             self.canv.drawCentredString(self.width / 2, self.height / 2 - font_size / 2, self._text)
-        
+
         self.canv.restoreState()
-    
+
     def wrap(self, availWidth, availHeight):
         w, h = Paragraph.wrap(self, availHeight, availWidth)
         self.width = h
@@ -40,15 +40,22 @@ class RotatedParagraph(Paragraph):
 
 
 class PDFExporter:
-    VOICE_COLORS = {
-        'Sopran': colors.Color(1.0, 0.85, 0.85),
-        'Alt': colors.Color(0.85, 0.85, 1.0),
-        'Tenor': colors.Color(0.85, 1.0, 0.85),
-        'Bass': colors.Color(1.0, 1.0, 0.85)
-    }
-    
     def __init__(self):
         self.styles = getSampleStyleSheet()
+
+    def _get_voice_color(self, voice_group_str: str) -> colors.Color:
+        """Get color for a voice group using the theme-aware config."""
+        try:
+            from config import get_voice_group_color
+            hex_color = get_voice_group_color(voice_group_str)
+            if hex_color and hex_color.startswith('#') and len(hex_color) == 7:
+                r = int(hex_color[1:3], 16) / 255.0
+                g = int(hex_color[3:5], 16) / 255.0
+                b = int(hex_color[5:7], 16) / 255.0
+                return colors.Color(r, g, b)
+        except (ImportError, Exception):
+            pass
+        return colors.white
     
     def export_formation(self, singers: List, rows: int, cols: int,
                         filename: str, title: str = "Choraufstellung",
@@ -146,22 +153,20 @@ class PDFExporter:
     def _create_standard_grid(self, singers, rows, cols, page_width, page_height, color_mode, text_rotation):
         col_width = page_width / cols
         row_height = min(page_height / rows, col_width * 2)
-        
+
         if text_rotation == "vertical":
             font_size = min(10, row_height / 3)
         else:
             font_size = min(10, col_width / 6)
-        
+
         display_data = []
         style_commands = []
-        
-        color_map = self.VOICE_COLORS if color_mode == "color" else None
-        
+
         cell_style = self.styles['Normal'].clone('CellStyle')
         cell_style.alignment = TA_CENTER
         cell_style.fontSize = font_size
         cell_style.leading = font_size + 2
-        
+
         for r in range(rows):
             row_data = []
             for c in range(cols):
@@ -169,85 +174,81 @@ class PDFExporter:
                 if singer:
                     name = singer.name
                     vg = singer.voice_group.value if hasattr(singer.voice_group, 'value') else str(singer.voice_group)
-                    vg_short = vg.split()[0] if vg else ""
-                    
+
                     if text_rotation == "vertical":
                         cell_text = RotatedParagraph(name, cell_style, 90)
                     else:
                         cell_text = Paragraph(name, cell_style)
-                    
+
                     row_data.append(cell_text)
-                    
+
                     if color_mode == "color":
-                        bg_color = color_map.get(vg_short, colors.white)
+                        bg_color = self._get_voice_color(vg)
                         style_commands.append(('BACKGROUND', (c, r), (c, r), bg_color))
                 else:
                     row_data.append("")
             display_data.append(row_data)
-        
+
         col_widths = [col_width] * cols
         row_heights = [row_height] * rows
-        
+
         return display_data, style_commands, col_widths, row_heights
     
     def _create_staggered_grid(self, singers, rows, cols, page_width, page_height, color_mode, text_rotation):
         half_col_width = page_width / (2 * cols)
         row_height = min(page_height / rows, 40 * mm)
-        
+
         if text_rotation == "vertical":
             font_size = min(10, row_height / 3)
         else:
             font_size = min(10, half_col_width / 2)
-        
+
         display_data = []
         style_commands = []
-        
-        color_map = self.VOICE_COLORS if color_mode == "color" else None
-        
+
         total_cols = 2 * cols
-        
+
         cell_style = self.styles['Normal'].clone('CellStyle')
         cell_style.alignment = TA_CENTER
         cell_style.fontSize = font_size
         cell_style.leading = font_size + 2
-        
+
         for r in range(rows):
             row_data = [''] * total_cols
-            
+
             for c in range(cols):
                 singer = self._get_singer_at(singers, r, c)
                 if singer:
                     name = singer.name
                     vg = singer.voice_group.value if hasattr(singer.voice_group, 'value') else str(singer.voice_group)
-                    vg_short = vg.split()[0] if vg else ""
-                    
+
                     if text_rotation == "vertical":
                         cell_text = RotatedParagraph(name, cell_style, 90)
                     else:
                         cell_text = Paragraph(name, cell_style)
-                    
+
                     if r % 2 == 0:
                         col_idx = 2 * c
                     else:
                         col_idx = 2 * c + 1
-                    
+
                     if col_idx + 1 < total_cols:
                         row_data[col_idx] = cell_text
                         if color_mode == "color":
-                            bg_color = color_map.get(vg_short, colors.white)
+                            bg_color = self._get_voice_color(vg)
                             style_commands.append(('BACKGROUND', (col_idx, r), (col_idx, r), bg_color))
                         style_commands.append(('SPAN', (col_idx, r), (col_idx + 1, r)))
                     else:
                         row_data[col_idx] = cell_text
                         if color_mode == "color":
-                            bg_color = color_map.get(vg_short, colors.white)
+                            bg_color = self._get_voice_color(vg)
                             style_commands.append(('BACKGROUND', (col_idx, r), (col_idx, r), bg_color))
-            
+
             display_data.append(row_data)
-        
+
         col_widths = [half_col_width] * total_cols
         row_heights = [row_height] * rows
-        
+
         return display_data, style_commands, col_widths, row_heights
     
     def _get_singer_at(self, singers, row, col):

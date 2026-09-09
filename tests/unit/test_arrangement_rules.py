@@ -218,9 +218,6 @@ class TestAffinityCostFunction:
         assert dist_odd == dist_same_even
         assert dist_mixed > dist_same_even
 
-    def test_cost_function_compute_cost_sum(self):
-        pytest.skip("Cost calculation test requires verification after integration")
-
     def test_cost_function_inf_for_unplaced(self):
         """Should return infinity cost for unplaced singers."""
         from core.rules import SingerRef

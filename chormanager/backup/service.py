@@ -18,8 +18,8 @@ _logger = logging.getLogger(__name__)
 _SQLITE_SUFFIXES = (".db", ".sqlite", ".sqlite3")
 
 
-class BackupService:
-    """Service for managing backups."""
+class FileBackupService:
+    """Service for managing file-level backups."""
     
     def __init__(self, backup_dir: Optional[str] = None, max_backups: int = 10):
         """Initialize backup service.
@@ -167,14 +167,14 @@ class BackupService:
 class AutoBackupService:
     """Service for automatic backups."""
     
-    def __init__(self, backup_service: Optional[BackupService] = None):
+    def __init__(self, backup_service: Optional[FileBackupService] = None):
         """Initialize auto backup service.
         
         Args:
-            backup_service: BackupService instance.
+            backup_service: FileBackupService instance.
         """
         if backup_service is None:
-            backup_service = BackupService()
+            backup_service = FileBackupService()
         
         self._backup_service = backup_service
         self._config = load_app_config()
@@ -212,3 +212,6 @@ class AutoBackupService:
             return None
         
         return self._backup_service.create_backup(db_path)
+
+
+BackupService = FileBackupService

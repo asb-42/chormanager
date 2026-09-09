@@ -1,0 +1,223 @@
+/* ===== DARK THEME ===== */
+
+/* Info bar - augenfreundlich im Dark Mode */
+QWidget#infoBarWidget {
+    background-color: #1e2832;
+    border-bottom: 2px solid #4a90d9;
+    padding: 8px;
+}
+QLabel {
+    color: #e0e0e0;
+    font-weight: bold;
+    padding: 4px 12px;
+    border-radius: 4px;
+}
+QLabel#projectInfoLabel {
+    background-color: #1565c0;
+    color: white;
+}
+QLabel#eventInfoLabel {
+    background-color: #e65100;
+    color: white;
+}
+QLabel#pageTitle {
+    background-color: #2d2d2d;
+    color: #ffffff;
+    font-size: 22px;
+    font-weight: bold;
+    padding: 14px 15px 10px 15px;
+    border-bottom: 2px solid #404040;
+}
+
+/* Main application colors */
+QMainWindow, QWidget {
+    background-color: #1a1a1a;
+    color: #e0e0e0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Table styling */
+QTableWidget {
+    background-color: #2d2d2d;
+    alternate-background-color: #262626;
+    gridline-color: #404040;
+    border: 1px solid #404040;
+    border-radius: 4px;
+}
+
+QTableWidget::item {
+    padding: 6px 8px;
+    border-bottom: 1px solid #333333;
+    color: #e0e0e0;
+}
+
+QTableWidget::item:selected {
+    background-color: #1e3a5f;
+    color: #64b5f6;
+}
+
+QHeaderView::section {
+    background-color: #333333;
+    color: #ffffff;
+    padding: 12px 8px;
+    border: 1px solid #404040;
+    border-left: none;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+QHeaderView::section:vertical {
+    padding: 8px 16px;
+}
+
+/* Button styling */
+QPushButton {
+    background-color: #333333;
+    border: 1px solid #555555;
+    border-radius: 6px;
+    padding: 8px 16px;
+    color: #e0e0e0;
+    font-weight: 500;
+}
+
+QPushButton:hover {
+    background-color: #404040;
+    border-color: #666666;
+}
+
+QPushButton:pressed {
+    background-color: #262626;
+}
+
+/* Checkbox styling for dark theme */
+QCheckBox {
+    background-color: transparent;
+    color: #e0e0e0;
+    padding: 4px;
+}
+QCheckBox::indicator {
+    width: 18px;
+    height: 18px;
+    border: 1px solid #666666;
+    border-radius: 3px;
+    background-color: #2d2d2d;
+}
+QCheckBox::indicator:checked {
+    background-color: #1565c0;
+    border-color: #1976d2;
+}
+QCheckBox::indicator:indeterminate {
+    background-color: #4a4a4a;
+}
+
+/* Menu styling */
+QMenuBar {
+    background-color: #2d2d2d;
+    border-bottom: 1px solid #404040;
+    color: #e0e0e0;
+}
+
+QMenuBar::item {
+    padding: 8px 12px;
+    background-color: transparent;
+}
+
+QMenuBar::item:selected {
+    background-color: #404040;
+}
+
+QMenu {
+    background-color: #333333;
+    border: 1px solid #555555;
+    border-radius: 4px;
+    color: #e0e0e0;
+}
+
+QMenu::item {
+    padding: 8px 20px;
+    border-radius: 2px;
+}
+
+QMenu::item:selected {
+    background-color: #1e3a5f;
+    color: #64b5f6;
+}
+
+/* Status bar */
+QStatusBar {
+    background-color: #1a1a1a;
+    border-top: 1px solid #404040;
+    color: #b0b0b0;
+}
+
+/* Tool bar */
+QToolBar {
+    background-color: #2d2d2d;
+    border: none;
+    border-bottom: 1px solid #404040;
+    color: #e0e0e0;
+}
+
+/* Info labels - custom colors maintained */
+QLabel#projectInfoLabel {
+    background-color: #4a90d9;
+    color: #ffffff;
+    padding: 10px 15px;
+    font-weight: bold;
+    font-size: 13px;
+    border-radius: 4px;
+}
+
+QLabel#eventInfoLabel {
+    background-color: #e67e22;
+    color: #ffffff;
+    padding: 10px 15px;
+    font-weight: bold;
+    font-size: 13px;
+    border-radius: 4px;
+}
+
+/* Form controls */
+QLineEdit, QComboBox, QTextEdit {
+    border: 1px solid #555555;
+    border-radius: 4px;
+    padding: 8px 12px;
+    background-color: #333333;
+    color: #e0e0e0;
+}
+
+QLineEdit:focus, QComboBox:focus, QTextEdit:focus {
+    border-color: #4a90d9;
+    outline: none;
+}
+
+/* Scroll bars */
+QScrollBar:vertical {
+    background-color: #1a1a1a;
+    width: 12px;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #555555;
+    border-radius: 6px;
+    min-height: 20px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #666666;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    border: none;
+    background: none;
+}
+
+/* Additional dark theme refinements */
+QSplitter::handle {
+    background-color: #404040;
+}
+
+QSplitter::handle:hover {
+    background-color: #555555;
+}

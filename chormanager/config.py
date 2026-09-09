@@ -272,3 +272,90 @@ def get_required_fields():
     """
     fields = load_fields()
     return [f["name"] for f in fields if f.get("required", False)]
+
+
+# Voice group color cache (theme-aware)
+_vg_color_cache: dict = {}
+_vg_color_theme: str | None = None
+
+
+def _load_voice_group_colors() -> list:
+    """Load voice group colors from voice_groups.json (theme-aware).
+    
+    Returns:
+        list: List of voice group color dicts with 'id' and 'color' keys.
+    """
+    global _vg_color_cache, _vg_color_theme
+
+    current_theme = get_theme()
+
+    if _vg_color_theme == current_theme and _vg_color_cache:
+        return _vg_color_cache
+
+    config_file = CONFIG_DIR / "voice_groups.json"
+    try:
+        with open(config_file, encoding="utf-8") as f:
+            data = json.load(f)
+        theme_data = data.get("themes", {}).get(current_theme, {})
+        colors = theme_data.get("colors", [])
+        if colors:
+            _vg_color_cache = colors
+            _vg_color_theme = current_theme
+            return colors
+    except (FileNotFoundError, json.JSONDecodeError, KeyError):
+        pass
+
+    # Hardcoded fallback (light theme)
+    _vg_color_cache = [
+        {"id": "Sopran 1", "color": "#E5C84B"}, {"id": "Sopran 2", "color": "#B8A23A"},
+        {"id": "Alt 1", "color": "#C75B5B"}, {"id": "Alt 2", "color": "#9B5B6B"},
+        {"id": "Tenor 1", "color": "#6BA888"}, {"id": "Tenor 2", "color": "#5B8A6B"},
+        {"id": "Bass 1", "color": "#6B8AA8"}, {"id": "Bass 2", "color": "#5B6B8A"},
+    ]
+    _vg_color_theme = current_theme
+    return _vg_color_cache
+
+
+def get_voice_group_color(voice_group_id: str, theme: str | None = None) -> str:
+    """Get hex color for a voice group (theme-aware, cached).
+    
+    Args:
+        voice_group_id: Voice group name (e.g. "Sopran 1").
+        theme: Optional theme override ("light"/"dark"). Defaults to current theme.
+    
+    Returns:
+        str: Hex color code (e.g. "#E5C84B").
+    """
+    if theme is not None:
+        _clear_vg_color_cache()
+        global _vg_color_theme
+        _vg_color_theme = theme
+
+    colors = _load_voice_group_colors()
+    for vg in colors:
+        if vg.get("id") == voice_group_id:
+            return vg["color"]
+    return "#cccccc"
+
+
+def _clear_vg_color_cache():
+    """Clear the voice group color cache."""
+    global _vg_color_cache, _vg_color_theme
+    _vg_color_cache = {}
+    _vg_color_theme = None
+
+
+def get_text_color() -> str:
+    """Get the current theme text color.
+    
+    Returns:
+        str: Hex text color.
+    """
+    current_theme = get_theme()
+    config_file = CONFIG_DIR / "voice_groups.json"
+    try:
+        with open(config_file, encoding="utf-8") as f:
+            data = json.load(f)
+        return data.get("themes", {}).get(current_theme, {}).get("text", "#1A1A1A")
+    except (FileNotFoundError, json.JSONDecodeError, KeyError):
+        return "#1A1A1A"

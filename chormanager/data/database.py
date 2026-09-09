@@ -292,12 +292,16 @@ class Database:
             )
         """)
 
+        conn.commit()
+
+        # Migration: projects.spielzeit (ChorManager spielzeit feature).
+        # Legacy databases created before the feature lack the column;
+        # SELECT * queries would then crash when mapping rows onto the
+        # Project model because the model expects the field.
         try:
-            conn.execute("ALTER TABLE repertoire RENAME COLUMN program TO project_id")
+            conn.execute("ALTER TABLE projects ADD COLUMN spielzeit TEXT")
         except sqlite3.OperationalError:
             pass
-
-        conn.commit()
 
         for col, typ in [
             ("street", "TEXT"),
@@ -307,13 +311,23 @@ class Database:
             ("guardian1_phone", "TEXT"),
             ("guardian2", "TEXT"),
             ("guardian2_phone", "TEXT"),
-            ("is_adult", "INTEGER"),
             ("height", "INTEGER"),
         ]:
             try:
                 conn.execute(f"ALTER TABLE singers ADD COLUMN {col} {typ}")
             except sqlite3.OperationalError:
                 pass
+        conn.commit()
+
+        for idx_name, idx_sql in [
+            ("idx_events_project_id", "CREATE INDEX IF NOT EXISTS idx_events_project_id ON events(project_id)"),
+            ("idx_events_date", "CREATE INDEX IF NOT EXISTS idx_events_date ON events(date)"),
+            ("idx_singers_voice_group", "CREATE INDEX IF NOT EXISTS idx_singers_voice_group ON singers(voice_group)"),
+            ("idx_availability_event_id", "CREATE INDEX IF NOT EXISTS idx_availability_event_id ON availability(event_id)"),
+            ("idx_availability_singer_id", "CREATE INDEX IF NOT EXISTS idx_availability_singer_id ON availability(singer_id)"),
+            ("idx_repertoire_project_id", "CREATE INDEX IF NOT EXISTS idx_repertoire_project_id ON repertoire(project_id)"),
+        ]:
+            conn.execute(idx_sql)
         conn.commit()
 
     @contextmanager

@@ -67,6 +67,12 @@ from ._selbstdarstellung import (
 from ._singer_selection import (
     SingerSelectionDialog,
 )
+from ._task_wizard import (
+    BesetzungPickDialog,
+    EventPickDialog,
+    TaskWizard,
+    build_default_executors,
+)
 
 __all__ = [
     # _availability
@@ -91,4 +97,9 @@ __all__ = [
     "NewFormationDialog",
     # _repertoire
     "RepertoireDialog",
+    # _task_wizard
+    "BesetzungPickDialog",
+    "EventPickDialog",
+    "TaskWizard",
+    "build_default_executors",
 ]

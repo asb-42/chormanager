@@ -4,6 +4,12 @@ import os
 import tempfile
 from datetime import datetime
 
+try:
+    from PyQt6.QtWidgets import QApplication
+    HAS_PYQT6 = True
+except ImportError:
+    HAS_PYQT6 = False
+
 
 class TestMetadataSaving:
     def test_event_date_saved_correctly(self):
@@ -170,13 +176,13 @@ class TestMetadataSaving:
         assert expected_filename == "choraufstellung-2026-08-25-version-" + today + ".json"
 
 
+@pytest.mark.skipif(not HAS_PYQT6, reason="Requires PyQt6 (main.py is PyQt6-only)")
 class TestMetadataFromEventFile:
     def test_metadata_updated_from_event_file(self):
         """Test that _loaded_metadata is updated when loading from temp event file."""
         import tempfile
         import os
         import json
-        from PyQt6.QtWidgets import QApplication
         from chormanager.choraufstellung.main import MainWindow
         
         app = QApplication.instance()
@@ -237,7 +243,6 @@ class TestMetadataFromEventFile:
         import tempfile
         import os
         import json
-        from PyQt6.QtWidgets import QApplication
         from chormanager.choraufstellung.main import MainWindow
         
         app = QApplication.instance()

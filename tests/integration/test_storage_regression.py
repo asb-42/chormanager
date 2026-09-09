@@ -35,6 +35,21 @@ import pytest
 # Qt-Stub damit storage.py ohne PyQt5-Installation importierbar ist
 # ---------------------------------------------------------------------------
 def _install_qt_stub():
+    """Install a minimal PyQt5 stub (only when PyQt5 is absent).
+
+    IMPORTANT: never install the stub when a real PyQt5 package is
+    importable. A bare ``types.ModuleType("PyQt5")`` in sys.modules
+    would SHADOW the real package for every later test in the same
+    process (e.g. the dialog tests that import
+    ``PyQt5.QtWidgets.QDialog`` would fail with
+    "'PyQt5' is not a package").
+    """
+    try:
+        import PyQt5.QtCore  # noqa: F401  # real package present?
+        return
+    except ImportError:
+        pass
+
     qt = types.ModuleType("PyQt5")
     core = types.ModuleType("PyQt5.QtCore")
 

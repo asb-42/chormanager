@@ -763,7 +763,12 @@ class MainWindow(QMainWindow):
         QMessageBox.about(self, "Über Choraufstellung", "Choraufstellung 1.0\n\nVerwaltung von Choraufstellungen.")
 
     def closeEvent(self, e):
-        if self.is_modified:
+        # M-2 Schritt 7 changed ``is_modified`` from a plain attribute to
+        # the AutoSaveController protocol *method* ``is_modified()``.
+        # Evaluating the bound method itself would always be truthy and
+        # would show the save-dialog even for pristine windows (and
+        # block forever in offscreen/CI runs). Always call it here.
+        if self.is_modified():
             r = QMessageBox.question(self, "Ungespeichert", "Änderungen speichern?", QMessageBox.StandardButton.Save|QMessageBox.StandardButton.Discard|QMessageBox.StandardButton.Cancel)
             if r == QMessageBox.StandardButton.Save:
                 self.save_f()

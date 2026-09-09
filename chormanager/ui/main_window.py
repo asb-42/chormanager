@@ -95,6 +95,7 @@ from .export_controller import (
     ExportTabSpecificMixin,
 )
 from .main_window_actions import MainWindowActionsMixin
+from .tab_signals import TAB_TASKS
 
 
 # --- M-1 step 5: ``get_icon`` was moved to its own module to avoid a
@@ -206,6 +207,10 @@ class MainWindow(
         saved_theme = get_theme()
         if saved_theme == "dark":
             self._set_dark_theme()
+
+        # Landing page: the Aufgaben view greets non-technical users
+        # with guided tasks instead of an empty project table.
+        self._switch_view(TAB_TASKS)
 
     def _setup_ui(self):
         """Set up the UI."""
@@ -619,6 +624,14 @@ class MainWindow(
         sidebar_layout.setSpacing(5)
 
         # Navigation buttons (OBEN zuerst) - mit Icons
+        self.nav_tasks = QPushButton("Aufgaben")
+        self.nav_tasks.setIcon(
+            get_icon("task-attention", QStyle.StandardPixmap.SP_DialogApplyButton)
+        )
+        self.nav_tasks.setCheckable(True)
+        self.nav_tasks.clicked.connect(lambda: self._switch_view(TAB_TASKS))
+        sidebar_layout.addWidget(self.nav_tasks)
+
         self.nav_projects = QPushButton("Projekte")
         self.nav_projects.setIcon(
             get_icon("folder", QStyle.StandardPixmap.SP_DirClosedIcon)
@@ -703,6 +716,10 @@ class MainWindow(
         self.current_project = None
         self.current_event = None
 
+        from .views.tasks_view import TasksView
+
+        self.tasks_view = TasksView(self.db)
+
         from .views.projects_tab import ProjectsTab
 
         self.projects_tab = ProjectsTab(self.db)
@@ -739,6 +756,14 @@ class MainWindow(
         self.content_stack.addWidget(self.events_tab)
         self.content_stack.addWidget(self.choraufstellung_tab)
         self.content_stack.addWidget(self.repertoire_tab)
+        # TAB_TASKS (= 6) is appended LAST so indices 0-5 stay stable.
+        self.content_stack.addWidget(self.tasks_view)
+
+        # Task-flow controller (composition, not a mixin method):
+        # connects tasks_view.task_started to the wizard launcher.
+        from .task_flow_controller import TaskFlowController
+
+        self.task_flow_controller = TaskFlowController(self)
 
         content_layout.addWidget(self.content_stack)
 
@@ -774,9 +799,11 @@ class MainWindow(
             "Terminverwaltung",
             "Choraufstellung",
             "Repertoire",
+            "Aufgaben",
         ]
         self.page_title_label.setText(titles[index])
         self.content_stack.setCurrentIndex(index)
+        self.nav_tasks.setChecked(index == TAB_TASKS)
         self.nav_projects.setChecked(index == 0)
         self.nav_singers.setChecked(index == 1)
         self.nav_besetzung.setChecked(index == 2)
@@ -792,11 +819,13 @@ class MainWindow(
         self.statusBar().showMessage("Bereit")
 
     def _refresh_tabs(self):
-        """Refresh all tabs."""
+        """Refresh all tabs (incl. the Aufgaben view)."""
         if hasattr(self, "singers_tab"):
             self.singers_tab._load_singers()
         if hasattr(self, "events_tab"):
             self.events_tab._load_events()
+        if hasattr(self, "tasks_view"):
+            self.tasks_view.refresh()
 
     def _on_search_text_changed(self, text):
         """Handle search text change."""
@@ -856,16 +885,23 @@ class MainWindow(
         from PyQt6.QtWidgets import QMessageBox
         import subprocess
         from datetime import datetime
+        from pathlib import Path
+
+        # Repo root = three levels above this module
+        # (chormanager/ui/main_window.py -> repo). Using the computed
+        # path instead of a hardcoded absolute path keeps the dialog
+        # working when the app is installed elsewhere.
+        app_root = str(Path(__file__).parent.parent.parent)
 
         try:
             git_hash = subprocess.check_output(
                 ["git", "describe", "--tags", "--abbrev=7", "--always", "--dirty"],
-                cwd="/media/data/coding/chormanager",
+                cwd=app_root,
                 text=True,
             ).strip()
             commit_date = subprocess.check_output(
                 ["git", "log", "-1", "--format=%cd", "--date=short"],
-                cwd="/media/data/coding/chormanager",
+                cwd=app_root,
                 text=True,
             ).strip()
         except Exception:
@@ -933,6 +969,8 @@ class MainWindow(
                 self.events_tab._load_events()
             if hasattr(self, 'besetzung_tab'):
                 self.besetzung_tab._load_besetzungen()
+            if hasattr(self, 'repertoire_tab'):
+                self.repertoire_tab._load_repertoire()
             
             self.statusBar().showMessage("Datenbank nach Backup-Restore neu geladen.", 3000)
         except Exception as e:

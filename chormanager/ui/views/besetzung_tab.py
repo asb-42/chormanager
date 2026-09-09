@@ -194,6 +194,10 @@ class BesetzungTab(QWidget):
         )
         if reply == QMessageBox.StandardButton.Yes:
             self.besetzung_repo.delete(besetzung.id)
+            # Bug 2 (2026-09 Audit): verwaiste last_active_besetzung_id
+            # aufräumen, damit die Info-Bar konsistent 'Keine' zeigt.
+            if get_last_active_besetzung_id() == besetzung.id:
+                set_last_active_besetzung_id(None)
             self._load_besetzungen()
 
     def _set_active_besetzung(self):

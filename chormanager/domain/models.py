@@ -37,6 +37,37 @@ class Singer:
     updated_at: str = ""
     address: Optional[str] = None  # Legacy: Kombination aus street + city
 
+    def to_formation_singer(self):
+        """Convert to a ChorAufstellung Singer (lightweight formation model).
+
+        Returns:
+            chormanager.choraufstellung.singer_model.Singer: Formation singer.
+        """
+        from chormanager.choraufstellung.singer_model import (
+            Singer as FormationSinger,
+            VoiceGroup as FormationVoiceGroup,
+        )
+
+        vg_str = self.voice_group or "Sopran"
+        vg = FormationVoiceGroup.SOPRAN_1
+        for member in FormationVoiceGroup:
+            if member.value == vg_str:
+                vg = member
+                break
+
+        name = self.short_name or self.full_name
+        singer_id = self.id or ""
+        height = self.height or 0
+        affinity = self.affinity_uuid or ""
+
+        return FormationSinger(
+            name=name,
+            voice_group=vg,
+            height=height,
+            singer_id=singer_id,
+            affinity=affinity,
+        )
+
     def is_adult(self) -> bool:
         """Check if singer is 18 years or older."""
         if self._is_adult is not None:
@@ -197,30 +228,13 @@ class Project:
 
             self.id = str(uuid.uuid4())
 
-    def __post_init__(self):
-        """Set timestamps if not set."""
-        now = datetime.now().isoformat()
-        if not self.created_at:
-            self.created_at = now
-        if not self.updated_at:
-            self.updated_at = now
-
-    @property
-    def is_past(self) -> bool:
-        """Check if event is in the past."""
-        try:
-            event_date = datetime.fromisoformat(self.date)
-            return event_date < datetime.now()
-        except (ValueError, TypeError):
-            return False
-
     def to_dict(self) -> dict:
         """Convert to dictionary."""
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Event":
-        """Create Event from dictionary."""
+    def from_dict(cls, data: dict) -> "Project":
+        """Create Project from dictionary."""
         return cls(**{k: v for k, v in data.items() if k in cls.__dataclass_fields__})
 
 

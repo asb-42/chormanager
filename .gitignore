@@ -64,5 +64,8 @@ workdir/
 .kilocode/.kilo/
 .kilocode/
 
+# GitNexus index
+.gitnexus/
+
 # Hypothesis (property-based tests)
 .hypothesis/

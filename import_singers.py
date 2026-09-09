@@ -134,10 +134,10 @@ def import_singers(csv_path, json_uuid_path, json_vg_path, db_path):
     return imported, skipped, total
 
 if __name__ == "__main__":
-    base_path = Path("/media/data/coding/chormanager")
+    base_path = Path(__file__).parent
     
-    csv_path = "/media/data/coding/choraufstellung/Inputs/Export.csv"
-    json_uuid_path = "/media/data/coding/choraufstellung/Outputs/jugendchor-5.json"
+    csv_path = os.environ.get("IMPORT_CSV", base_path / "workdir" / "Mitgliederliste.csv")
+    json_uuid_path = os.environ.get("IMPORT_JSON", base_path / "workdir" / "singers.json")
     json_vg_path = base_path / "config" / "voice_groups.json"
     # Use default data directory
     db_path = Path.home() / ".local/share/chormanager/chor.db"

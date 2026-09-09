@@ -31,7 +31,9 @@ config changes via ``QSettings``.
   (``tests/unit/test_chormanager_ui_dialogs_*.py``) and the
   relevant form test.
 * Adding a new dialog: add the file, add a test, add a menu
-  entry in MainWindow.
+  entry in MainWindow. (``_task_wizard.py`` is the exception:
+  it is opened from the Aufgaben view, not from a menu, and its
+  tests live in ``tests/gui/test_task_wizard.py``.)
 
 ## Verification
 

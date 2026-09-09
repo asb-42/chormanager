@@ -2,14 +2,19 @@
 
 import csv
 import io
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Protocol
 import sqlite3
+
+
+class Exportable(Protocol):
+    """Protocol for objects that can be exported."""
+    def to_dict(self) -> Dict[str, Any]: ...
 
 
 class ExportService:
     """Service for exporting data to various formats."""
     
-    def get_export_data(self, items: List[Any], fields: List[str]) -> List[Dict[str, Any]]:
+    def get_export_data(self, items: List[Exportable], fields: List[str]) -> List[Dict[str, str]]:
         """Convert items to exportable dictionary list.
         
         Args:
@@ -38,7 +43,7 @@ class ExportService:
         
         return data
     
-    def export_to_csv(self, data: List[Dict[str, Any]], fields: List[str], 
+    def export_to_csv(self, data: List[Dict[str, str]], fields: List[str], 
                         delimiter: str = ",") -> str:
         """Export data to CSV format.
         
@@ -61,7 +66,7 @@ class ExportService:
         
         return output.getvalue()
     
-    def export_to_libreoffice_calc(self, data: List[Dict[str, Any]], 
+    def export_to_libreoffice_calc(self, data: List[Dict[str, str]], 
                                  fields: List[str]) -> str:
         """Export data to LibreOffice Calc format (.ods).
         
@@ -75,7 +80,7 @@ class ExportService:
         # Use tab delimiter for Calc compatibility
         return self.export_to_csv(data, fields, delimiter="\t")
     
-    def export_to_libreoffice_writer(self, data: List[Dict[str, Any]], 
+    def export_to_libreoffice_writer(self, data: List[Dict[str, str]], 
                                   fields: List[str]) -> str:
         """Export data to LibreOffice Writer format (.odt compatible HTML).
         

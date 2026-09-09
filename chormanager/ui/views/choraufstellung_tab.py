@@ -263,7 +263,11 @@ class ChorAufstellungTab(QWidget):
             self.table.setItem(row, 2, QTableWidgetItem(meta.get("project", "")))
             event_date = meta.get("event_date", "")
             if event_date:
-                event_date = event_date[:10]
+                try:
+                    from datetime import datetime
+                    event_date = datetime.fromisoformat(event_date).strftime("%Y-%m-%d")
+                except (ValueError, TypeError):
+                    event_date = event_date[:10] if len(event_date) >= 10 else ""
             self.table.setItem(row, 3, QTableWidgetItem(event_date))
             event_type = meta.get("event_type", "")
             if not event_type:

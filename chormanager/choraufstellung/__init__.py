@@ -29,10 +29,6 @@ import pdf_export as _pdf
 PDFExporter = _pdf.PDFExporter
 
 import config as _config
-load_settings = _config.load_settings
-save_settings = _config.save_settings
-load_voice_groups_config = _config.load_voice_groups_config
-get_valid_voice_groups = _config.get_valid_voice_groups
 
 import ui.grid_widget as _ui_grid
 FormationGrid = _ui_grid.FormationGrid

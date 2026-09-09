@@ -1,15 +1,8 @@
-try:
-    from PyQt6.QtWidgets import (
-        QDialog, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
-        QPushButton, QCheckBox, QGroupBox, QLineEdit
-    )
-    from PyQt6.QtCore import Qt
-except ImportError:
-    from PyQt5.QtWidgets import (
-        QDialog, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
-        QPushButton, QCheckBox, QGroupBox, QLineEdit
-    )
-    from PyQt5.QtCore import Qt
+from PyQt6.QtWidgets import (
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
+    QPushButton, QCheckBox, QGroupBox, QLineEdit
+)
+from PyQt6.QtCore import Qt
 
 
 class PDFExportDialog(QDialog):

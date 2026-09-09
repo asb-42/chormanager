@@ -79,6 +79,36 @@ class Singer:
             affinity_uuid=affinity_uuid,
         )
 
+    @classmethod
+    def from_domain_singer(cls, domain_singer):
+        """Create a formation Singer from a domain Singer model.
+
+        Args:
+            domain_singer: chormanager.domain.models.Singer instance.
+
+        Returns:
+            Formation Singer instance.
+        """
+        vg_str = domain_singer.voice_group or "Sopran"
+        vg = VoiceGroup.SOPRAN_1
+        for member in VoiceGroup:
+            if member.value == vg_str:
+                vg = member
+                break
+
+        name = domain_singer.short_name or domain_singer.full_name
+        singer_id = domain_singer.id or ""
+        height = domain_singer.height or 0
+        affinity = domain_singer.affinity_uuid or ""
+
+        return cls(
+            name=name,
+            voice_group=vg,
+            height=height,
+            singer_id=singer_id,
+            affinity=affinity,
+        )
+
 
 def voice_group_color(voice_group: VoiceGroup) -> str:
     """Return hex color for voice group - loads from central config."""

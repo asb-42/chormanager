@@ -17,7 +17,37 @@ imported.
 """
 from __future__ import annotations
 
-from ..config import set_theme
+from typing import Optional
+
+from ..config import get_theme, set_theme
+
+
+# Accent colors for semantic status feedback. The dark variants are
+# noticeably lighter so they stay readable on the dark background.
+_ACCENT_COLORS = {
+    "light": {"success": "#2e7d32", "error": "#b00020"},
+    "dark": {"success": "#81c784", "error": "#ff8a80"},
+}
+
+
+def accent_color(kind: str, theme: Optional[str] = None) -> str:
+    """Return a theme-aware accent color as a CSS color string.
+
+    Args:
+        kind: Semantic accent name; currently ``"success"``/``"error"``.
+        theme: ``"light"``/``"dark"``; when omitted the configured
+            app theme is used.
+
+    Returns:
+        CSS color string, or an empty string for unknown kinds.
+    """
+    if theme is None:
+        try:
+            theme = get_theme()
+        except Exception:
+            theme = "light"
+    colors = _ACCENT_COLORS.get(theme, _ACCENT_COLORS["light"])
+    return colors.get(kind, "")
 
 
 class ThemeMixin:

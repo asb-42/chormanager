@@ -70,8 +70,9 @@ def compute_is_adult(birth_date: str | None) -> int:
 
 
 def main():
-    db_path = Path("/media/data/coding/chormanager/data/chor.db")
-    csv_path = Path("/media/data/coding/chormanager/workdir/Mitgliederliste.csv")
+    from chormanager.config import get_data_dir
+    db_path = get_data_dir() / "chor.db"
+    csv_path = get_data_dir().parent / "workdir" / "Mitgliederliste.csv"
 
     if not csv_path.exists():
         print(f"CSV file not found: {csv_path}")

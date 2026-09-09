@@ -18,7 +18,12 @@ class BackupFile:
         return f'<BackupFile {self.archive_name} mtime={self.mtime}>'
 
 
-class BackupService:
+class ApplicationBackupService:
+    """ZIP-based application backup service.
+
+    Also exported under the legacy name ``BackupService`` for
+    backward compatibility with older call-sites and tests.
+    """
     # Dateien, die ins Backup gehören (Pfade relativ zum App-Root)
     BACKUP_FILES = [
         'data/chor.db',
@@ -151,3 +156,7 @@ class BackupService:
 
     def get_backup_size(self, archive_path: str) -> int:
         return Path(archive_path).stat().st_size
+
+# Backward-compatible alias: older code and the phase-1 service tests
+# import the service under its former name ``BackupService``.
+BackupService = ApplicationBackupService
