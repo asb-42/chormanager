@@ -191,6 +191,15 @@ contract, update both the child and this index.
 | ``plans/`` | Plan documents (M-4, sub-plans, retrospective). | [plans/AGENTS.md](plans/AGENTS.md) |
 | ``docs/`` | User-facing documentation (Benutzerhandbuch) + code-review reports. | [docs/AGENTS.md](docs/AGENTS.md) |
 
+### Root files owned by this doc
+
+* ``README.md`` — project overview (features, install, data model,
+  architecture). Keep factual claims in sync with the code; do not
+  re-add a changelog section here.
+* ``CHANGELOG.md`` — the durable change log (Keep-a-Changelog
+  short form, German, newest first). When landing a user-facing
+  change, add an entry there instead of updating the README.
+
 ### Sub-trees without a local AGENTS.md
 
 These directories are simple grouping utilities with no
