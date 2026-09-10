@@ -11,6 +11,8 @@ for backward compatibility with any external import.
 """
 from __future__ import annotations
 
+from pathlib import Path
+
 from PyQt6.QtCore import QObject, QThread, pyqtSignal
 from PyQt6.QtWidgets import (
     QDialog,
@@ -19,6 +21,14 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
+
+from chormanager import __version__
+
+#: Repo root (``chormanager/ui/update_controller.py`` → package → repo).
+#: Derived from ``__file__`` so the update check works on any
+#: machine (dev box, Zielrechner, test worktree) — NOT a hardcoded
+#: absolute path (v0.1 release review, 2026-09-10).
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 
 
 class VersionCheckDialog(QDialog):
@@ -31,7 +41,7 @@ class VersionCheckDialog(QDialog):
 
         layout = QVBoxLayout(self)
 
-        self.info_label = QLabel("Aktuelle Version: Unbekannt")
+        self.info_label = QLabel(f"Aktuelle Version: {__version__}")
         self.info_label.setStyleSheet("font-weight: bold; padding: 10px;")
         layout.addWidget(self.info_label)
 
@@ -61,7 +71,7 @@ class VersionCheckDialog(QDialog):
         self.status_label.setText("Prüfe GitHub Repository...")
         self._worker = VersionCheckWorker(
             repo="asb-42/chormanager", branch="main",
-            cwd="/media/data/coding/chormanager",
+            cwd=str(_REPO_ROOT),
         )
         self._worker.finished.connect(self._on_check_finished)
         self._worker.start()
@@ -89,7 +99,7 @@ class VersionCheckDialog(QDialog):
         self.status_label.setText("Aktualisiere von GitHub...")
         self._pull_worker = UpdateWorker(
             cmd=['git', 'pull', 'origin', 'main'],
-            cwd="/media/data/coding/chormanager",
+            cwd=str(_REPO_ROOT),
         )
         self._pull_worker.finished.connect(self._on_pull_finished)
         self._pull_worker.start()
