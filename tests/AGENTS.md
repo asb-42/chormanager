@@ -71,6 +71,21 @@ The two ignored tests are **pre-existing deadlocks** on `main`
 and are tracked as future-sprint work. They are excluded from
 the verification command to keep CI green.
 
+**Python 3.9 compatibility guard:** ``tests/unit/test_py39_compat.py``
+scans every module for PEP 604 unions (``str | None``) that would be
+evaluated at import time on 3.9 (``run.sh`` promises >= 3.9). It is
+AST-based and runs on any interpreter. Full end-to-end proof for a
+release: run the app import chain inside ``python:3.9-slim`` docker.
+For a real 3.9 runtime check (docker python:3.9-slim + requirements):
+
+```bash
+docker run --rm -v "$PWD:/app" -w /app -e QT_QPA_PLATFORM=offscreen \
+  python:3.9-slim bash -c "apt-get -qq update >/dev/null; \
+  apt-get -qq install -y libglib2.0-0 libgl1 libegl1 libxkbcommon0 \
+  libdbus-1-3 libfontconfig1 >/dev/null; pip -q install -r requirements.txt; \
+  python -m chormanager --help"
+```
+
 ## Child DOX Index
 
 *(The three test sub-folders are simple sub-trees; no per-tier
