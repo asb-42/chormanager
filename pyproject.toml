@@ -7,7 +7,7 @@ name = "chormanager"
 version = "0.1.0"
 description = "Chorverwaltungsanwendung für Chorleiter"
 authors = [{name = "Chorleiter"}]
-requires-python = ">=3.11"
+requires-python = ">=3.9"
 dependencies = [
     "PyQt6>=6.5.0",
     "PyYAML>=6.0",
