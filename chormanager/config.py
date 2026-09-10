@@ -1,5 +1,10 @@
 """Configuration management for ChorManager."""
 
+# PEP 563: Annotationen als Strings — ``str | None`` (PEP 604) würde
+# auf Python 3.9 zur Import-Zit evaluiert und crasht (TypeError:
+# unsupported operand type(s) for | — Zielrechner-Report 2026-09-10).
+from __future__ import annotations
+
 import logging
 import os
 import yaml

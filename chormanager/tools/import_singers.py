@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """Import Sänger from CSV (Mitgliederliste) - mit Upsert-Logik."""
 
+# PEP 563: Annotationen als Strings — ``str | None``-Signaturen (PEP 604)
+# würden auf Python 3.9 zur Import-Zeit mit ``TypeError: unsupported
+# operand type(s) for |`` crashen (Zielrechner-Report 2026-09-10).
+from __future__ import annotations
+
 import sys
 import csv
 import sqlite3
