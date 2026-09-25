@@ -16,6 +16,7 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QDialog,
     QComboBox,
+    QStackedWidget,
 )
 from PyQt6.QtCore import pyqtSignal, Qt
 
@@ -39,12 +40,21 @@ class ChorAufstellungTab(QWidget):
             "data",
         )
         self._data_dir = os.path.normpath(self._data_dir)
+        # Phase 2 (M0, increment 2/3): embedded-editor state. Until
+        # increment 3/3 the legacy subprocess path stays the default;
+        # the embedded editor is opt-in per file (see open_embedded).
+        self._embedded_file = None
+        self._embedded_meta = {}
+        self._embedded_voicing = []
         self._setup_ui()
         self._load_formations()
 
     def _setup_ui(self):
         """Set up the user interface."""
-        layout = QVBoxLayout(self)
+        # List page keeps the pre-existing file manager UI verbatim;
+        # the embedded editor lives on a second stacked page.
+        self._list_page = QWidget()
+        layout = QVBoxLayout(self._list_page)
 
         # The old "Aus ChorManager laden" button was removed in
         # 2026-06-12 (bug-fix). It was wired to a handler that
@@ -102,6 +112,43 @@ class ChorAufstellungTab(QWidget):
 
         self.status_label = QLabel("")
         layout.addWidget(self.status_label)
+
+        self._editor_page = self._build_editor_page()
+        self._stack = QStackedWidget()
+        self._stack.addWidget(self._list_page)
+        self._stack.addWidget(self._editor_page)
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.addWidget(self._stack)
+
+    def _build_editor_page(self):
+        """Build the embedded-editor page (toolbar + editor widget)."""
+        from chormanager.choraufstellung.editor_widget import (
+            FormationEditorWidget,
+        )
+
+        page = QWidget()
+        page_layout = QVBoxLayout(page)
+        toolbar = QHBoxLayout()
+        back_button = QPushButton("← Zurück zur Liste")
+        back_button.clicked.connect(self.close_embedded)
+        toolbar.addWidget(back_button)
+        save_button = QPushButton("Speichern")
+        save_button.clicked.connect(self._on_save_button)
+        toolbar.addWidget(save_button)
+        self._editor_label = QLabel("")
+        toolbar.addWidget(self._editor_label)
+        toolbar.addStretch()
+        page_layout.addLayout(toolbar)
+        self.editor = FormationEditorWidget()
+        page_layout.addWidget(self.editor, 1)
+        return page
+
+    def _on_save_button(self):
+        """Save-button handler: failures are modal (the editor page
+        has no status label of its own)."""
+        if not self.save_embedded():
+            QMessageBox.warning(self, "Fehler", "Speichern fehlgeschlagen.")
 
     def set_project(self, project):
         """Set the current project."""
@@ -291,14 +338,108 @@ class ChorAufstellungTab(QWidget):
 
         menu = QMenu(self)
         edit_action = menu.addAction("Bearbeiten")
+        embed_action = menu.addAction("Im Tab bearbeiten")
         dup_action = menu.addAction("Duplizieren")
 
         action = menu.exec(self.table.viewport().mapToGlobal(pos))
 
         if action == edit_action:
             self._edit_formation()
+        elif action == embed_action:
+            self._open_embedded_selected()
         elif action == dup_action:
             self._duplicate_formation()
+
+    def _open_embedded_selected(self):
+        """Open the selected formation in the embedded editor."""
+        current_row = self.table.currentRow()
+        if current_row < 0:
+            return False
+        filename = self.table.item(current_row, 0).text()
+        return self.open_embedded(os.path.join(self._data_dir, filename))
+
+    def open_embedded(self, filepath):
+        """Open a formation file in the embedded editor (no subprocess).
+
+        Args:
+            filepath: Path to a formation JSON file.
+
+        Returns:
+            True if the file was loaded and the editor page is shown,
+            False otherwise (stays on the list page).
+        """
+        from chormanager.choraufstellung.storage import FormationStorage
+
+        try:
+            data = FormationStorage(filepath).load_formation()
+        except Exception:
+            data = None
+        if not data:
+            self.status_label.setText(
+                f"Datei kann nicht geöffnet werden: {filepath}"
+            )
+            return False
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                raw = json.load(f)
+        except Exception:
+            raw = {}
+        self._embedded_file = filepath
+        self._embedded_meta = raw.get("metadata", {}) or {}
+        self._embedded_voicing = raw.get("voicing_config", []) or []
+        self.editor.load_formation_data(data)
+        self._editor_label.setText(os.path.basename(filepath))
+        self._stack.setCurrentWidget(self._editor_page)
+        return True
+
+    def save_embedded(self):
+        """Save the embedded editor state back to its file.
+
+        Metadata and voicing config from the loaded file are
+        preserved; placements are rebuilt from the grid.
+
+        Returns:
+            True on success, False otherwise.
+        """
+        if not self._embedded_file:
+            return False
+        try:
+            from chormanager.choraufstellung.storage import FormationStorage
+
+            grid = self.editor.grid
+            placed = grid.get_placed_singers()
+            placed_ids = {s.singer_id for s, _row, _col in placed}
+            unplaced = [
+                s for s in self.editor.singers
+                if s.singer_id not in placed_ids
+            ]
+            ok = FormationStorage().save_formation(
+                unplaced,
+                grid.rows,
+                grid.cols,
+                self._embedded_file,
+                placed_singers=placed,
+                staggered=grid.staggered,
+                voicing_config=self._embedded_voicing,
+                metadata=self._embedded_meta,
+            )
+        except Exception as e:
+            self.status_label.setText(f"Speichern fehlgeschlagen:\n{str(e)}")
+            return False
+        if not ok:
+            self.status_label.setText("Speichern fehlgeschlagen.")
+            return False
+        self._load_formations()
+        self.status_label.setText(
+            f"Gespeichert: {os.path.basename(self._embedded_file)}"
+        )
+        return True
+
+    def close_embedded(self):
+        """Return from the embedded editor to the file list."""
+        self._embedded_file = None
+        self._stack.setCurrentWidget(self._list_page)
+        self._load_formations()
 
     def _edit_formation(self):
         """Open formation in external editor."""
