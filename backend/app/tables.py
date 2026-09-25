@@ -1,0 +1,38 @@
+"""Portable table definitions (SQLite + MariaDB/MySQL).
+
+Mirrors ``chormanager/data/database.py::create_tables``. Only
+``String``/``Integer`` columns — no Postgres-only types, no
+server defaults that differ per dialect (Analyse §5.6).
+"""
+from sqlalchemy import Column, Integer, MetaData, String, Table
+
+metadata = MetaData()
+
+singers_table = Table(
+    "singers",
+    metadata,
+    Column("id", String(64), primary_key=True),
+    Column("full_name", String(255), nullable=False),
+    Column("short_name", String(128)),
+    Column("birth_date", String(16)),
+    Column("voice_group", String(64)),
+    Column("height", Integer),
+    Column("email", String(255)),
+    Column("phone", String(64)),
+    Column("street", String(255)),
+    Column("postal_code", String(32)),
+    Column("city", String(128)),
+    Column("gender", String(32)),
+    Column("guardian1", String(255)),
+    Column("guardian1_phone", String(64)),
+    Column("guardian2", String(255)),
+    Column("guardian2_phone", String(64)),
+    Column("social_contacts", String(1024)),
+    Column("joined_year", Integer),
+    Column("joined_month", Integer),
+    Column("left_year", Integer),
+    Column("left_month", Integer),
+    Column("affinity_uuid", String(64)),
+    Column("created_at", String(32), nullable=False),
+    Column("updated_at", String(32), nullable=False),
+)
