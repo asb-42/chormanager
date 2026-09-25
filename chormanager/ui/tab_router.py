@@ -1,7 +1,7 @@
 """Tab router: selection, context-toolbar and info-label updates.
 
 Extracted from chormanager.ui.main_window as part of M-1 (God-Class
-refactor, see plans/2026-06-12_m1_main_window_refactor.md step 5).
+refactor, see docs/plans/2026-06-12_m1_main_window_refactor.md step 5).
 
 The class is a Mixin that contributes the tab-routing methods to the
 host widget: ``_emit_selection`` (the entry point hit on every tab

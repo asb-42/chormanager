@@ -15,7 +15,7 @@ plain ``core.commands.UndoCommand`` instances.  Instead, it is a thin
 ``QObject`` that holds a private :class:`core.commands.UndoStack` and
 re-emits the change signals.
 
-See plans/2026-06-12_m2_choraufstellung_refactor.md, Schritt 3.
+See docs/plans/2026-06-12_m2_choraufstellung_refactor.md, Schritt 3.
 """
 from __future__ import annotations
 

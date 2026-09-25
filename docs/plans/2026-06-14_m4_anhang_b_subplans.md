@@ -4,11 +4,11 @@
 **Bezug:** `docs/reports/2026-06-14_code-review.md` und `2026-06-14_m4_findings.md`
 **Scope:** 5 Sub-Pläne, die vor dem jeweiligen Cluster-Start erstellt werden müssen.
 
-> **Konvention:** Jeder Sub-Plan bekommt eine eigene Datei: `plans/2026-06-14_subplan_<topic>.md`. Diese Anhang-Datei listet die Tradeoffs, Architektur-Entscheidungen und Subtasks, die im jeweiligen Sub-Plan detailliert werden.
+> **Konvention:** Jeder Sub-Plan bekommt eine eigene Datei: `docs/plans/2026-06-14_subplan_<topic>.md`. Diese Anhang-Datei listet die Tradeoffs, Architektur-Entscheidungen und Subtasks, die im jeweiligen Sub-Plan detailliert werden.
 
 ---
 
-## 🔍 1. `plans/2026-06-14_subplan_update_controller.md` (C3-SUBPLAN-A)
+## 🔍 1. `docs/plans/2026-06-14_subplan_update_controller.md` (C3-SUBPLAN-A)
 
 **Bezugs-Findings:** C-3 (blockierender git pull), M-3 (processEvents), M-1 (Subprocess-Async für 7 Pfade)
 **Geschätzter Aufwand:** M (1 Tag)
@@ -46,7 +46,7 @@
 
 ---
 
-## 🔍 2. `plans/2026-06-14_subplan_subshell_ipc.md` (C1-SUBPLAN-A)
+## 🔍 2. `docs/plans/2026-06-14_subplan_subshell_ipc.md` (C1-SUBPLAN-A)
 
 **Bezugs-Findings:** C-1 (Subshell-Spawn fragil), M-7 (Pfad-Validation)
 **Geschätzter Aufwand:** XL (3-5 Tage)
@@ -83,7 +83,7 @@
 
 ---
 
-## 🔍 3. `plans/2026-06-14_subplan_db_connection_pool.md` (C6-SUBPLAN-A)
+## 🔍 3. `docs/plans/2026-06-14_subplan_db_connection_pool.md` (C6-SUBPLAN-A)
 
 **Bezugs-Findings:** C-6 (Connection-Sharing), m-6 (set_active ohne Transaktion), m-7 (INSERT OR REPLACE Pattern)
 **Geschätzter Aufwand:** L (2 Tage)
@@ -119,7 +119,7 @@
 
 ---
 
-## 🔍 4. `plans/2026-06-14_subplan_optimizer_perf.md` (C4-SUBPLAN-A)
+## 🔍 4. `docs/plans/2026-06-14_subplan_optimizer_perf.md` (C4-SUBPLAN-A)
 
 **Bezugs-Findings:** C-4 (AffinityRule O(n²)), R-1 (Bounds-Check), R-2 (Sanity-Check)
 **Geschätzter Aufwand:** L (2 Tage)
@@ -159,7 +159,7 @@
 
 ---
 
-## 🔍 5. `plans/2026-06-14_subplan_mixin_refactor.md` (A1-SUBPLAN-A)
+## 🔍 5. `docs/plans/2026-06-14_subplan_mixin_refactor.md` (A1-SUBPLAN-A)
 
 **Bezugs-Findings:** A-1 (Mixin-Inflation), A-2 (PyQt5-Totcode), A-3 (Lazy-Caches)
 **Geschätzter Aufwand:** L (2-3 Tage)

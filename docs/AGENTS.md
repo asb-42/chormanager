@@ -2,9 +2,12 @@
 
 ## Purpose
 **User-facing documentation** (Benutzerhandbuch) plus
-**code-review reports**. The Benutzerhandbuch is the primary
+**code-review reports** plus **plan documents** (in
+``docs/plans/``). The Benutzerhandbuch is the primary
 end-user document; the review reports are developer-facing
-artefacts from the periodic code-review wave.
+artefacts from the periodic code-review wave; the plans are
+historical records of the M-1 / M-2 / M-3 / M-4 refactor
+waves and migration analyses.
 
 ## Ownership
 The Benutzerhandbuch is owned by the project lead. The
@@ -50,5 +53,7 @@ There is no automated test for docs. Verification is
 
 ## Child DOX Index
 
-*(The two sub-folders are simple grouping utilities; no
-per-sub-folder AGENTS.md is needed.)*
+| Child | Owns | Local AGENTS.md |
+|---|---|---|
+| ``docs/plans/`` | Plan documents (M-1 / M-2 / M-3 / M-4, sub-plans, migration analyses). Naming ``YYYY-MM-DD_*.md``, one file per scope. | [plans/AGENTS.md](plans/AGENTS.md) |
+| ``docs/reports/`` | Code-review reports per refactor wave (``YYYY-MM-DD_code-review.md``). Immutable once committed. | *(no local AGENTS.md; follows this doc)* |

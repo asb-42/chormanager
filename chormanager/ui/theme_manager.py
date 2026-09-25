@@ -1,7 +1,7 @@
 """Theme manager: light and dark Qt stylesheets.
 
 Extracted from chormanager.ui.main_window as part of M-1 (God-Class
-refactor, see plans/2026-06-12_m1_main_window_refactor.md step 4).
+refactor, see docs/plans/2026-06-12_m1_main_window_refactor.md step 4).
 
 The class is a Mixin that contributes two methods - ``set_light_theme``
 and ``set_dark_theme`` - to the host widget. ``MainWindow`` inherits

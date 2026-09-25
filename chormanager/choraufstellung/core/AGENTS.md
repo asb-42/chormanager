@@ -37,7 +37,7 @@ test suite can run on bare CPython (no display server).
   ``tests/unit/test_sprint1_fixes.py``). All new code must have a
   matching test.
 * When in doubt about a rule, look at
-  ``plans/2026-06-14_subplan_optimizer_perf.md`` for the
+  ``docs/plans/2026-06-14_subplan_optimizer_perf.md`` for the
   C-4 performance contract.
 
 ## Verification

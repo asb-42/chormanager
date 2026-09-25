@@ -2,7 +2,7 @@
 
 Extracted from ``chormanager.ui.main_window`` as part of M-1
 (God-Class refactor, see
-``plans/2026-06-12_m1_main_window_refactor.md`` step 8).
+``docs/plans/2026-06-12_m1_main_window_refactor.md`` step 8).
 
 This Mixin hosts the per-tab action handlers that bridge menu /
 toolbar actions to the underlying tab widgets:

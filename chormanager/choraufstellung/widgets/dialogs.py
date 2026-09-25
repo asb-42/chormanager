@@ -14,7 +14,7 @@ The classes are re-exported from :mod:`choraufstellung.main` for
 backward compatibility with any external caller that did
 ``from chormanager.choraufstellung.main import AddSingerDialog``.
 
-See plans/2026-06-12_m2_choraufstellung_refactor.md, Schritt 4.
+See docs/plans/2026-06-12_m2_choraufstellung_refactor.md, Schritt 4.
 """
 from __future__ import annotations
 

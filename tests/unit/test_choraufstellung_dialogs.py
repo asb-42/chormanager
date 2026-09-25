@@ -9,7 +9,7 @@ external caller.
 
 The new module is tested both via the new import path
 (``widgets.dialogs``) and via the old re-export path
-(``choraufstellung.main``).  See plans/2026-06-12_m2_choraufstellung_refactor.md,
+(``choraufstellung.main``).  See docs/plans/2026-06-12_m2_choraufstellung_refactor.md,
 Schritt 4.
 """
 from __future__ import annotations

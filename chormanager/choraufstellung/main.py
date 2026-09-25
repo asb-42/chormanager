@@ -26,7 +26,7 @@ twelve M-2 refactoring steps to its new home:
 
 The :class:`MainWindow` class in this file is now a thin shell that
 wires the controllers together and owns the user-facing dialogs and
-the close-event handler. See :mod:`plans/2026-06-12_m2_choraufstellung_refactor`
+the close-event handler. See :mod:`docs/plans/2026-06-12_m2_choraufstellung_refactor`
 for the full refactoring plan.
 
 Backward compatibility

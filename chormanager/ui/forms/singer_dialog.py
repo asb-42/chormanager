@@ -1,7 +1,7 @@
 """Dialog for adding/editing a singer.
 
 Extracted from chormanager.ui.main_window as part of M-1 (God-Class
-refactor, see plans/2026-06-12_m1_main_window_refactor.md step 1).
+refactor, see docs/plans/2026-06-12_m1_main_window_refactor.md step 1).
 
 The class is kept byte-for-byte identical to the previous
 implementation; only the location changed. A re-export at the

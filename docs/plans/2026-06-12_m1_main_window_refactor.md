@@ -93,7 +93,7 @@ chormanager/ui/
 > Commits: `89a101e` (Schritt 1) … `2f32d0d` (Schritt 8) + `06e6328` (Cleanup duplicate `_on_selection_changed`).
 > Test-Suite: 518 passed, 4 skipped, 0 failed.
 > `chormanager/ui/main_window.py`: 3 105 → 924 LOC (-70%).
-> Nächster Schritt: M-2 (siehe `plans/2026-06-12_m2_choraufstellung_refactor.md`).
+> Nächster Schritt: M-2 (siehe `docs/plans/2026-06-12_m2_choraufstellung_refactor.md`).
 
 ---
 

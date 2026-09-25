@@ -10,7 +10,7 @@
 > `chormanager/`-Komponente kommt vom Repo-Namen + Python-Package-Namen.
 
 **Datum:** 2026-06-12
-**Vorgänger:** M-1 (siehe `plans/2026-06-12_m1_main_window_refactor.md`, abgeschlossen)
+**Vorgänger:** M-1 (siehe `docs/plans/2026-06-12_m1_main_window_refactor.md`, abgeschlossen)
 **Code-Review:** `docs/reports/2026-06-12_code-review.md` Abschnitt M-2 + R-2
 **Severity:** 🔴 Hoch (P0)
 **Ziel-Datei (absolut):** `/media/data/coding/chormanager/chormanager/choraufstellung/main.py` (2 180 LOC, 12 Klassen).

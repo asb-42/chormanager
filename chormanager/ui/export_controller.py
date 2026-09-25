@@ -1,7 +1,7 @@
 """Export controller: Export-Core Mixin for MainWindow.
 
 Extracted from ``chormanager.ui.main_window`` as part of M-1 (God-Class
-refactor, see ``plans/2026-06-12_m1_main_window_refactor.md`` step 7).
+refactor, see ``docs/plans/2026-06-12_m1_main_window_refactor.md`` step 7).
 
 This module hosts three Mixin classes — all extracted byte-for-byte
 from ``main_window.py``:
@@ -896,7 +896,7 @@ class ExportController(QObject):
     """A-1: QObject wrapper for the export methods.
 
     Signals match the acceptance criterion in
-    ``plans/2026-06-14_subplan_mixin_refactor.md``.
+    ``docs/plans/2026-06-14_subplan_mixin_refactor.md``.
     """
 
     export_finished = pyqtSignal(str)  # path

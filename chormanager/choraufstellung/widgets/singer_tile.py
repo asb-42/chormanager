@@ -16,7 +16,7 @@ avoid the circular dependency: at runtime the parent reference is
 duck-typed (``hasattr``/``isinstance``) and the type hint is only
 needed for static analysis.
 
-See plans/2026-06-12_m2_choraufstellung_refactor.md, Schritt 5.
+See docs/plans/2026-06-12_m2_choraufstellung_refactor.md, Schritt 5.
 """
 from __future__ import annotations
 

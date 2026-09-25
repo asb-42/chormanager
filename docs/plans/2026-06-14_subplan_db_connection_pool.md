@@ -3,7 +3,7 @@
 | Feld | Wert |
 |------|------|
 | **Quelle** | `docs/reports/2026-06-14_code-review.md` — **C-6** (Geteilte SQLite-Connection) |
-| **Bezug** | `plans/2026-06-14_m4_findings.md` — Sprint 2 / Cluster E / C6-SUBPLAN-A |
+| **Bezug** | `docs/plans/2026-06-14_m4_findings.md` — Sprint 2 / Cluster E / C6-SUBPLAN-A |
 | **Status** | 📝 **Vorbereitet** (Sprint 2.7) — Implementation Sprint 3 |
 | **Prio** | P1 |
 | **Aufwand** | L (2 Personentage) |
@@ -166,8 +166,8 @@ def test_concurrent_writes_serialized():
 ## 🔗 Verweise
 
 - Code-Review: `docs/reports/2026-06-14_code-review.md` — C-6
-- Haupt-Plan: `plans/2026-06-14_m4_findings.md` — Sprint 2
-- Sub-Plan-Index: `plans/2026-06-14_m4_anhang_b_subplans.md`
+- Haupt-Plan: `docs/plans/2026-06-14_m4_findings.md` — Sprint 2
+- Sub-Plan-Index: `docs/plans/2026-06-14_m4_anhang_b_subplans.md`
 - Original-Datei: `chormanager/data/database.py:1-243`
 - Test-Datei (Soll): `tests/integration/test_db_concurrent_writes.py` (neu)
 

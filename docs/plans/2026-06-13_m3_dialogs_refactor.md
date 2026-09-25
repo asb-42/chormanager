@@ -1,7 +1,7 @@
 # Plan: M-3 — Aufteilung `chormanager/ui/dialogs.py`
 
 > Erstellt am 2026-06-13 nach Abschluss von M-2.
-> Schließt an [`plans/2026-06-12_m2_choraufstellung_refactor.md`](2026-06-12_m2_choraufstellung_refactor.md) an.
+> Schließt an [`docs/plans/2026-06-12_m2_choraufstellung_refactor.md`](2026-06-12_m2_choraufstellung_refactor.md) an.
 
 ## 🎯 Ziel
 
@@ -254,7 +254,7 @@ Python den Re-Export-Name dynamisch auflöst (PEP 3134 / import system).
 ## 📅 Reihenfolge der Commits
 
 ```
-[plan]      plans/2026-06-13_m3_dialogs_refactor.md          (dieses Dokument)
+[plan]      docs/plans/2026-06-13_m3_dialogs_refactor.md          (dieses Dokument)
 [1]  refactor: dialogs/ package-skelett (Pure-Re-Export)
 [2]  refactor: dialogs/_availability.py
 [3]  refactor: dialogs/_event.py

@@ -1,4 +1,4 @@
-# AGENTS.md — plans/
+# AGENTS.md — docs/plans/
 
 ## Purpose
 **Plan documents** for the major M-1 / M-2 / M-3 / M-4 refactor
@@ -12,7 +12,7 @@ lightly — only when a refactor scope changes materially.
 
 ## Local Contracts
 
-* **One file per scope.** ``plans/2026-06-14_m4_findings.md``
+* **One file per scope.** ``docs/plans/2026-06-14_m4_findings.md``
   is the top-level M-4 plan; the ``_phase2_p1.md`` and
   ``_phase3_p2.md`` files detail the P1 and P2 sub-clusters.
   Sub-plans (``_subplan_*.md``) live next to the main plan.

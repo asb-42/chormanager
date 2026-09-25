@@ -14,7 +14,7 @@
 
 #### 🔍 C1-SUBPLAN-A · Eigenes Sub-Plan: Subshell-IPC-Architektur evaluieren
 - **Prio:** P1 · **Aufwand:** XL (3-5 Tage) — siehe Sub-Plan
-- **Sub-Plan-Datei:** `plans/2026-06-14_subplan_subshell_ipc.md` (zu erstellen)
+- **Sub-Plan-Datei:** `docs/plans/2026-06-14_subplan_subshell_ipc.md` (zu erstellen)
 - **Warum Sub-Plan?** Architektur-Entscheidung: (a) Modul-Einbettung, (b) IPC mit `multiprocessing.connection`, (c) Status quo + Cleanup.
 - **Akzeptanz:** (1) Entscheidung dokumentiert. (2) Temp-JSON-Leak behoben. (3) Backup-Restore-Race behoben. (4) Tests für den gewählten Ansatz.
 - **Subtasks:**
@@ -27,7 +27,7 @@
 
 #### 🔍 C6-SUBPLAN-A · Eigenes Sub-Plan: Pro-Tab-Database-Connection-Pool
 - **Prio:** P1 · **Aufwand:** L (2 Tage) — siehe Sub-Plan
-- **Sub-Plan-Datei:** `plans/2026-06-14_subplan_db_connection_pool.md` (zu erstellen)
+- **Sub-Plan-Datei:** `docs/plans/2026-06-14_subplan_db_connection_pool.md` (zu erstellen)
 - **Warum Sub-Plan?** Connection-Pool-Topologie: (a) Pool pro Tab, (b) ein Pool mit n Slots, (c) Write-Lock via `BEGIN IMMEDIATE`. Test-Strategie muss Concurrency abdecken.
 - **Akzeptanz:** (1) Jeder Tab hat eigene Connection. (2) Schreib-Concurrency-Test grün. (3) `_reload_after_restore` race-frei.
 - **Subtasks:**
@@ -40,7 +40,7 @@
 
 #### 🔍 A1-SUBPLAN-A · Eigenes Sub-Plan: Mixin-Inflation auflösen
 - **Prio:** P1 · **Aufwand:** L (2-3 Tage) — siehe Sub-Plan
-- **Sub-Plan-Datei:** `plans/2026-06-14_subplan_mixin_refactor.md` (zu erstellen)
+- **Sub-Plan-Datei:** `docs/plans/2026-06-14_subplan_mixin_refactor.md` (zu erstellen)
 - **Warum Sub-Plan?** Mixin-Architektur durch Komposition ersetzen: `ExportController`, `UpdateController`, `TabRouter` als QObject-Members. Diamond-Problem-Resolution.
 - **Akzeptanz:** (1) MainWindow-Klasse < 200 LOC. (2) Controller-Klassen eigenständig testbar. (3) Keine Mixin-MRO-Konflikte.
 - **Subtasks:**
@@ -63,7 +63,7 @@
 
 #### 🔍 C4-SUBPLAN-A · Eigenes Sub-Plan: `AffinityRule` Performance + QThread-Migration
 - **Prio:** P1 · **Aufwand:** L (2 Tage) — siehe Sub-Plan
-- **Sub-Plan-Datei:** `plans/2026-06-14_subplan_optimizer_perf.md` (zu erstellen)
+- **Sub-Plan-Datei:** `docs/plans/2026-06-14_subplan_optimizer_perf.md` (zu erstellen)
 - **Warum Sub-Plan?** Optimierer ist hot path. Performance-Refactor + Threading-Architektur gekoppelt.
 - **Akzeptanz:** (1) 50 Sänger mit 20 Affinitäts-Paaren < 1 s. (2) Optimierer in QThread. (3) Progress-Signal. (4) Singersuche O(1) via Dict-Index.
 - **Subtasks:**

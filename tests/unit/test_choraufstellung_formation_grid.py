@@ -17,7 +17,7 @@ behaviour-preserving and we can also catch regressions in the
 SingerTile <-> FormationGrid interaction (which Schritt 5's
 duck-typing allows but doesn't enforce).
 
-See plans/2026-06-12_m2_choraufstellung_refactor.md, Schritt 6.
+See docs/plans/2026-06-12_m2_choraufstellung_refactor.md, Schritt 6.
 """
 from __future__ import annotations
 

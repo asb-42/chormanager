@@ -1,7 +1,7 @@
 """ChorAufstellung subshell helpers.
 
 Extracted from chormanager.ui.main_window as part of M-1 (God-Class
-refactor, see ``plans/2026-06-12_m1_main_window_refactor.md``).
+refactor, see ``docs/plans/2026-06-12_m1_main_window_refactor.md``).
 
 This module hosts two related pieces:
 

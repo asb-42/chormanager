@@ -7,7 +7,7 @@ and Z. 970-1206).  M-2 Schritt 5 moves them to
 the class names from ``choraufstellung.main`` for backward compatibility.
 
 The classes are tested via the new module path.  See
-plans/2026-06-12_m2_choraufstellung_refactor.md, Schritt 5.
+docs/plans/2026-06-12_m2_choraufstellung_refactor.md, Schritt 5.
 """
 from __future__ import annotations
 

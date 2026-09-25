@@ -3,7 +3,7 @@
 | Feld | Wert |
 |------|------|
 | **Quelle** | `docs/reports/2026-06-14_code-review.md` — **C-3** (Subprocess-Spawn ohne UI-Feedback / blockierender `subprocess.run`) |
-| **Bezug** | `plans/2026-06-14_m4_findings.md` — Cluster B / C3-SUBPLAN-A |
+| **Bezug** | `docs/plans/2026-06-14_m4_findings.md` — Cluster B / C3-SUBPLAN-A |
 | **Status** | 📝 **Vorbereitet** (Sprint 1.7) — Implementierung in Sprint 2 |
 | **Owner** | TBD |
 | **Prio** | P0 (Block-Release) |
@@ -190,8 +190,8 @@ def _on_check_finished(self, result: dict) -> None:
 ## 🔗 Verweise
 
 - Code-Review: `docs/reports/2026-06-14_code-review.md` — C-3
-- Haupt-Plan: `plans/2026-06-14_m4_findings.md` — Cluster B
-- Sub-Plan-Index: `plans/2026-06-14_m4_anhang_b_subplans.md`
+- Haupt-Plan: `docs/plans/2026-06-14_m4_findings.md` — Cluster B
+- Sub-Plan-Index: `docs/plans/2026-06-14_m4_anhang_b_subplans.md`
 - Original-Datei: `chormanager/ui/update_controller.py:1-114`
 - Test-Datei (Soll): `tests/unit/test_update_controller.py` (neu)
 

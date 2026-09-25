@@ -23,7 +23,7 @@ controller gets three small injection points:
 Plus a ``storage`` object that exposes ``save_autosave(data)`` (the
 existing ``choraufstellung.storage.FormationStorage`` already has it).
 
-See plans/2026-06-12_m2_choraufstellung_refactor.md, Schritt 7.
+See docs/plans/2026-06-12_m2_choraufstellung_refactor.md, Schritt 7.
 """
 from __future__ import annotations
 

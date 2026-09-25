@@ -3,7 +3,7 @@
 | Feld | Wert |
 |------|------|
 | **Quelle** | `docs/reports/2026-06-14_code-review.md` — **C-1** (Subshell-Spawn blockiert Main-Thread, Temp-JSON-Leak) |
-| **Bezug** | `plans/2026-06-14_m4_findings.md` — Sprint 2 / Cluster E / C1-SUBPLAN-A |
+| **Bezug** | `docs/plans/2026-06-14_m4_findings.md` — Sprint 2 / Cluster E / C1-SUBPLAN-A |
 | **Status** | 📝 **Vorbereitet** (Sprint 2.5) — Spike-Phase Sprint 3 |
 | **Prio** | P1 |
 | **Aufwand** | XL (3-5 Personentage, ueber 2 Sprints) |
@@ -118,8 +118,8 @@ with tempfile.TemporaryDirectory(prefix="chor_") as tmp:
 ## 🔗 Verweise
 
 - Code-Review: `docs/reports/2026-06-14_code-review.md` — C-1
-- Haupt-Plan: `plans/2026-06-14_m4_findings.md` — Sprint 2
-- Sub-Plan-Index: `plans/2026-06-14_m4_anhang_b_subplans.md`
+- Haupt-Plan: `docs/plans/2026-06-14_m4_findings.md` — Sprint 2
+- Sub-Plan-Index: `docs/plans/2026-06-14_m4_anhang_b_subplans.md`
 - Original-Datei: `chormanager/ui/choraufstellung_launcher.py:151-218, 221-308`
 
 ---

@@ -35,7 +35,7 @@ to patch a specific dependency.
 
 # Re-exports for backward compatibility.  Each block corresponds to one
 # M-3 extraction step; the order below matches the order in the M-3 plan
-# (``plans/2026-06-13_m3_dialogs_refactor.md``).
+# (``docs/plans/2026-06-13_m3_dialogs_refactor.md``).
 from ._availability import (
     AVAILABILITY_STATUS,
     AvailabilityDelegate,

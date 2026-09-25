@@ -9,7 +9,7 @@ thin Qt-signal bridge.
 It also documents and pins the (currently buggy) ``on_can_undo_changed``
 and ``on_can_redo_changed`` callbacks of ``core.commands.UndoStack``.
 
-See plans/2026-06-12_m2_choraufstellung_refactor.md, Schritt 3.
+See docs/plans/2026-06-12_m2_choraufstellung_refactor.md, Schritt 3.
 """
 from __future__ import annotations
 

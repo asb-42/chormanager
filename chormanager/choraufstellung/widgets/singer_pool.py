@@ -13,7 +13,7 @@ The pool re-uses the draggable table widget extracted in M-2 Schritt 2
 (``widgets.draggable_list.DraggableTableWidget``) and the affinity
 dialog extracted in M-2 Schritt 4 (``widgets.dialogs.AffinityDialog``).
 
-See plans/2026-06-12_m2_choraufstellung_refactor.md, Schritt 5.
+See docs/plans/2026-06-12_m2_choraufstellung_refactor.md, Schritt 5.
 """
 from __future__ import annotations
 
