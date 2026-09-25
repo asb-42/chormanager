@@ -107,16 +107,17 @@ Leistung: Bei typischen Chören (40–120 Kacheln) reicht DOM problemlos. Erst a
 Diese Empfehlung **bestätigt** den Vorgängerplan (Option A Monolith) und präzisiert ihn auf Basis der Live-Analyse (§2.1: DOM statt Canvas).
 
 ```text
-Backend      FastAPI 0.110+ · SQLAlchemy 2.0 · Pydantic v2 · Alembic · PyTest
-DB           PostgreSQL 16 (Produktion) · SQLite (Dev/Test, Bestand weiter nutzbar)
-Auth         Zunächst Single-User + Token (Chorleiter), später OAuth2/Password-Flow
+Backend      FastAPI 0.110+ · SQLAlchemy 2.0 · Pydantic v2 · Alembic · PyTest · Python 3.11/3.12 via .venv
+DB           MariaDB/MySQL InnoDB utf8mb4 (Produktion, wird bereits betrieben) · SQLite (Dev/Test, Bestand weiter nutzbar)
+Auth         Single-User + Token zum Start; Rollen-/Rechtemodell (Chorleiter/Vorstand/Sänger) als Architektur-Reserve, s. §5.8
 PDF/Export   reportlab (behalten, server-seitig) · LibreOffice-Export via odfpy/unoconv-Endpoint
 Frontend     TypeScript 5 · React 18 · Vite · Tailwind CSS · shadcn/ui (Radix) · TanStack Query · Zustand · React Hook Form + Zod
 DnD          @dnd-kit/core + @dnd-kit/sortable (Formation Editor, s. §3.3)
 Tabellen     TanStack Table (Sänger/Verfügbarkeit/Besetzung)
 PDF-Preview  <iframe>/PDF.js auf Backend-Endpoint
-Deployment   Docker Compose (api + db + static-frontend via nginx) · PWA-mäßig installierbar
+Deployment   Docker Compose (api + db + static-frontend via nginx), server-seitig, Browser als primärer Client
 Tests        Backend: pytest (Bestand) · Frontend: Vitest + Testing Library + Playwright (1–2 Smoke-Flows)
+Branch       Eigener Migrations-Branch, Qt-`main` bleibt bis MS4 voll benutzbar, s. §5.9
 ```
 
 **Warum genau dieser Stack:**
@@ -124,8 +125,8 @@ Tests        Backend: pytest (Bestand) · Frontend: Vitest + Testing Library + P
 1. **Maximale Backend-Wiederverwendung.** `domain/`, `choraufstellung/core/`, `data/`, `export/`, `backup/` sind Qt-frei und wandern fast unverändert hinter FastAPI-Router — das ist der größte Hebel (ca. 3k LOC geschenkt). Django wäre schwerer, weil das bestehende SQLAlchemy-nahe Repository-Pattern und die Pydantic-ähnlichen Dataclasses (`Singer.to_dict/from_dict`) natürlicher auf FastAPI abbilden.
 2. **React + dnd-kit ist die einzige Kombination, die alle Raster-Interaktionen (§2.2) abdeckt** — inkl. Touch, Tastatur-Accessibility und Gruppen-Drag. HTMX/Alpine (im Vorgängerplan als „nicht empfohlen“ markiert) bleiben für CRUD denkbar, scheitern aber am Formation Editor. Vue 3 + `vuedraggable` wäre gleichwertig, hat aber kleineres DnD-Ökosystem als dnd-kit.
 3. **reportlab bleibt server-seitig** — der Vorgängerplan (Option A Server-side) ist korrekt; Client-PDF (jsPDF) würde Drucktreue verlieren.
-4. **PostgreSQL statt SQLite-Datei**, sobald mehr als ein Gerät zugreift (der eigentliche Web-Mehrwert). Für Single-User-Start reicht SQLite + Litestream — kein harter Cutover nötig.
-5. **PWA/Offline:** Konzertsäle haben oft kein Netz. Frontend als installierbare PWA mit Service-Worker-Cache + queued Mutations (TanStack Query Persist) einplanen — das ist der einzige echte Architektur-Zusatz gegenüber dem Vorgängerplan.
+4. **MariaDB statt SQLite-Datei**, sobald mehr als ein Gerät zugreift (der eigentliche Web-Mehrwert) — und MariaDB statt PostgreSQL, weil sie **bereits betrieben wird** (s. §5.6). Für Single-User-Start reicht SQLite weiter — kein harter Cutover nötig. SQL portabel halten (keine PG-spezifischen Typen), damit ein späterer Wechsel möglich bleibt.
+5. **PWA/Offline nur optional:** Der Nutzen ist unbewiesen — daher kein Kernbestandteil, sondern optionale Erweiterung M6 (§5.7), nur bei echtem Bedarf.
 
 ### 3.2 Ausdrücklich nicht empfohlen (mit Begründung)
 
@@ -145,6 +146,15 @@ Tests        Backend: pytest (Bestand) · Frontend: Vitest + Testing Library + P
 - **Undo:** TS-Port von `core/commands.py` (`UndoStack`, max. 100 Einträge wie Desktop-`history/service.py`), synchronisiert mit Backend-Transaktionen (optimistic UI + Rollback).
 - **Optimizer:** Regeln laufen **serverseitig** (Python-`RULE_REGISTRY` unverändert), Frontend zeigt `swap_count`/`cost`/`elapsed_ms` + Vorher/Nachher-Diff; „Übernehmen“ pusht einen `OptimizeFormationCommand` auf den Undo-Stack.
 - **Persistenz:** `PUT /api/formations/{id}/placements` (Bulk), Autosave-Debounce 2 s + Rotation (Desktop-`autosave.py`-Semantik: max. 5 Snapshots), Recovery-Dialog bei neuerem Snapshot.
+- **Primärgerät Desktop/Notebook:** DnD, Rubber-Band und Tastaturkürzel werden für Maus/Trackpad optimiert und dort abgenommen. Touch/Tablet/Handy: Kacheln ansehen und einfache Aktionen sollen funktionieren (progressive Erweiterung), aber **kein Mobile-First-Redesign** — das Raster bleibt eine Desktop-Komponente (§5.1).
+
+### 3.4 Architektur-Reserven (eingeplant, NICHT implementiert)
+
+Eigner-Vorgabe 2026-09-26: Die App läuft überwiegend server-seitig (Browser als primärer Client). Spätere Sänger-Selbstbedienung (eigene Stammdaten-Teile pflegen, Verfügbarkeiten per Webseite/App eintragen) wird architektonisch vorbereitet, gehört aber **nicht** zum Migrationsumfang:
+
+- **Rollenmodell** in Schema + Auth von Anfang an vorsehen (`chorleiter`, `vorstand`, `saenger`), inkl. Scoped Permissions (Sänger sieht/schreibt nur eigene Datensätze: `PUT /api/me/availability/{event_id}` idempotent, Unique-Constraint `(singer_id, event_id)` für Concurrent-Writes).
+- **Formation-Planung bleibt Single-Editor** (§5.2): kein Kollaborations-Protokoll, einfacher Versions-Check (`If-Match`/Revision) genügt.
+- **Kein Code für das Sänger-Portal in M0–M5** — nur: keine Designentscheidung treffen, die es später blockiert (z. B. kein Singleton-User, keine clientseitigen Admin-Geheimnisse, keine nicht-mandantenfähigen Session-Annahmen).
 
 ---
 
@@ -158,38 +168,44 @@ Der Vorgängerplan widerspricht sich selbst: Executive Summary „400–700 h / 
 | **M1 Backend-API** | FastAPI-Skeleton, Auth-Token, Router für singers/events/projects/availability/besetzung/repertoire/formations/export/config, Alembic-Migrationen aus `database.py`-Schema, `domain/`+`choraufstellung/core/` als Services verdrahten | 2–3 Wochen · 80–120 h | Niedrig |
 | **M2 Frontend-CRUD** | App-Shell + Router + Theming (Hell/Dunkel), 6 CRUD-Tabs (Sänger/Projekte/Termine/Verfügbarkeit/Besetzung/Repertoire), Aufgaben-Wizard als Multi-Step-Form, TanStack-Table + Filter/Suche/Sortierung | 2–3 Wochen · 60–80 h | Mittel |
 | **M3 Formation Editor** | §3.3 vollständig: Grid, DnD, Rubber-Band, Kontextmenü, Undo, Suche-Puls, Optimizer-Anbindung, Autosave/Recovery | 3–5 Wochen · 100–160 h | **Hoch** |
-| **M4 Export/PDF/Backup** | reportlab-Endpoints, CSV/LibreOffice, JSON-Sync, Backup/Restore-UI, Update-Check-Ersatz | 1 Woche · 20–30 h | Niedrig |
-| **M5 Auth-Multi-User + Deployment** | Rollen (Chorleiter/Stimme), Postgres-Migration, Docker Compose, PWA/Offline-Queue, Playwright-Smoke, Doku (Benutzerhandbuch nachziehen) | 1–2 Wochen · 40–70 h | Mittel |
+| **M4 Export/PDF/Backup** | reportlab-Endpoints (PDF-Qualitätskriterien §5.3: Zentrierung, S/W-Tauglichkeit, Schriften, Kopf), CSV/LibreOffice, JSON-Sync, Backup/Restore-UI, Update-Check-Ersatz | 1 Woche · 20–30 h | Niedrig |
+| **M5 Rollen-Reserve + Deployment** | Rollenmodell als Schema/Auth-Reserve (§3.4, ohne Portal-UI), MariaDB-Schema-Migration via Alembic, Docker Compose (api + db + static-frontend), Playwright-Smoke, Doku (Benutzerhandbuch nachziehen) | 1–2 Wochen · 30–50 h | Mittel |
+| **M6 (optional, nur bei Bedarf)** | PWA/Offline: Service-Worker-Cache + queued Mutations | 1 Woche · 20–40 h | Mittel |
 | **Test/Puffer** | Ausbau pytest + Vitest + Playwright, Accessibility-Audit, Performance (300-Kacheln-Probe) | durchgehend · 40–60 h | — |
-| **Gesamt** | | **10–15 Wochen (1 Dev) · 370–560 h; 6–8 Wochen (2 Devs)** | Kritischer Pfad: M1 → M3 |
+| **Gesamt (Kern M0–M5)** | | **10–15 Wochen (1 Dev) · 365–550 h; 6–8 Wochen (2 Devs)** | Kritischer Pfad: M1 → M3 |
 
-Ohne Multi-User-Anspruch (Single-User-Web als 1:1-Ersatz) entfallen ca. 30–40 h aus M5 → **340–520 h**. Die alte „Tauri 2–3 Wochen“-Aussage ist gestrichen (§3.2).
+Ohne Multi-User-Anspruch (Single-User-Web als 1:1-Ersatz) entfallen ca. 20–30 h aus M5 → **ca. 340–520 h**. M6 kommt nur bei nachgewiesenem Bedarf hinzu. Die alte „Tauri 2–3 Wochen“-Aussage ist gestrichen (§3.2).
 
 ### Meilensteine (Demo-fähig)
 
 - **MS1 (nach M1):** API + OpenAPI-Docs, CRUD via Swagger, Optimizer-Regeln per `curl` aufrufbar.
 - **MS2 (nach M2):** Alle CRUD-Tabs klickbar, Wizard durchgängig, Desktop parallel nutzbar (gleiche SQLite-Datei im Dev-Modus).
-- **MS3 (nach M3):** Formation Editor paritätisch (Akzeptanz: Pool→Grid, Swap, Gruppen-Drag, Rubber-Band, Undo, Optimizer-Diff — je 1 Playwright-Test).
-- **MS4 (nach M4+M5):** Docker-Compose-Release, Benutzerhandbuch aktualisiert, Desktop als Fallback noch lauffähig.
+- **MS3 (nach M3):** Formation Editor paritätisch (Akzeptanz: Pool→Grid, Swap, Gruppen-Drag, Rubber-Band, Undo, Optimizer-Diff — je 1 Playwright-Test; Abnahme an Notebook mit Maus/Trackpad).
+- **MS4 (nach M4+M5):** Docker-Compose-Release, Benutzerhandbuch aktualisiert, Desktop als Fallback noch lauffähig — erst hier Merge des Migrations-Branch nach `main` (§5.9).
+- **MS0 (vor M1):** Migrations-Branch angelegt, Desktop-CI auf `main` grün, API-Kontrakt + MariaDB-Entscheidung festgezurrt.
 
 ---
 
-## 5. Risiken & offene Entscheidungen
+## 5. Risiken & Entscheidungen (Eigner-Vorgaben 2026-09-26 eingearbeitet)
 
-1. **Touch-Geräte (Tablets im Probenraum):** Qt-Desktop kennt kein Touch-DnD; Web muss es neu definieren (Long-Press-Drag, vergrößerte Hit-Areas). In M3 einplanen, nicht nachträglich.
-2. **Echtzeit-Kollaboration:** Aktuell Single-User-Semantik (SQLite-Datei). Falls zwei Chorleiter gleichzeitig aufstellen, braucht es WebSockets + Conflict-Resolution (zusätzlich ca. 40–60 h, nicht in Schätzung enthalten). **Entscheidung vor M1:** Single-User-Lock (einfach) vs. CRDT/OT (teuer).
-3. **Drucktreue:** Bühnenpläne als PDF müssen maßstabsgetreu sein. Früh (M4) Referenz-PDFs Desktop-vs-Web vergleichen.
-4. **`voice_groups.yaml` vs. `.json`:** README und Tech-Doc widersprechen sich (Subanalyse §3). Vor M1 vereinheitlichen — sonst divergieren Desktop- und Web-Farben.
-5. **Python-3.9-Fessel:** `requires-python >=3.9` verbietet moderne Syntax im Bestand. Backend neu auf 3.11+ aufsetzen, Bestand als Lib importieren (Kompat-Test `test_py39_compat.py` beachten).
+1. **Primärgerät Notebook/Desktop (kein Mobile-First):** Die App wird per Browser an Notebook/Desktop-PC mit Maus/Trackpad bedient — alle DnD- und Rubber-Band-Interaktionen werden dort abgenommen. Dass sie sich zusätzlich auf Handy/Tablet brauchbar bedienen lässt, ist erfreulich, aber **kein Design-Ziel**: kein Mobile-First-Layout, keine Touch-Neukonzeption des Rasters in M3 (nur Basistauglichkeit, keine Abnahme auf Touch).
+2. **Keine gleichzeitige Formation-Planung (Wahrscheinlichkeit quasi null):** Zwei Chorleiter, die gleichzeitig dieselbe Aufstellung bearbeiten, sind kein Design-Ziel — Single-Editor-Semantik mit Revisions-Check genügt, kein CRDT/OT, keine WebSockets für das Raster. **Getrennt davon:** Das Backend muss später Concurrent-Writes vieler Sänger entgegennehmen können (Verfügbarkeits-Zusagen, Stammdaten-Teile) — das wird über idempotente Pro-Sänger-Endpoints + Unique-Constraints gelöst (§3.4), betrifft die Formation-Planung aber **nicht**.
+3. **Keine Maßstabstreue — dafür PDF-Qualität:** Das Raster ist auch in Qt weder maßstabsgetreu noch bemaßt, und das bleibt so (kein Design-Ziel). **Viel wichtiger** ist die Qualität der PDF-Version — Abnahmekriterien in M4: Sänger-Kurznamen sauber horizontal + vertikal in den Raster-Kacheln zentriert, Stimmgruppen-Farben auch im S/W-Druck unterscheidbar (Muster/Symbole als Rückfallebene prüfen), Schriften eingebettet, Kopf mit Projekt/Termin/Datum, keine abgeschnittenen Kacheln am Seitenrand. Referenz-PDFs Desktop-vs-Web in M4 vergleichen.
+4. **Farbschema leicht änderbar, Format egal:** Ob YAML oder JSON ist vollkommen gleichgültig — Anforderung ist nur, dass Stimmgruppen-Farben (hell/dunkel) einfach konfigurier- und änderbar sind. Eine Quelle (`voice_groups.*`-Duplikat auflösen, §7), migriert in eine DB-Tabelle mit Admin-Pflege; Desktop- und Web-Farben dürfen nicht divergieren.
+5. **Python 3.11/3.12 via .venv:** Die 3.9-Bindung diente historisch nur der lokalen Qt-Lauffähigkeit auf Ubuntu/Mint. Das Backend zielt auf **3.11+** (im Migrations-Branch, eigene `.venv`); der Kompat-Test `test_py39_compat.py` gilt weiter nur für den Qt-Desktop-Branch.
+6. **MariaDB/MySQL server-seitig: ja, ohne gravierende Nachteile.** Antwort auf Eigner-Frage 1: SQLAlchemy + Alembic abstrahieren den Dialekt; bei dieser Größenordnung (ein Chor, 7 Tabellen, keine GIS-/Array-/Vektor-Workloads) hat MariaDB gegenüber PostgreSQL keine praxisrelevanten Nachteile. Zu beachten: Engine **InnoDB**, Charset **utf8mb4** (für `utf8mb4_unicode_ci`-Kollation), `DATETIME` statt `TIMESTAMP` für Veranstaltungszeiten (kein 2038-/TZ-Problem), JSON-Spalten sparsam einsetzen (MariaDB-Longtext-Alias beachten), `RETURNING` erst ab 10.5 — im Zweifel letzte IDs via `lastrowid` lesen. Keine PG-spezifischen Typen (`ARRAY`, `CITEXT`, `JSONB`) verwenden, dann bleibt ein späterer Wechsel zu PostgreSQL ein reiner Config-Vorgang. **Entscheidung: MariaDB** (bereits betrieben — Betriebswissen schlägt theoretische PG-Vorteile).
+7. **PWA/Offline nur optional (M6):** Aufwand derzeit nicht gerechtfertigt — kein Kernbestandteil, nur bei nachgewiesenem Bedarf (z. B. netzlose Konzertsäle mit Tablet-Einsatz). Architektur versperrt den Weg nicht (API bereits offline-freundlich: Bulk-Endpoints, Revisionen).
+8. **Sänger-Portal als Architektur-Reserve:** Stammdaten-Selbstpflege und Verfügbarkeits-Eintrag per Webseite/App werden mitgedacht (§3.4: Rollen, Scopes, idempotente Endpoints), aber **nicht implementiert** — kein Portal-UI, keine Sänger-Accounts-Verwaltung in M0–M5.
+9. **Branch-Isolation:** Die gesamte Migration entwickelt sich in einem **eigenen Branch** (`web-migration`); der Qt-`main` bleibt bis zum Abschluss **vollständig benutzbar** (CI grün, Releases möglich). Hotfixes auf `main` werden per Cherry-Pick in den Migrations-Branch übernommen, nicht umgekehrt. Merge nach `main` erst bei MS4 (Docker-Release + abgenommene Parität).
 
 ---
 
 ## 6. Empfehlung / Next Steps
 
-1. **M0 starten** (1 Woche): Duplikat-UI löschen, Singer-Modell unifizieren, OpenAPI-Kontrakt schreiben. Kein Web-Code vor MS1-Vertrag.
-2. **Stack wie in §3.1 beschließen** (FastAPI + React + dnd-kit + Postgres + Docker Compose + PWA-Cache). Kein Spagat mit HTMX/Canvas/Tauri.
-3. **Formation Editor als Prototyp vorziehen** (M3-Risiko-S spike, 2–3 Tage): 1 Grid + 20 Kacheln + dnd-kit + Rubber-Band als Wegwerf-Prototype — killt das größte Risiko vor dem Full-Commit.
-4. **Desktop und Web parallel betreiben** bis MS4 (gleiche JSON-/SQLite-Formate, Einweg-Bridge wiederverwenden).
+1. **M0 starten** (1–2 Wochen): Migrations-Branch `web-migration` anlegen, Duplikat-UI löschen, Singer-Modell unifizieren, Verzeichnisstruktur-Bereinigung (§7), OpenAPI-Kontrakt + MariaDB-Entscheidung festzurren. Kein Web-Code vor MS1-Vertrag.
+2. **Stack wie in §3.1 beschließen** (FastAPI + React + dnd-kit + MariaDB + Docker Compose, Python 3.11/3.12). Kein Spagat mit HTMX/Canvas/Tauri, kein Mobile-First, keine Maßstabs-Neukonzeption.
+3. **Formation Editor als Prototyp vorziehen** (M3-Risiko-Spike, 2–3 Tage): 1 Grid + 20 Kacheln + dnd-kit + Rubber-Band als Wegwerf-Prototype an Notebook mit Maus/Trackpad — killt das größte Risiko vor dem Full-Commit.
+4. **Desktop und Web parallel betreiben** bis MS4 (gleiche JSON-/SQLite-Formate, Einweg-Bridge wiederverwenden); Merge erst bei MS4, `main` bleibt bis dahin voll benutzbar (§5.9).
 
 ---
 
