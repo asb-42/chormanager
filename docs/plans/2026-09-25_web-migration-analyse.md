@@ -62,7 +62,7 @@ DB-Schema (`chormanager/data/database.py`, `ConnectionPool` mit WAL + `busy_time
 
 - Komplette `ui/` (35 Dateien): `MainWindow` (~990), `TabRouter` (533), alle 7 Views, 10 Dialoge, Delegates, Icons, `ThemeManager`, `ExportController` (919).
 - Komplettes `choraufstellung/widgets/` + `main.py`/`file_io`-Dialoganteile/`pdf_export*`/`theme.ThemeApplier` (QSS) / `undo_bridge.QtUndoStack` (dünner Signal-Adapter).
-- Totes Duplikat `choraufstellung/ui/grid_widget.py` (778) + `pool_widget.py` (496) **nicht** portieren — nur `widgets/formation_grid.py` (825) ist Source of Truth (vgl. Subanalyse; Vorgängerplan irrte mit „`main.py` 2.180 lines reusable“ — tatsächlich 839 LOC und per Choraufstellung-Plan Phase 5 zum Löschen vorgesehen).
+- Doppelimplementierung `choraufstellung/ui/` (778 + 496 LOC) vs. `choraufstellung/widgets/`: **beide leben und sind divergiert** (Entscheid 2026-09-26, Branch `web-migration`). `widgets/formation_grid.py` (825) wird von `main.py` produktiv genutzt und gilt als **Verhaltens-Spec für den React-Editor**; `ui/grid_widget.py` + `ui/pool_widget.py` hängen am Paket-Interface (`__init__.py`-Reexporte) und an 2 Tests. Keine Löschung in M0 — beide werden ohnehin durch das Frontend ersetzt.
 
 ---
 
@@ -164,7 +164,7 @@ Der Vorgängerplan widerspricht sich selbst: Executive Summary „400–700 h / 
 
 | Phase | Umfang | Aufwand (1 erfahrener Dev) | Risiko |
 |---|---|---|---|
-| **M0 Vorbereitung** | Desktop-Bugs fixen, totes `choraufstellung/ui/`-Duplikat löschen (1,3k LOC), Choraufstellung-Plan Phase 1–2 (Singer-Modell unifizieren, Embed), **Verzeichnisstruktur-Bereinigung (§7)**, ERD + API-Kontrakte (OpenAPI), E2E-Basis | 1–2 Wochen · 35–50 h | Niedrig |
+| **M0 Vorbereitung** | Desktop-Bugs fixen, **Duplikat-Entscheid 2026-09-26: keine Qt-Löschung, `widgets/` = Verhaltens-Spec für React-Editor (§1.4)**, Choraufstellung-Plan Phase 1–2 (Singer-Modell unifizieren, Embed), **Verzeichnisstruktur-Bereinigung (§7)**, ERD + API-Kontrakte (OpenAPI), E2E-Basis | 1–2 Wochen · 35–50 h | Niedrig |
 | **M1 Backend-API** | FastAPI-Skeleton, Auth-Token, Router für singers/events/projects/availability/besetzung/repertoire/formations/export/config, Alembic-Migrationen aus `database.py`-Schema, `domain/`+`choraufstellung/core/` als Services verdrahten | 2–3 Wochen · 80–120 h | Niedrig |
 | **M2 Frontend-CRUD** | App-Shell + Router + Theming (Hell/Dunkel), 6 CRUD-Tabs (Sänger/Projekte/Termine/Verfügbarkeit/Besetzung/Repertoire), Aufgaben-Wizard als Multi-Step-Form, TanStack-Table + Filter/Suche/Sortierung | 2–3 Wochen · 60–80 h | Mittel |
 | **M3 Formation Editor** | §3.3 vollständig: Grid, DnD, Rubber-Band, Kontextmenü, Undo, Suche-Puls, Optimizer-Anbindung, Autosave/Recovery | 3–5 Wochen · 100–160 h | **Hoch** |
