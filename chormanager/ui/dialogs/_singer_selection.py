@@ -41,7 +41,7 @@ except ImportError:  # pragma: no cover - PyQt5 fallback
         QVBoxLayout,
     )
 
-from ...config import load_voice_groups
+from ...config import get_workdir, load_voice_groups
 from ...domain.repository import SingerRepository
 
 
@@ -253,7 +253,6 @@ class SingerSelectionDialog(QDialog):
         from ...domain.repository import SingerRepository
         from ...core.export_service import ExportService
         from PyQt6.QtWidgets import QFileDialog
-        from pathlib import Path
         from datetime import datetime
 
         singer_repo = SingerRepository(self.db)
@@ -268,7 +267,7 @@ class SingerSelectionDialog(QDialog):
         today = datetime.now().strftime("%Y-%m-%d")
         safe_name = self.besetzung_name.replace(" ", "-").replace("/", "-")
         default_name = f"{today}-{safe_name}.{ext}"
-        workdir = Path(__file__).parent.parent.parent / "workdir"
+        workdir = get_workdir()
         workdir.mkdir(exist_ok=True)
         default_path = str(workdir / default_name)
 

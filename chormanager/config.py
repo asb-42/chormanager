@@ -193,6 +193,20 @@ def get_data_dir() -> Path:
     return get_app_dir() / "data"
 
 
+def get_workdir() -> Path:
+    """Get the export work directory (§7 single source).
+
+    By default, uses a 'workdir' subdirectory within the app
+    directory. All export/test-PDF default paths must resolve
+    through this helper — no ``Path(__file__).parent...`` chains
+    and no absolute paths in callers.
+
+    Returns:
+        Path: The work directory (not created; callers mkdir).
+    """
+    return get_app_dir() / "workdir"
+
+
 @lru_cache(maxsize=1)
 def load_voice_groups():
     """Load voice groups from YAML configuration.
