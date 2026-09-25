@@ -26,6 +26,9 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"
+markers = [
+    "e2e: Web end-to-end tests (Playwright, aktiv ab M3/M4; siehe tests/e2e/README.md)",
+]
 
 [tool.coverage.run]
 source = ["chormanager"]

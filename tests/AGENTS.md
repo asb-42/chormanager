@@ -1,10 +1,13 @@
 # AGENTS.md — tests/
 
 ## Purpose
-All test files for the project. Three tiers:
+All test files for the project. Four tiers:
 * ``unit/`` — fast, no I/O, headless (``QT_QPA_PLATFORM=offscreen``).
 * ``integration/`` — touches the database; may run a few seconds.
 * ``gui/`` — full Qt MainWindow smoke-tests.
+* ``e2e/`` — Web end-to-end specs (Playwright). Gerüst only until
+  M3/M4 (see ``tests/e2e/README.md``); everything skipped, marker
+  ``e2e`` registered in ``pyproject.toml``.
 
 ## Ownership
 The tests belong to the project. New tests are added next to the
