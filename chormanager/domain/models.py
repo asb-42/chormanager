@@ -1,6 +1,7 @@
 """Domain models for ChorManager."""
 
 import json
+import uuid
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from typing import Optional, Any
@@ -36,6 +37,12 @@ class Singer:
     created_at: str = ""
     updated_at: str = ""
     address: Optional[str] = None  # Legacy: Kombination aus street + city
+    # --- NEW (Phase 1, M0): transient formation fields. NOT DB columns —
+    # SingerRepository._SINGER_COLS intentionally excludes them; placements
+    # live in ChorAufstellung JSON today and in the M1 `formations` table.
+    row: int = -1
+    col: int = -1
+    affinity: str = ""
 
     def to_formation_singer(self):
         """Convert to a ChorAufstellung Singer (lightweight formation model).
@@ -66,6 +73,50 @@ class Singer:
             height=height,
             singer_id=singer_id,
             affinity=affinity,
+        )
+
+    @classmethod
+    def from_formation_dict(cls, data: dict) -> "Singer":
+        """Build a domain Singer from a ChorAufstellung formation dict.
+
+        Phase 1 (M0) counterpart to :meth:`to_formation_singer`, so the
+        web backend (M1) can use ONE model. The formation ``affinity``
+        (partner singer id) wins over the ``affinity_uuid`` fallback;
+        both land in :attr:`affinity` and :attr:`affinity_uuid`.
+        ``external_id`` has no domain counterpart and is dropped.
+
+        Args:
+            data: Formation singer dict as produced by
+                ``FormationSinger.to_dict()`` (keys: ``name``,
+                ``voice_group``, ``height``, ``singer_id``, ``row``,
+                ``col``, ``affinity``, ``affinity_uuid``).
+
+        Returns:
+            Domain Singer with transient ``row``/``col``/``affinity``
+            set (``-1``/``-1``/``""`` = unplaced). A missing
+            ``singer_id`` yields a generated UUID.
+        """
+        name = data.get("name", "") or ""
+        singer_id = data.get("singer_id") or str(uuid.uuid4())
+        try:
+            row = int(data.get("row", -1))
+        except (TypeError, ValueError):
+            row = -1
+        try:
+            col = int(data.get("col", -1))
+        except (TypeError, ValueError):
+            col = -1
+        partner = data.get("affinity") or data.get("affinity_uuid") or ""
+        return cls(
+            id=singer_id,
+            full_name=name,
+            short_name=name,
+            voice_group=data.get("voice_group"),
+            height=data.get("height", 0),
+            affinity_uuid=partner,
+            row=row,
+            col=col,
+            affinity=partner,
         )
 
     def is_adult(self) -> bool:
