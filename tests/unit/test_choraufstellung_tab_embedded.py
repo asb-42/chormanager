@@ -9,6 +9,7 @@ increment 3/3 flips the default — both paths are tested here.
 from __future__ import annotations
 
 import json
+import os
 
 import pytest
 
@@ -128,12 +129,110 @@ def test_close_embedded_returns_to_list(embedded_tab):
 
 
 def test_legacy_subprocess_path_still_intact(embedded_tab):
-    """Until increment 3/3, _edit_formation still delegates to the
-    MainWindow subprocess opener (parallel operation)."""
+    """Since increment 3/3, _edit_formation defaults to the embedded
+    editor (parallel subprocess operation is gone)."""
     import os
 
     fake = _FakeMainWindow()
     _attach_fake(embedded_tab, fake)
     embedded_tab._edit_formation()
-    assert fake.opened_file == os.path.join(
-        embedded_tab._data_dir, "choraufstellung-test.json")
+    assert embedded_tab._stack.currentWidget() == embedded_tab._editor_page
+    assert "s-anna" in embedded_tab.editor.placed_singer_ids()
+    assert fake.opened_file == "__not_called__"
+
+
+@pytest.fixture
+def db_tab(qtbot, tmp_path):
+    """ChorAufstellungTab backed by a real tmp database with one
+    project, one event and one available singer."""
+    from chormanager.data.database import Database
+    from chormanager.domain.repository import (
+        AvailabilityRepository,
+        EventRepository,
+        ProjectRepository,
+        SingerRepository,
+    )
+    from chormanager.ui.views.choraufstellung_tab import ChorAufstellungTab
+
+    db = Database(str(tmp_path / "t.db"))
+    db.connect()
+    db.create_tables()
+    project = ProjectRepository(db).create(name="P")
+    event = EventRepository(db).create(
+        name="Probe", date="2026-09-26", event_type="Probe",
+        project_id=project.id,
+    )
+    singer = SingerRepository(db).create(
+        full_name="Anna Muster", short_name="Anna",
+        voice_group="Sopran 1", height=170,
+    )
+    AvailabilityRepository(db).create(
+        singer_id=singer.id, event_id=event.id, status="yes",
+    )
+    data_dir = tmp_path / "formations"
+    data_dir.mkdir()
+    tab = ChorAufstellungTab(db)
+    tab._data_dir = str(data_dir)
+    tab._load_formations()
+    qtbot.addWidget(tab)
+    yield tab, event
+    db.close()
+    tab.close()
+
+
+def test_open_new_for_event_seeds_editor(qtbot, db_tab):
+    tab, event = db_tab
+    assert tab.open_new_for_event(event) is True
+    assert tab._stack.currentWidget() == tab._editor_page
+    names = [s.name for s in tab.editor.singers]
+    assert names == ["Anna"]
+    assert tab._embedded_file is not None
+    assert tab._embedded_file.endswith(".json")
+    assert os.path.dirname(tab._embedded_file) == tab._data_dir
+    assert tab._embedded_meta["event"] == "Probe"
+    # Not yet saved: the file must not exist before save_embedded().
+    assert not os.path.exists(tab._embedded_file)
+    assert tab.save_embedded() is True
+    assert os.path.exists(tab._embedded_file)
+
+
+def test_open_new_for_event_without_yes_singers(qtbot, tmp_path):
+    """No availability rows: the editor still opens, pool stays empty."""
+    from chormanager.data.database import Database
+    from chormanager.domain.repository import EventRepository
+    from chormanager.ui.views.choraufstellung_tab import ChorAufstellungTab
+
+    db = Database(str(tmp_path / "t2.db"))
+    db.connect()
+    db.create_tables()
+    event = EventRepository(db).create(
+        name="Leer", date="2026-09-27", event_type="Probe",
+    )
+    data_dir = tmp_path / "formations"
+    data_dir.mkdir()
+    tab = ChorAufstellungTab(db)
+    tab._data_dir = str(data_dir)
+    qtbot.addWidget(tab)
+    try:
+        assert tab.open_new_for_event(event) is True
+        assert tab.editor.singers == []
+    finally:
+        db.close()
+        tab.close()
+
+
+def test_load_from_chormanager_event_goes_embedded(qtbot, db_tab):
+    tab, event = db_tab
+
+    class _Fake:
+        opened_file = "__not_called__"
+
+        def _open_choraufstellung_for_event(self, _event):
+            self.opened_file = "SUBPROCESS"
+
+    fake = _Fake()
+    tab.window = lambda: fake  # type: ignore[assignment]
+    tab._load_from_chormanager(event)
+    assert tab._stack.currentWidget() == tab._editor_page
+    assert [s.name for s in tab.editor.singers] == ["Anna"]
+    assert fake.opened_file == "__not_called__"

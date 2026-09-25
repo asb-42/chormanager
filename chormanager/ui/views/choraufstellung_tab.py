@@ -161,6 +161,12 @@ class ChorAufstellungTab(QWidget):
     def _new_formation(self):
         from ..dialogs import NewFormationDialog
 
+        if self.db is None:
+            # No database: no projects/events to choose from. Production
+            # always passes a db; this guards headless/test usage.
+            self.status_label.setText("Keine Datenbank verbunden.")
+            return
+
         main_window = self.window()
         projects_tab = getattr(main_window, "projects_tab", None)
         current_project = projects_tab.current_project if projects_tab else None
@@ -173,60 +179,35 @@ class ChorAufstellungTab(QWidget):
         if not event:
             return
 
-        if hasattr(main_window, "_open_choraufstellung_for_event"):
-            main_window._open_choraufstellung_for_event(event)
-        else:
+        # Since 3/3 the embedded editor is the only target: seed it
+        # directly instead of spawning a subprocess via MainWindow.
+        if not self.open_new_for_event(event):
             QMessageBox.warning(
-                self, "Fehler", "Funktion zum Öffnen der Choraufstellung nicht verfügbar."
+                self, "Fehler", "Aufstellung kann nicht erstellt werden."
             )
 
     def _load_from_chormanager(self, event=None):
-        """Open a saved formation in the Choraufstellung editor.
+        """Open a saved formation in the embedded Choraufstellung editor.
 
-        Bug-fix 2026-06-12: this method was previously the handler
-        for the (now removed) big 'Aus ChorManager laden' button and
-        for the main-menu 'Aufstellung → In Aufstellung öffnen…'
-        entry point. The old code ALWAYS spawned a fresh editor
-        (no CHOR_FILE) which is why the saved formation was not
-        loaded. Now it routes to the same handler as the
-        context-toolbar / right-click 'Bearbeiten':
+        Since 3/3 every path here is embedded (no subprocess):
 
-          * if a row is selected in the table -> open THAT file
-            (CHOR_FILE is set, saved singers are restored to the grid)
-          * otherwise -> open a fresh editor (backward compatible)
+          * with an event -> seed the editor via open_new_for_event
+          * with a selected table row -> open THAT file embedded
+          * otherwise -> new-formation dialog (pick an event first)
         """
         try:
-            main_window = self.window()
-
-            # Backward compatibility for callers that pass an event
-            # (e.g. the old NewFormationDialog flow). The
-            # ``_pending_event`` mechanism was dead code (never set)
-            # and is removed; the event argument is the only path
-            # for the 'open-from-event' flow now.
             if event:
-                if hasattr(main_window, "_open_choraufstellung_for_event"):
-                    main_window._open_choraufstellung_for_event(event)
+                if not self.open_new_for_event(event):
+                    QMessageBox.warning(
+                        self, "Fehler", "Aufstellung kann nicht erstellt werden."
+                    )
                 return
 
-            # If the user has selected a row in the table, open that
-            # formation. This is the path the context-toolbar /
-            # right-click 'Bearbeiten' use; it sets CHOR_FILE so
-            # the saved grid is restored.
             if self.table.currentRow() >= 0:
-                if hasattr(main_window, "_edit_formation"):
-                    main_window._edit_formation()
-                    return
+                self._edit_formation()
+                return
 
-            # No row selected: fall back to a fresh editor with
-            # the current project / event context.
-            if hasattr(main_window, "_open_choraufstellung"):
-                main_window._open_choraufstellung()
-            else:
-                QMessageBox.information(
-                    self,
-                    "Info",
-                    "Bitte nutzen Sie: Menü → Choraufstellung → In Aufstellung öffnen",
-                )
+            self._new_formation()
 
         except Exception as e:
             QMessageBox.warning(
@@ -441,25 +422,119 @@ class ChorAufstellungTab(QWidget):
         self._stack.setCurrentWidget(self._list_page)
         self._load_formations()
 
+    def _gather_available_singers(self, event):
+        """Collect formation payloads for an event.
+
+        Singers with availability ``yes`` or ``conditional`` become
+        one payload each (same shape the legacy temp-JSON flow used).
+
+        Args:
+            event: Domain event with ``id``.
+
+        Returns:
+            List of formation singer dicts (possibly empty).
+        """
+        from ...domain.repository import (
+            AvailabilityRepository,
+            SingerRepository,
+        )
+
+        singer_repo = SingerRepository(self.db)
+        avail_repo = AvailabilityRepository(self.db)
+        payloads = []
+        for singer in singer_repo.get_all():
+            try:
+                avail = avail_repo.get_by_ids(singer.id, event.id)
+            except Exception:
+                continue
+            if avail is not None and avail.status in ("yes", "conditional"):
+                payloads.append(
+                    {
+                        "singer_id": singer.id,
+                        "name": singer.short_name or singer.full_name,
+                        "voice_group": singer.voice_group,
+                        "height": singer.height or 0,
+                        "affinity": singer.affinity_uuid or "",
+                    }
+                )
+        return payloads
+
+    def open_new_for_event(self, event):
+        """Seed the embedded editor with an event's available singers.
+
+        Replaces the legacy temp-JSON + subprocess flow
+        (``_open_choraufstellung_for_event``): the target filename is
+        generated up front so :meth:`save_embedded` can persist it.
+
+        Args:
+            event: Domain event with ``id``, ``name``, ``date``,
+                ``event_type`` attributes.
+
+        Returns:
+            True if the editor page is shown, False otherwise.
+        """
+        from chormanager.choraufstellung.file_io import FormationFileIO
+        from chormanager.choraufstellung.singer_model import (
+            Singer,
+            resolve_voice_group,
+        )
+
+        if event is None or self.db is None:
+            return False
+        try:
+            singers = []
+            for payload in self._gather_available_singers(event):
+                try:
+                    singers.append(
+                        Singer(
+                            name=payload["name"],
+                            voice_group=resolve_voice_group(
+                                payload.get("voice_group")
+                            ),
+                            height=int(payload.get("height", 0) or 0),
+                            singer_id=payload.get("singer_id") or "",
+                            affinity=payload.get("affinity") or "",
+                        )
+                    )
+                except (KeyError, TypeError, ValueError):
+                    continue
+            date_part = (event.date or "")[:10]
+            # generate_filename is a pure helper; storage is unused.
+            filename = FormationFileIO(None).generate_filename(
+                date_part, event.name
+            )
+            window = self.window()
+            projects_tab = getattr(window, "projects_tab", None)
+            project = getattr(projects_tab, "current_project", None)
+            self._embedded_file = os.path.join(self._data_dir, filename)
+            self._embedded_meta = {
+                "project": project.name if project else "",
+                "event": event.name,
+                "event_date": date_part,
+                "event_type": event.event_type or "",
+            }
+            self._embedded_voicing = []
+            self.editor.set_singers(singers)
+            self._editor_label.setText(filename)
+            self._stack.setCurrentWidget(self._editor_page)
+            return True
+        except Exception as e:
+            self.status_label.setText(
+                "Aufstellung kann nicht erstellt werden: " + str(e)
+            )
+            return False
+
     def _edit_formation(self):
-        """Open formation in external editor."""
-        current_row = self.table.currentRow()
-        if current_row < 0:
+        """Open the selected formation in the embedded editor.
+
+        Default since 3/3 (no subprocess). With no row selected this
+        is a no-op, as before.
+        """
+        if self.table.currentRow() < 0:
             return
-
-        filename = self.table.item(current_row, 0).text()
-        filepath = os.path.join(self._data_dir, filename)
-
-        main_window = self.window()
-        if hasattr(main_window, "_open_choraufstellung_file"):
-            main_window._open_choraufstellung_file(filepath)
-        else:
-            from PyQt6.QtWidgets import QMessageBox
-
-            QMessageBox.information(
-                self,
-                "Info",
-                f"Datei kann nicht direkt geöffnet werden.\nDateipfad: {filepath}",
+        if not self._open_embedded_selected():
+            QMessageBox.warning(
+                self, "Fehler", "Die ausgewählte Aufstellung kann nicht geöffnet werden."
             )
 
     def _duplicate_formation(self):
