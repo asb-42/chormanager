@@ -3,6 +3,7 @@
 **Stand:** 2026-09-25 · **Autor:** OpenCode (Muse Spark) · **Quelle:** Live-Codeanalyse von `main` @ `c9acebf`
 **Vorgänger:** `docs/plans/2026-06-11_web-migration.md` (wird hier aktualisiert / korrigiert, nicht ersetzt)
 **Ablage:** `docs/plans/` (am 2026-09-25 von `plans/` hierher verschoben; siehe §7 zur Verzeichnisstruktur-Bereinigung).
+**MS4 erreicht am 2026-09-27 (Branch `web-migration`):** Docker-Compose-Release verifiziert (Write-Kette + PDF/ODT durch nginx→api→MariaDB), Web-Benutzerhandbuch + CHANGELOG nachgezogen, danach Merge nach `main`.
 
 ---
 
