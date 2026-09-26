@@ -1,6 +1,7 @@
-import { Link, NavLink, Route, Routes } from 'react-router-dom'
+import { Link, Route, Routes } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import AboutPage from './pages/AboutPage'
 import AvailabilityPage from './pages/AvailabilityPage'
 import BackupPage from './pages/BackupPage'
 import BesetzungPage from './pages/BesetzungPage'
@@ -15,8 +16,10 @@ import WizardPage from './pages/WizardPage'
 import HelpPage from './pages/HelpPage'
 import MarketingPage from './pages/MarketingPage'
 import MenuBar from './components/MenuBar'
+import Sidebar from './components/Sidebar'
 import InfoBar from './components/InfoBar'
 import { ActiveProvider } from './active/active'
+import { MenuIcon, MonitorIcon, MoonIcon, SunIcon } from './components/icons'
 import { fetchVersion } from './api/client'
 
 type Theme = 'light' | 'dark' | 'system'
@@ -74,9 +77,6 @@ function HomePage() {
   )
 }
 
-const linkClass = ({ isActive }: { isActive: boolean }) =>
-  `rounded px-3 py-1 ${isActive ? 'bg-blue-700 font-semibold text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`
-
 export default function App() {
   const { data: version } = useQuery({
     queryKey: ['version'],
@@ -85,84 +85,88 @@ export default function App() {
     staleTime: Infinity,
   })
   const [theme, setTheme] = useState<Theme>(loadTheme)
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(
+    () =>
+      typeof window.matchMedia !== 'function' ||
+      window.matchMedia('(min-width: 768px)').matches,
+  )
 
   useEffect(() => {
     applyTheme(theme)
     window.localStorage.setItem('chor-theme', theme)
   }, [theme])
 
+  function closeSidebarOnMobile() {
+    if (
+      typeof window.matchMedia === 'function' &&
+      !window.matchMedia('(min-width: 768px)').matches
+    ) {
+      setSidebarOpen(false)
+    }
+  }
+
+  const themeButton =
+    'rounded p-2 hover:bg-gray-100 dark:hover:bg-gray-800'
+
   return (
     <ActiveProvider>
-      <div className="mx-auto max-w-5xl p-4">
-        <MenuBar theme={theme} onTheme={setTheme} />
-        <InfoBar />
-        <nav className="mb-6 flex flex-wrap items-center gap-2">
-        <NavLink to="/" className={linkClass}>
-          Start
-        </NavLink>
-        <NavLink to="/singers" className={linkClass}>
-          Sänger
-        </NavLink>
-        <NavLink to="/events" className={linkClass}>
-          Termine
-        </NavLink>
-        <NavLink to="/projects" className={linkClass}>
-          Projekte
-        </NavLink>
-        <NavLink to="/besetzung" className={linkClass}>
-          Besetzung
-        </NavLink>
-        <NavLink to="/repertoire" className={linkClass}>
-          Repertoire
-        </NavLink>
-        <NavLink to="/availability" className={linkClass}>
-          Verfügbarkeit
-        </NavLink>
-        <NavLink to="/wizard" className={linkClass}>
-          Assistent
-        </NavLink>
-        <NavLink to="/backup" className={linkClass}>
-          Backup
-        </NavLink>
-        <span className="ml-2 flex gap-1 text-sm" role="group" aria-label="Ansicht">
-          <button
-            type="button"
-            onClick={() => setTheme('light')}
-            aria-pressed={theme === 'light'}
-            className={`rounded px-2 py-1 ${theme === 'light' ? 'bg-gray-200 dark:bg-gray-700' : ''}`}
-          >
-            Hell
-          </button>
-          <button
-            type="button"
-            onClick={() => setTheme('dark')}
-            aria-pressed={theme === 'dark'}
-            className={`rounded px-2 py-1 ${theme === 'dark' ? 'bg-gray-200 dark:bg-gray-700' : ''}`}
-          >
-            Dunkel
-          </button>
-          <button
-            type="button"
-            onClick={() => setTheme('system')}
-            aria-pressed={theme === 'system'}
-            className={`rounded px-2 py-1 ${theme === 'system' ? 'bg-gray-200 dark:bg-gray-700' : ''}`}
-          >
-            Auto
-          </button>
-        </span>
-        <NavLink to="/settings" className={linkClass}>
-          Konfiguration
-        </NavLink>
-        <NavLink to="/marketing" className={linkClass}>
-          Marketing
-        </NavLink>
-        <NavLink to="/help" className={linkClass}>
-          Hilfe
-        </NavLink>
-        <NavLink to="/formations" className={linkClass}>
-          Aufstellungen
-        </NavLink>
-      </nav>
+      <div className="flex min-h-screen">
+        <div
+          className={`${
+            sidebarOpen ? '' : 'hidden'
+          } fixed inset-y-0 left-0 z-40 flex md:static md:flex`}
+        >
+          <Sidebar open={sidebarOpen} onNavigate={closeSidebarOnMobile} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="mx-auto max-w-5xl p-4">
+            <div className="mb-2 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSidebarOpen((open) => !open)}
+                aria-label="Navigation"
+                aria-expanded={sidebarOpen}
+                className={`${themeButton} md:hidden`}
+              >
+                <MenuIcon />
+              </button>
+              <div className="min-w-0 flex-1">
+                <MenuBar theme={theme} onTheme={setTheme} />
+              </div>
+              <span className="flex gap-1" role="group" aria-label="Ansicht">
+                <button
+                  type="button"
+                  onClick={() => setTheme('light')}
+                  aria-pressed={theme === 'light'}
+                  aria-label="Hell"
+                  title="Hell"
+                  className={themeButton}
+                >
+                  <SunIcon />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTheme('dark')}
+                  aria-pressed={theme === 'dark'}
+                  aria-label="Dunkel"
+                  title="Dunkel"
+                  className={themeButton}
+                >
+                  <MoonIcon />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTheme('system')}
+                  aria-pressed={theme === 'system'}
+                  aria-label="Auto"
+                  title="Auto"
+                  className={themeButton}
+                >
+                  <MonitorIcon />
+                </button>
+              </span>
+            </div>
+            <InfoBar />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/singers" element={<SingersPage />} />
@@ -178,12 +182,15 @@ export default function App() {
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/marketing" element={<MarketingPage />} />
         <Route path="/help" element={<HelpPage />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="/formations" element={<FormationsPage />} />
         <Route path="/formations/:id" element={<FormationEditorPage />} />
       </Routes>
       <footer className="mt-8 text-sm text-gray-500">
         ChorManager Web{version ? ` ${version.version}` : ''}
       </footer>
+          </div>
+        </div>
       </div>
     </ActiveProvider>
   )
