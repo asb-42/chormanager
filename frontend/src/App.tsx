@@ -14,6 +14,7 @@ import SingersPage from './pages/SingersPage'
 import WizardPage from './pages/WizardPage'
 import HelpPage from './pages/HelpPage'
 import MarketingPage from './pages/MarketingPage'
+import MenuBar from './components/MenuBar'
 import { fetchVersion } from './api/client'
 
 type Theme = 'light' | 'dark' | 'system'
@@ -85,6 +86,7 @@ export default function App() {
 
   return (
     <div className="mx-auto max-w-5xl p-4">
+      <MenuBar theme={theme} onTheme={setTheme} />
       <nav className="mb-6 flex flex-wrap items-center gap-2">
         <NavLink to="/" className={linkClass}>
           Start

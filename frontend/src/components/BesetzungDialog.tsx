@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { BesetzungInput, Project, Singer } from '../api/client'
-import { dialogClassName } from './ui'
+import { Modal } from './Modal'
 
 interface BesetzungDialogProps {
   projects: Project[]
@@ -48,7 +48,8 @@ export default function BesetzungDialog({
   }
 
   return (
-    <div role="dialog" aria-label="Besetzung anlegen" className={dialogClassName}>
+    <Modal label="Besetzung anlegen" onClose={onClose}>
+      <h2 className="text-lg font-semibold">Besetzung anlegen</h2>
       <h2 className="text-lg font-semibold">Besetzung anlegen</h2>
       <form onSubmit={handleSubmit} className="mt-2 space-y-2">
         <label className="block text-sm font-medium">
@@ -106,6 +107,6 @@ export default function BesetzungDialog({
           </button>
         </div>
       </form>
-    </div>
+    </Modal>
   )
 }

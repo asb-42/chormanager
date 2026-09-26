@@ -5,7 +5,7 @@ import type {
   StoredSinger,
 } from '../api/client'
 import type { PlacementMap } from '../formation/placements'
-import { dialogClassName } from './ui'
+import { Modal } from './Modal'
 
 interface OptimizerDialogProps {
   rules: FormationRule[]
@@ -55,7 +55,8 @@ export default function OptimizerDialog({
   const refinement = rules.filter((rule) => !rule.primary)
 
   return (
-    <div role="dialog" aria-label="Aufstellung optimieren" className={dialogClassName}>
+    <Modal label="Aufstellung optimieren" onClose={onClose}>
+      <h2 className="text-lg font-semibold">Aufstellung optimieren</h2>
       <h2 className="text-lg font-semibold">Aufstellung optimieren</h2>
       <fieldset className="mt-2">
         <legend className="text-sm font-medium">Anordnung</legend>
@@ -126,6 +127,6 @@ export default function OptimizerDialog({
           </button>
         </div>
       )}
-    </div>
+    </Modal>
   )
 }

@@ -2,9 +2,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { createFormation, fetchEvents, fetchFormations } from '../api/client'
-import { dialogClassName,
-  PageHeader,} from '../components/ui'
+import { PageHeader } from '../components/ui'
 import { Th, Td } from '../components/ui'
+import { Modal } from '../components/Modal'
 
 const inputClass =
   'w-full rounded border border-gray-300 px-2 py-1 dark:border-gray-600 dark:bg-gray-800'
@@ -89,7 +89,8 @@ export default function FormationsPage() {
         </table>
       )}
       {showDialog && (
-        <div role="dialog" aria-label="Aufstellung anlegen" className={dialogClassName}>
+        <Modal label="Aufstellung anlegen" onClose={() => setShowDialog(false)}>
+          <h2 className="text-lg font-semibold">Aufstellung anlegen</h2>
           <h2 className="text-lg font-semibold">Aufstellung anlegen</h2>
           <form onSubmit={(event) => void handleCreate(event)} className="mt-2 space-y-2">
             <label className="block text-sm font-medium">
@@ -151,7 +152,7 @@ export default function FormationsPage() {
               </button>
             </div>
           </form>
-        </div>
+        </Modal>
       )}
     </section>
   )

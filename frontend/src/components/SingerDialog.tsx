@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Singer, SingerInput, VoiceGroup } from '../api/client'
-import { Button, Field, dialogClassName, inputClassName } from './ui'
+import { Button, Field, inputClassName } from './ui'
+import { Modal } from './Modal'
 
 interface SingerDialogProps {
   title: string
@@ -42,7 +43,8 @@ export default function SingerDialog({
   }
 
   return (
-    <div role="dialog" aria-label={title} className={dialogClassName}>
+    <Modal label={title} onClose={onClose}>
+      <h2 className="text-lg font-semibold">{title}</h2>
       <h2 className="text-lg font-semibold">{title}</h2>
       <form onSubmit={handleSubmit} className="mt-2 space-y-2">
         <Field label="Name">
@@ -95,6 +97,6 @@ export default function SingerDialog({
           <Button onClick={onClose}>Abbrechen</Button>
         </div>
       </form>
-    </div>
+    </Modal>
   )
 }
