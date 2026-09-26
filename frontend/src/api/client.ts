@@ -140,6 +140,74 @@ export function deleteRepertoire(id: string): Promise<void> {
   return api<void>(`/api/repertoire/${id}`, { method: 'DELETE' })
 }
 
+export interface StoredSinger {
+  singer_id: string
+  name: string
+  voice_group?: string | null
+  height?: number | null
+  affinity?: string
+}
+
+export interface PlacedEntry {
+  singer: StoredSinger
+  row: number
+  col: number
+}
+
+export interface FormationDoc {
+  id: string
+  name?: string | null
+  rows: number
+  cols: number
+  staggered: boolean
+  voicing_config: string[]
+  singers: StoredSinger[]
+  placed: PlacedEntry[]
+  metadata: Record<string, string>
+  event_id?: string | null
+}
+
+export interface FormationListItem {
+  id: string
+  name?: string | null
+  rows: number
+  cols: number
+  event_id?: string | null
+  updated_at: string
+}
+
+export function fetchFormations(): Promise<FormationListItem[]> {
+  return api<FormationListItem[]>('/api/formations')
+}
+
+export function fetchFormation(id: string): Promise<FormationDoc> {
+  return api<FormationDoc>(`/api/formations/${id}`)
+}
+
+export interface PlacementPayload {
+  singer_id: string
+  row: number
+  col: number
+}
+
+export interface PlacementsPayload {
+  rows?: number
+  cols?: number
+  staggered?: boolean
+  placements: PlacementPayload[]
+}
+
+export function putPlacements(
+  id: string,
+  payload: PlacementsPayload,
+): Promise<FormationDoc> {
+  return api<FormationDoc>(`/api/formations/${id}/placements`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
 export interface EventInput {
   name: string
   date: string
