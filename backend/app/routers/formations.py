@@ -6,17 +6,22 @@ rules server-side via :mod:`app.optimizer` as preview-only
 (Analyse §3.3); applying goes through placements PUT.
 """
 import json
+import os
 import uuid
 from datetime import datetime
 from typing import Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi.responses import FileResponse
 from sqlalchemy import delete, insert, select, update
 from sqlalchemy.engine import Connection
+from starlette.background import BackgroundTask
 
 from ..auth import require_chorleiter
 from ..deps import get_db
+from ..formation_pdf import render_formation_pdf, write_temp_pdf
 from ..optimizer import run_preview, rule_info
+from ..voice import load_theme_colors
 from ..schemas import (
     FormationCreate,
     FormationDoc,
@@ -326,3 +331,24 @@ def delete_formation(
     )
     db.commit()
     return Response(status_code=204)
+
+
+@router.get("/{formation_id}/pdf")
+def formation_pdf(
+    formation_id: str, db: Connection = Depends(get_db)
+) -> FileResponse:
+    """Formation grid PDF (§5.3: zentrierte Kurznamen, Farben +
+    Gruppen-Text, Kopf, Fit-Skalierung)."""
+    doc = _to_doc(_read_row(db, formation_id)).model_dump()
+    theme = load_theme_colors()
+    colors = {
+        group_id: shades.get("light", "#cccccc")
+        for group_id, shades in theme.items()
+    }
+    path = write_temp_pdf(render_formation_pdf(doc, colors), "formation-")
+    return FileResponse(
+        path,
+        media_type="application/pdf",
+        filename=f"aufstellung-{formation_id[:8]}.pdf",
+        background=BackgroundTask(os.unlink, path),
+    )

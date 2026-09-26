@@ -49,6 +49,10 @@ export function fetchVoiceGroups(): Promise<VoiceGroup[]> {
   return api<VoiceGroup[]>('/api/config/voice-groups')
 }
 
+export function fetchVersion(): Promise<{ version: string }> {
+  return api<{ version: string }>('/api/version')
+}
+
 export interface SingerInput {
   full_name: string
   short_name?: string

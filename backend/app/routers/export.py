@@ -12,6 +12,7 @@ from types import SimpleNamespace
 from typing import Dict, List
 
 from chormanager.core.response_matrix import build_response_matrix
+from chormanager.core.response_render_odt import render_response_matrix_odt
 from chormanager.core.response_render_pdf import render_response_matrix_pdf
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse, Response
@@ -132,6 +133,41 @@ def zusagen_pdf(
     project_id: str, db: Connection = Depends(get_db)
 ) -> FileResponse:
     """Zusagen/Absagen-Liste eines Projekts als PDF (reportlab)."""
+    name, matrix = _matrix_for_project(db, project_id)
+    tmp = tempfile.NamedTemporaryFile(
+        suffix=".pdf", prefix="zusagen-", delete=False
+    )
+    tmp.close()
+    render_response_matrix_pdf(matrix, tmp.name)
+    return FileResponse(
+        tmp.name,
+        media_type="application/pdf",
+        filename=f"zusagen-{name[:30]}.pdf",
+        background=BackgroundTask(os.unlink, tmp.name),
+    )
+
+
+@router.get("/zusagen.odt")
+def zusagen_odt(
+    project_id: str, db: Connection = Depends(get_db)
+) -> FileResponse:
+    """Zusagen/Absagen-Liste eines Projekts als LibreOffice-Writer."""
+    name, matrix = _matrix_for_project(db, project_id)
+    tmp = tempfile.NamedTemporaryFile(
+        suffix=".odt", prefix="zusagen-", delete=False
+    )
+    tmp.close()
+    render_response_matrix_odt(matrix, tmp.name)
+    return FileResponse(
+        tmp.name,
+        media_type="application/vnd.oasis.opendocument.text",
+        filename=f"zusagen-{name[:30]}.odt",
+        background=BackgroundTask(os.unlink, tmp.name),
+    )
+
+
+def _matrix_for_project(db: Connection, project_id: str):
+    """Load project + rows and build the response matrix (404)."""
     project = db.execute(
         select(projects_table.c.id, projects_table.c.name).where(
             projects_table.c.id == project_id
@@ -183,14 +219,4 @@ def zusagen_pdf(
         ],
         title=project["name"],
     )
-    tmp = tempfile.NamedTemporaryFile(
-        suffix=".pdf", prefix="zusagen-", delete=False
-    )
-    tmp.close()
-    render_response_matrix_pdf(matrix, tmp.name)
-    return FileResponse(
-        tmp.name,
-        media_type="application/pdf",
-        filename=f"zusagen-{project['name'][:30]}.pdf",
-        background=BackgroundTask(os.unlink, tmp.name),
-    )
+    return project["name"], matrix

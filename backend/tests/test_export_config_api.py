@@ -124,6 +124,19 @@ def test_zusagen_pdf_unknown_project(client):
     assert response.status_code == 404
 
 
+def test_zusagen_odt(client):
+    response = client.get(
+        "/api/export/zusagen.odt", params={"project_id": "p-1"}
+    )
+    assert response.status_code == 200
+    assert "oasis.opendocument" in response.headers["content-type"]
+    assert response.content.startswith(b"PK")
+    unknown = client.get(
+        "/api/export/zusagen.odt", params={"project_id": "nope"}
+    )
+    assert unknown.status_code == 404
+
+
 def test_voice_groups_merged(client):
     response = client.get("/api/config/voice-groups")
     assert response.status_code == 200

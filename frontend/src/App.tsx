@@ -1,4 +1,5 @@
 import { NavLink, Route, Routes } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import AvailabilityPage from './pages/AvailabilityPage'
 import BackupPage from './pages/BackupPage'
 import BesetzungPage from './pages/BesetzungPage'
@@ -9,6 +10,7 @@ import ProjectsPage from './pages/ProjectsPage'
 import RepertoirePage from './pages/RepertoirePage'
 import SingersPage from './pages/SingersPage'
 import WizardPage from './pages/WizardPage'
+import { fetchVersion } from './api/client'
 
 function HomePage() {
   return (
@@ -23,6 +25,12 @@ const linkClass = ({ isActive }: { isActive: boolean }) =>
   `rounded px-3 py-1 ${isActive ? 'bg-gray-200 dark:bg-gray-700' : ''}`
 
 export default function App() {
+  const { data: version } = useQuery({
+    queryKey: ['version'],
+    queryFn: fetchVersion,
+    retry: false,
+    staleTime: Infinity,
+  })
   return (
     <div className="mx-auto max-w-5xl p-4">
       <nav className="mb-6 flex gap-2">
@@ -70,6 +78,9 @@ export default function App() {
         <Route path="/formations" element={<FormationsPage />} />
         <Route path="/formations/:id" element={<FormationEditorPage />} />
       </Routes>
+      <footer className="mt-8 text-sm text-gray-500">
+        ChorManager Web{version ? ` ${version.version}` : ''}
+      </footer>
     </div>
   )
 }

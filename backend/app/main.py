@@ -1,6 +1,8 @@
 """FastAPI application factory (M1)."""
 from fastapi import FastAPI
 
+from chormanager import __version__ as desktop_version
+
 from .routers import (
     availability,
     backup,
@@ -39,6 +41,12 @@ def create_app() -> FastAPI:
     def health() -> dict:
         """Liveness probe (no database access)."""
         return {"status": "ok"}
+
+    @app.get("/api/version")
+    def version() -> dict:
+        """App version (Update-Check-Ersatz: kept in sync with the
+        desktop ``__version__`` until the Docker release pins tags)."""
+        return {"version": desktop_version}
 
     return app
 
