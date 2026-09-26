@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchVersion } from '../api/client'
+import { PageHeader } from '../components/ui'
 
 export default function HelpPage() {
   const [checkedAt, setCheckedAt] = useState<Date | null>(null)
@@ -19,7 +20,7 @@ export default function HelpPage() {
 
   return (
     <section>
-      <h1 className="text-xl font-semibold">Hilfe</h1>
+      <PageHeader title="Hilfe" />
       <h2 className="mt-4 font-semibold">Über ChorManager Web</h2>
       <p className="mt-1 text-sm">
         Chorverwaltung im Browser. {`Backend-Version: ${data ? data.version : '–'}`}

@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { fetchEvents, fetchProjects, formatDate } from '../api/client'
+import { Th, Td,
+  PageHeader,} from '../components/ui'
 
 const EVENT_TYPES = ['GP', 'OP', 'SOFA', 'Probe', 'Konzert', 'Auftritt']
 
@@ -33,7 +35,7 @@ export default function EventsPage() {
 
   return (
     <section>
-      <h1 className="text-xl font-semibold">Termine</h1>
+      <PageHeader title="Termine" />
       <div className="mt-3 flex flex-wrap gap-2">
         <label>
           Projekt{' '}
@@ -80,21 +82,21 @@ export default function EventsPage() {
         <table className="mt-4 w-full border-collapse text-left">
           <thead>
             <tr className="border-b">
-              <th className="py-1 pr-4">Datum</th>
-              <th className="py-1 pr-4">Name</th>
-              <th className="py-1 pr-4">Typ</th>
-              <th className="py-1 pr-4">Projekt</th>
-              <th className="py-1 pr-4">Zusagen</th>
-              <th className="py-1 pr-4">Vorbehalt</th>
+              <Th>Datum</Th>
+              <Th>Name</Th>
+              <Th>Typ</Th>
+              <Th>Projekt</Th>
+              <Th>Zusagen</Th>
+              <Th>Vorbehalt</Th>
             </tr>
           </thead>
           <tbody>
             {events.map((event) => (
               <tr key={event.id} className="border-b">
-                <td className="py-1 pr-4">{formatDate(event.date)}</td>
-                <td className="py-1 pr-4">{event.name}</td>
-                <td className="py-1 pr-4">{event.event_type}</td>
-                <td className="py-1 pr-4">
+                <Td>{formatDate(event.date)}</Td>
+                <Td>{event.name}</Td>
+                <Td>{event.event_type}</Td>
+                <Td>
                   {event.project_id ? (
                     <Link
                       to={`/projects/${event.project_id}`}
@@ -105,9 +107,9 @@ export default function EventsPage() {
                   ) : (
                     '–'
                   )}
-                </td>
-                <td className="py-1 pr-4">{event.yes_count}</td>
-                <td className="py-1 pr-4">{event.conditional_count}</td>
+                </Td>
+                <Td>{event.yes_count}</Td>
+                <Td>{event.conditional_count}</Td>
               </tr>
             ))}
           </tbody>

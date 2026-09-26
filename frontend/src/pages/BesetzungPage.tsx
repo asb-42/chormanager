@@ -8,6 +8,8 @@ import {
   fetchProjects,
   fetchSingers,
 } from '../api/client'
+import { Th, Td,
+  PageHeader,} from '../components/ui'
 import type { BesetzungInput } from '../api/client'
 import BesetzungDialog from '../components/BesetzungDialog'
 
@@ -95,7 +97,7 @@ export default function BesetzungPage() {
 
   return (
     <section>
-      <h1 className="text-xl font-semibold">Besetzung</h1>
+      <PageHeader title="Besetzung" />
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <label>
           Projekt{' '}
@@ -129,17 +131,17 @@ export default function BesetzungPage() {
         <table className="mt-4 w-full border-collapse text-left">
           <thead>
             <tr className="border-b">
-              <th className="py-1 pr-4">Name</th>
-              <th className="py-1 pr-4">Projekt</th>
-              <th className="py-1 pr-4">Sänger</th>
-              <th className="py-1 pr-4">Aktionen</th>
+              <Th>Name</Th>
+              <Th>Projekt</Th>
+              <Th>Sänger</Th>
+              <Th>Aktionen</Th>
             </tr>
           </thead>
           <tbody>
             {items.map((item) => (
               <tr key={item.id} className="border-b">
-                <td className="py-1 pr-4">{item.name}</td>
-                <td className="py-1 pr-4">
+                <Td>{item.name}</Td>
+                <Td>
                   {item.project_id ? (
                     <Link
                       to={`/projects/${item.project_id}`}
@@ -150,16 +152,16 @@ export default function BesetzungPage() {
                   ) : (
                     '–'
                   )}
-                </td>
-                <td className="py-1 pr-4">{item.singer_ids.length}</td>
-                <td className="py-1 pr-4">
+                </Td>
+                <Td>{item.singer_ids.length}</Td>
+                <Td>
                   <DeleteButtons
                     confirming={deleteConfirmId === item.id}
                     onAsk={() => setDeleteConfirmId(item.id)}
                     onConfirm={() => deleteMutation.mutate(item.id)}
                     onCancel={() => setDeleteConfirmId(null)}
                   />
-                </td>
+                </Td>
               </tr>
             ))}
           </tbody>

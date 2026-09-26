@@ -7,6 +7,8 @@ import {
   fetchProjects,
   fetchRepertoire,
 } from '../api/client'
+import { Th, Td,
+  PageHeader,} from '../components/ui'
 import type { RepertoireInput } from '../api/client'
 import RepertoireDialog from '../components/RepertoireDialog'
 
@@ -52,7 +54,7 @@ export default function RepertoirePage() {
 
   return (
     <section>
-      <h1 className="text-xl font-semibold">Repertoire</h1>
+      <PageHeader title="Repertoire" />
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <label>
           Projekt{' '}
@@ -86,18 +88,18 @@ export default function RepertoirePage() {
         <table className="mt-4 w-full border-collapse text-left">
           <thead>
             <tr className="border-b">
-              <th className="py-1 pr-4">Titel</th>
-              <th className="py-1 pr-4">Komponist</th>
-              <th className="py-1 pr-4">Projekt</th>
-              <th className="py-1 pr-4">Aktionen</th>
+              <Th>Titel</Th>
+              <Th>Komponist</Th>
+              <Th>Projekt</Th>
+              <Th>Aktionen</Th>
             </tr>
           </thead>
           <tbody>
             {items.map((item) => (
               <tr key={item.id} className="border-b">
-                <td className="py-1 pr-4">{item.title}</td>
-                <td className="py-1 pr-4">{item.composer ?? '–'}</td>
-                <td className="py-1 pr-4">
+                <Td>{item.title}</Td>
+                <Td>{item.composer ?? '–'}</Td>
+                <Td>
                   {item.project_id ? (
                     <Link
                       to={`/projects/${item.project_id}`}
@@ -108,8 +110,8 @@ export default function RepertoirePage() {
                   ) : (
                     '–'
                   )}
-                </td>
-                <td className="py-1 pr-4">
+                </Td>
+                <Td>
                   {deleteConfirmId === item.id ? (
                     <div className="flex gap-2">
                       <button
@@ -136,7 +138,7 @@ export default function RepertoirePage() {
                       Löschen
                     </button>
                   )}
-                </td>
+                </Td>
               </tr>
             ))}
           </tbody>

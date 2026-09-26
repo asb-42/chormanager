@@ -12,6 +12,7 @@ import {
 import type { EventInput, SingerInput } from '../api/client'
 import EventDialog from '../components/EventDialog'
 import SingerDialog from '../components/SingerDialog'
+import { PageHeader } from '../components/ui'
 
 type Workflow = 'formation' | 'event' | 'singer' | null
 
@@ -94,7 +95,7 @@ export default function WizardPage() {
   if (workflow === null) {
     return (
       <section>
-        <h1 className="text-xl font-semibold">Assistent</h1>
+        <PageHeader title="Assistent" />
         <p className="mt-2">Womit soll es losgehen?</p>
         <div className="mt-4 grid max-w-2xl gap-2">
           <button
@@ -125,7 +126,7 @@ export default function WizardPage() {
 
   return (
     <section>
-      <h1 className="text-xl font-semibold">Assistent</h1>
+      <PageHeader title="Assistent" />
       {done ? (
         <div>
           <p className="mt-4">{done}</p>

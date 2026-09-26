@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 import { fetchProjects, fetchProjectSummary, formatDate } from '../api/client'
+import { Th, Td,
+  PageHeader,} from '../components/ui'
 
 export default function ProjectsPage() {
   const params = useParams<{ id?: string }>()
@@ -22,7 +24,7 @@ export default function ProjectsPage() {
 
   return (
     <section>
-      <h1 className="text-xl font-semibold">Projekte</h1>
+      <PageHeader title="Projekte" />
       {isLoading && <p className="mt-4">Lädt …</p>}
       {isError && <p className="mt-4 text-red-600">Fehler beim Laden.</p>}
       <ul className="mt-4 space-y-1">
@@ -48,19 +50,19 @@ export default function ProjectsPage() {
           <table className="mt-2 w-full border-collapse text-left">
             <thead>
               <tr className="border-b">
-                <th className="py-1 pr-4">Datum</th>
-                <th className="py-1 pr-4">Name</th>
-                <th className="py-1 pr-4">Zusagen</th>
-                <th className="py-1 pr-4">Vorbehalt</th>
+                <Th>Datum</Th>
+                <Th>Name</Th>
+                <Th>Zusagen</Th>
+                <Th>Vorbehalt</Th>
               </tr>
             </thead>
             <tbody>
               {summary.events.map((event) => (
                 <tr key={event.event_id} className="border-b">
-                  <td className="py-1 pr-4">{formatDate(event.date)}</td>
-                  <td className="py-1 pr-4">{event.name}</td>
-                  <td className="py-1 pr-4">{event.yes}</td>
-                  <td className="py-1 pr-4">{event.conditional}</td>
+                  <Td>{formatDate(event.date)}</Td>
+                  <Td>{event.name}</Td>
+                  <Td>{event.yes}</Td>
+                  <Td>{event.conditional}</Td>
                 </tr>
               ))}
             </tbody>
@@ -69,18 +71,18 @@ export default function ProjectsPage() {
           <table className="mt-2 w-full border-collapse text-left">
             <thead>
               <tr className="border-b">
-                <th className="py-1 pr-4">Stimmgruppe</th>
-                <th className="py-1 pr-4">Zusagen</th>
-                <th className="py-1 pr-4">Vorbehalt</th>
+                <Th>Stimmgruppe</Th>
+                <Th>Zusagen</Th>
+                <Th>Vorbehalt</Th>
               </tr>
             </thead>
             <tbody>
               {Object.entries(summary.by_voice_group).map(
                 ([group, counts]) => (
                   <tr key={group} className="border-b">
-                    <td className="py-1 pr-4">{group}</td>
-                    <td className="py-1 pr-4">{counts.yes ?? 0}</td>
-                    <td className="py-1 pr-4">{counts.conditional ?? 0}</td>
+                    <Td>{group}</Td>
+                    <Td>{counts.yes ?? 0}</Td>
+                    <Td>{counts.conditional ?? 0}</Td>
                   </tr>
                 ),
               )}

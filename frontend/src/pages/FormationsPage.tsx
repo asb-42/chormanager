@@ -2,6 +2,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { createFormation, fetchEvents, fetchFormations } from '../api/client'
+import { dialogClassName,
+  PageHeader,} from '../components/ui'
+import { Th, Td } from '../components/ui'
 
 const inputClass =
   'w-full rounded border border-gray-300 px-2 py-1 dark:border-gray-600 dark:bg-gray-800'
@@ -36,7 +39,7 @@ export default function FormationsPage() {
 
   return (
     <section>
-      <h1 className="text-xl font-semibold">Aufstellungen</h1>
+      <PageHeader title="Aufstellungen" />
       <div className="mt-3">
         <button
           type="button"
@@ -62,31 +65,31 @@ export default function FormationsPage() {
         <table className="mt-4 w-full border-collapse text-left">
           <thead>
             <tr className="border-b">
-              <th className="py-1 pr-4">Name</th>
-              <th className="py-1 pr-4">Raster</th>
+              <Th>Name</Th>
+              <Th>Raster</Th>
             </tr>
           </thead>
           <tbody>
             {items.map((item) => (
               <tr key={item.id} className="border-b">
-                <td className="py-1 pr-4">
+                <Td>
                   <Link
                     to={`/formations/${item.id}`}
                     className="text-blue-600 underline"
                   >
                     {item.name ?? item.id}
                   </Link>
-                </td>
-                <td className="py-1 pr-4">
+                </Td>
+                <Td>
                   {item.rows}×{item.cols}
-                </td>
+                </Td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
       {showDialog && (
-        <div role="dialog" aria-label="Aufstellung anlegen" className="mt-4 max-w-md rounded border p-4">
+        <div role="dialog" aria-label="Aufstellung anlegen" className={dialogClassName}>
           <h2 className="text-lg font-semibold">Aufstellung anlegen</h2>
           <form onSubmit={(event) => void handleCreate(event)} className="mt-2 space-y-2">
             <label className="block text-sm font-medium">

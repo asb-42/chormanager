@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { BesetzungInput, Project, Singer } from '../api/client'
+import { dialogClassName } from './ui'
 
 interface BesetzungDialogProps {
   projects: Project[]
@@ -47,7 +48,7 @@ export default function BesetzungDialog({
   }
 
   return (
-    <div role="dialog" aria-label="Besetzung anlegen" className="mt-4 rounded border p-4">
+    <div role="dialog" aria-label="Besetzung anlegen" className={dialogClassName}>
       <h2 className="text-lg font-semibold">Besetzung anlegen</h2>
       <form onSubmit={handleSubmit} className="mt-2 space-y-2">
         <label className="block text-sm font-medium">

@@ -81,8 +81,8 @@ export function PageHeader({
   actions?: ReactNode
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <h1 className="text-xl font-semibold">{title}</h1>
+    <div className="flex flex-wrap items-center gap-3 border-b border-gray-200 pb-2 dark:border-gray-700">
+      <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
   )
@@ -110,6 +110,22 @@ export function ErrorMessage({ text }: { text: string }) {
     </p>
   )
 }
+
+export function Th({ children }: { children: ReactNode }) {
+  return (
+    <th className="py-1 pr-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+      {children}
+    </th>
+  )
+}
+
+export function Td({ children }: { children: ReactNode }) {
+  return <td className="py-1 pr-4">{children}</td>
+}
+
+export const dialogClassName =
+  'mt-4 max-w-md rounded-lg border border-gray-200 bg-white p-4 shadow-lg ' +
+  'dark:border-gray-700 dark:bg-gray-900'
 
 export function Loading({ text = 'Lädt …' }: { text?: string }) {
   return <p className="mt-4 text-gray-500">{text}</p>

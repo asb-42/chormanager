@@ -2,7 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { Button, EmptyState, Field, PageHeader } from '../ui'
+import { Button, EmptyState, Field, PageHeader, Th, Td } from '../ui'
 
 describe('Button', () => {
   afterEach(() => {
@@ -55,12 +55,40 @@ describe('PageHeader', () => {
     cleanup()
   })
 
-  it('renders title and actions', () => {
+  it('renders title and actions with separator', () => {
     render(
       <PageHeader title="Sänger" actions={<button type="button">Neu</button>} />,
     )
     expect(screen.getByRole('heading', { name: 'Sänger' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Neu' })).toBeInTheDocument()
+  })
+})
+
+describe('Th/Td', () => {
+  afterEach(() => {
+    cleanup()
+  })
+
+  it('styles header cells uppercase gray, body cells plain', () => {
+    render(
+      <table>
+        <thead>
+          <tr>
+            <Th>Name</Th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <Td>Anna</Td>
+          </tr>
+        </tbody>
+      </table>,
+    )
+    const th = screen.getByText('Name')
+    expect(th.tagName).toBe('TH')
+    expect(th).toHaveClass('uppercase')
+    expect(th).toHaveClass('text-gray-500')
+    expect(screen.getByText('Anna').tagName).toBe('TD')
   })
 })
 

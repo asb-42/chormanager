@@ -6,6 +6,8 @@ import {
   fetchBackups,
   restoreBackup,
 } from '../api/client'
+import { Th, Td,
+  PageHeader,} from '../components/ui'
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Unbekannter Fehler'
@@ -54,7 +56,7 @@ export default function BackupPage() {
 
   return (
     <section>
-      <h1 className="text-xl font-semibold">Backup</h1>
+      <PageHeader title="Backup" />
       <div className="mt-3">
         <button
           type="button"
@@ -76,17 +78,17 @@ export default function BackupPage() {
         <table className="mt-4 w-full border-collapse text-left">
           <thead>
             <tr className="border-b">
-              <th className="py-1 pr-4">Datei</th>
-              <th className="py-1 pr-4">Größe</th>
-              <th className="py-1 pr-4">Aktionen</th>
+              <Th>Datei</Th>
+              <Th>Größe</Th>
+              <Th>Aktionen</Th>
             </tr>
           </thead>
           <tbody>
             {items.map((item) => (
               <tr key={item.id} className="border-b">
-                <td className="py-1 pr-4">{item.id}</td>
-                <td className="py-1 pr-4">{item.size} B</td>
-                <td className="py-1 pr-4">
+                <Td>{item.id}</Td>
+                <Td>{item.size} B</Td>
+                <Td>
                   <div className="flex gap-2">
                     {restoreConfirmId === item.id ? (
                       <>
@@ -141,7 +143,7 @@ export default function BackupPage() {
                       </button>
                     )}
                   </div>
-                </td>
+                </Td>
               </tr>
             ))}
           </tbody>

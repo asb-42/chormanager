@@ -5,6 +5,8 @@ import {
   fetchEvents,
   putAvailabilityBulk,
 } from '../api/client'
+import { Th, Td,
+  PageHeader,} from '../components/ui'
 
 const STATUSES = [
   { value: 'yes', label: '✓ Zusage' },
@@ -65,7 +67,7 @@ export default function AvailabilityPage() {
 
   return (
     <section>
-      <h1 className="text-xl font-semibold">Verfügbarkeit</h1>
+      <PageHeader title="Verfügbarkeit" />
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <label>
           Termin{' '}
@@ -100,17 +102,17 @@ export default function AvailabilityPage() {
         <table className="mt-4 w-full border-collapse text-left">
           <thead>
             <tr className="border-b">
-              <th className="py-1 pr-4">Name</th>
-              <th className="py-1 pr-4">Stimmgruppe</th>
-              <th className="py-1 pr-4">Status</th>
+              <Th>Name</Th>
+              <Th>Stimmgruppe</Th>
+              <Th>Status</Th>
             </tr>
           </thead>
           <tbody>
             {matrix.entries.map((entry) => (
               <tr key={entry.singer_id} className="border-b">
-                <td className="py-1 pr-4">{entry.full_name}</td>
-                <td className="py-1 pr-4">{entry.voice_group ?? '–'}</td>
-                <td className="py-1 pr-4">
+                <Td>{entry.full_name}</Td>
+                <Td>{entry.voice_group ?? '–'}</Td>
+                <Td>
                   <select
                     aria-label={entry.full_name}
                     value={overrides[entry.singer_id] ?? entry.status}
@@ -128,7 +130,7 @@ export default function AvailabilityPage() {
                       </option>
                     ))}
                   </select>
-                </td>
+                </Td>
               </tr>
             ))}
           </tbody>

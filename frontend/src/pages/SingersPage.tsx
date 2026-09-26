@@ -15,6 +15,8 @@ import {
   ErrorMessage,
   Loading,
   PageHeader,
+  Th,
+  Td,
   inputClassName,
 } from '../components/ui'
 
@@ -91,19 +93,19 @@ export default function SingersPage() {
         <table className="mt-4 w-full border-collapse text-left">
           <thead>
             <tr className="border-b">
-              <th className="py-1 pr-4">Name</th>
-              <th className="py-1 pr-4">Kurzname</th>
-              <th className="py-1 pr-4">Stimmgruppe</th>
-              <th className="py-1 pr-4">Aktionen</th>
+              <Th>Name</Th>
+              <Th>Kurzname</Th>
+              <Th>Stimmgruppe</Th>
+              <Th>Aktionen</Th>
             </tr>
           </thead>
           <tbody>
             {singers.map((singer) => (
               <tr key={singer.id} className="border-b">
-                <td className="py-1 pr-4">{singer.full_name}</td>
-                <td className="py-1 pr-4">{singer.short_name ?? '–'}</td>
-                <td className="py-1 pr-4">{singer.voice_group ?? '–'}</td>
-                <td className="py-1 pr-4">
+                <Td>{singer.full_name}</Td>
+                <Td>{singer.short_name ?? '–'}</Td>
+                <Td>{singer.voice_group ?? '–'}</Td>
+                <Td>
                   <div className="flex gap-2">
                     <Button size="sm" onClick={() => setDialog({ mode: 'edit', singer })}>
                       Bearbeiten
@@ -127,7 +129,7 @@ export default function SingersPage() {
                       </Button>
                     )}
                   </div>
-                </td>
+                </Td>
               </tr>
             ))}
           </tbody>

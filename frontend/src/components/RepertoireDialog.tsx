@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { Project, RepertoireInput } from '../api/client'
+import { dialogClassName } from './ui'
 
 interface RepertoireDialogProps {
   projects: Project[]
@@ -31,7 +32,7 @@ export default function RepertoireDialog({
   }
 
   return (
-    <div role="dialog" aria-label="Stück anlegen" className="mt-4 rounded border p-4">
+    <div role="dialog" aria-label="Stück anlegen" className={dialogClassName}>
       <h2 className="text-lg font-semibold">Stück anlegen</h2>
       <form onSubmit={handleSubmit} className="mt-2 space-y-2">
         <label className="block text-sm font-medium">

@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { fetchMarketing, putMarketing } from '../api/client'
+import { PageHeader } from '../components/ui'
 
 export default function MarketingPage() {
   const [saved, setSaved] = useState(false)
@@ -17,7 +18,7 @@ export default function MarketingPage() {
 
   return (
     <section>
-      <h1 className="text-xl font-semibold">Marketing</h1>
+      <PageHeader title="Marketing" />
       {isLoading && <p className="mt-4">Lädt …</p>}
       {isError && <p className="mt-4 text-red-600">Fehler beim Laden.</p>}
       {data && (

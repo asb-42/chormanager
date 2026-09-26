@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchVersion } from '../api/client'
+import { PageHeader } from '../components/ui'
 
 const inputClass =
   'w-full rounded border border-gray-300 px-2 py-1 dark:border-gray-600 dark:bg-gray-800'
@@ -35,7 +36,7 @@ export default function SettingsPage() {
 
   return (
     <section>
-      <h1 className="text-xl font-semibold">Konfiguration</h1>
+      <PageHeader title="Konfiguration" />
       <div className="mt-4 max-w-md">
         <h2 className="font-semibold">API-Token</h2>
         <p className="text-sm text-gray-600">

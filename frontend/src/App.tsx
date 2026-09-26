@@ -67,7 +67,7 @@ function HomePage() {
 }
 
 const linkClass = ({ isActive }: { isActive: boolean }) =>
-  `rounded px-3 py-1 ${isActive ? 'bg-gray-200 dark:bg-gray-700' : ''}`
+  `rounded px-3 py-1 ${isActive ? 'bg-blue-700 font-semibold text-white' : 'hover:bg-gray-100 dark:hover:bg-gray-800'}`
 
 export default function App() {
   const { data: version } = useQuery({
