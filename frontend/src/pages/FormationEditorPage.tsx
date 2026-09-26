@@ -317,7 +317,7 @@ export default function FormationEditorPage() {
         ← Alle Aufstellungen
       </Link>
       <h1 className="mt-1 text-xl font-semibold">{loadedDoc.name ?? loadedDoc.id}</h1>
-      <div className="mt-2 flex flex-wrap items-center gap-4 text-sm">
+      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
         <span className="flex gap-1" role="group" aria-label="Bearbeiten">
           <button
             type="button"
@@ -346,7 +346,9 @@ export default function FormationEditorPage() {
             </svg>
           </button>
         </span>
-        <label>
+        <span aria-hidden="true" className="h-6 w-px bg-gray-200 dark:bg-gray-700" />
+        <span className="flex items-center gap-2" role="group" aria-label="Raster">
+          <label>
           <input
             type="checkbox"
             checked={staggered}
@@ -386,6 +388,8 @@ export default function FormationEditorPage() {
         >
           Anwenden
         </button>
+        </span>
+        <span aria-hidden="true" className="h-6 w-px bg-gray-200 dark:bg-gray-700" />
         <button
           type="button"
           onClick={() => {
@@ -396,13 +400,9 @@ export default function FormationEditorPage() {
         >
           Optimieren
         </button>
-        <span>
+        <span className="ml-auto text-gray-500">
           {placedCount} platziert, {singers.length - placedCount} im Pool
         </span>
-        {mutation.isPending && <span>Speichert …</span>}
-        {savedAt && !mutation.isPending && (
-          <span>Gespeichert um {savedAt.toLocaleTimeString()}.</span>
-        )}
         {mutation.isPending && <span>Speichert …</span>}
         {savedAt && !mutation.isPending && (
           <span>Gespeichert um {savedAt.toLocaleTimeString()}.</span>
@@ -436,6 +436,7 @@ export default function FormationEditorPage() {
           staggered={staggered}
           colors={colors}
           highlight={highlight}
+          poolFilter={search}
           onMapChange={handleMapChange}
           onSelect={handleSelect}
           onSelectMany={setSelected}

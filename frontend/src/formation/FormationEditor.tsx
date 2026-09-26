@@ -52,11 +52,11 @@ function Tile({
     data: { singerId: singer.singer_id },
   })
   const point = pixelPos(pos.row, pos.col, staggered)
-  const border = highlighted
+  const outline = highlighted
     ? '3px solid #FF8C00'
     : selected
       ? '3px solid #0066cc'
-      : '1px solid #888'
+      : '1px solid rgba(0,0,0,0.25)'
   return (
     <div
       ref={setNodeRef}
@@ -71,19 +71,26 @@ function Tile({
         height: 60,
         transform: CSS.Translate.toString(transform),
         background: color,
-        border,
-        borderRadius: 4,
-        padding: 4,
+        outline,
+        outlineOffset: -1,
+        borderRadius: 8,
+        padding: '6px 8px',
         fontSize: 12,
+        lineHeight: 1.3,
         cursor: 'grab',
+        boxShadow: transform
+          ? '0 8px 20px rgba(0,0,0,0.3)'
+          : '0 1px 3px rgba(0,0,0,0.2)',
         zIndex: transform ? 10 : 1,
+        overflow: 'hidden',
+        whiteSpace: 'nowrap',
       }}
       {...listeners}
       {...attributes}
     >
-      <strong>{singer.name}</strong>
+      <strong style={{ fontSize: 13, letterSpacing: '-0.01em' }}>{singer.name}</strong>
       <br />
-      {singer.voice_group ?? ''}
+      <span style={{ opacity: 0.85, fontSize: 11 }}>{singer.voice_group ?? ''}</span>
     </div>
   )
 }
@@ -99,17 +106,22 @@ function PoolItem({ singer, color }: { singer: StoredSinger; color: string }) {
       style={{
         transform: CSS.Translate.toString(transform),
         background: color,
-        border: '1px solid #888',
-        borderRadius: 4,
-        padding: '2px 6px',
-        marginBottom: 4,
+        border: '1px solid rgba(0,0,0,0.2)',
+        borderRadius: 8,
+        padding: '4px 8px',
+        marginBottom: 6,
         fontSize: 12,
         cursor: 'grab',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.15)',
+        overflow: 'hidden',
+        whiteSpace: 'nowrap',
+        textOverflow: 'ellipsis',
       }}
       {...listeners}
       {...attributes}
     >
-      {singer.name} ({singer.voice_group ?? '–'})
+      <strong style={{ fontWeight: 600 }}>{singer.name}</strong>{' '}
+      <span style={{ opacity: 0.8 }}>({singer.voice_group ?? '–'})</span>
     </div>
   )
 }
@@ -126,8 +138,9 @@ function Cell({ row, col, staggered }: { row: number; col: number; staggered: bo
         top: point.y,
         width: 125,
         height: 75,
-        border: '1px solid #d4c9b8',
-        background: '#f8f4eb',
+        border: '1px solid rgba(0,0,0,0.12)',
+        borderRadius: 6,
+        background: '#faf8f2',
       }}
     />
   )
@@ -142,6 +155,7 @@ export default function FormationEditor({
   staggered,
   colors,
   highlight,
+  poolFilter,
   onMapChange,
   onSelect,
   onSelectMany,
@@ -154,6 +168,7 @@ export default function FormationEditor({
   staggered: boolean
   colors: EditorColors
   highlight: string[]
+  poolFilter: string
   onMapChange: (next: PlacementMap) => void
   onSelect: (id: string, toggle: boolean) => void
   onSelectMany: (ids: string[]) => void
@@ -250,6 +265,11 @@ export default function FormationEditor({
       .map(([id]) => id),
   )
   const pool = singers.filter((singer) => !placedIds.has(singer.singer_id))
+  const needle = poolFilter.trim().toLowerCase()
+  const visiblePool =
+    needle.length === 0
+      ? pool
+      : pool.filter((singer) => singer.name.toLowerCase().includes(needle))
   const width = MARGIN_LEFT + cols * CELL_WIDTH + 50
   const height = MARGIN_TOP + rows * CELL_HEIGHT + 20
 
@@ -271,8 +291,11 @@ export default function FormationEditor({
     >
       <div style={{ display: 'flex', gap: 16 }}>
         <div style={{ width: 220 }}>
-          <h2 className="font-semibold">Pool ({pool.length})</h2>
-          {pool.map((singer) => (
+          <h2 className="font-semibold">
+            Pool ({visiblePool.length}
+            {visiblePool.length !== pool.length ? ` von ${pool.length}` : ''})
+          </h2>
+          {visiblePool.map((singer) => (
             <PoolItem
               key={singer.singer_id}
               singer={singer}

@@ -62,4 +62,37 @@ describe('FormationEditorPage search', () => {
       tile.closest('[data-tile]')?.getAttribute('data-highlight'),
     ).toBe('true')
   })
+
+  it('filters the pool by search without moving tiles', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        if (String(url).includes('/api/formations/f-1')) {
+          return { ok: true, json: async () => DOC }
+        }
+        return { ok: true, json: async () => [] }
+      }),
+    )
+    queryClient.clear()
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/formations/f-1']}>
+          <Routes>
+            <Route path="/formations/:id" element={<FormationEditorPage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+    await screen.findByText('Berta B')
+    const user = userEvent.setup({ delay: 10 })
+    await user.type(screen.getByPlaceholderText('Suchen …'), 'berta')
+    // Berta (Pool) bleibt sichtbar, Anna (Grid) ist nicht highlightet.
+    expect(await screen.findByText('Berta B')).toBeInTheDocument()
+    const tile = screen.getByText('Anna Muster').closest('[data-tile]')
+    expect(tile?.getAttribute('data-highlight')).toBeNull()
+    // Filter greift: nichts Passendes -> Zähler zeigt 0 von 1.
+    await user.clear(screen.getByPlaceholderText('Suchen …'))
+    await user.type(screen.getByPlaceholderText('Suchen …'), 'xyz')
+    expect(await screen.findByText(/Pool \(0 von 1\)/)).toBeInTheDocument()
+  })
 })
