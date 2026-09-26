@@ -9,6 +9,26 @@ import {
 import { Button, PageHeader, Th, Td } from '../components/ui'
 import { useActive } from '../active/active'
 
+const STATUS_DOT: Record<string, string> = {
+  yes: 'bg-green-600',
+  no: 'bg-red-600',
+  none: 'bg-gray-300',
+  conditional: 'bg-amber-500',
+  unknown: 'bg-gray-400',
+  maybe: 'bg-yellow-400',
+}
+
+export function StatusDot({ status }: { status: string }) {
+  return (
+    <span
+      data-status-dot={status}
+      title={status}
+      aria-hidden="true"
+      className={`mr-2 inline-block h-2.5 w-2.5 rounded-full ${STATUS_DOT[status] ?? 'bg-gray-300'}`}
+    />
+  )
+}
+
 const STATUSES = [
   { value: 'yes', label: '✓ Zusage' },
   { value: 'no', label: '✗ Absage' },
@@ -105,14 +125,13 @@ export default function AvailabilityPage() {
             ))}
           </select>
         </label>
-        <button
-          type="button"
+        <Button
+          variant="primary"
           onClick={() => saveMutation.mutate()}
           disabled={eventId === null || saveMutation.isPending}
-          className="rounded bg-blue-600 px-3 py-1 text-white disabled:opacity-40"
         >
           Speichern
-        </button>
+        </Button>
         {savedMessage && <span>Gespeichert.</span>}
         {activeBesetzung && (
           <span className="text-sm text-gray-600">
@@ -148,8 +167,10 @@ export default function AvailabilityPage() {
                 <Td>{entry.full_name}</Td>
                 <Td>{entry.voice_group ?? '–'}</Td>
                 <Td>
-                  <select
-                    aria-label={entry.full_name}
+                  <span className="flex items-center">
+                    <StatusDot status={overrides[entry.singer_id] ?? entry.status} />
+                    <select
+                      aria-label={entry.full_name}
                     value={overrides[entry.singer_id] ?? entry.status}
                     onChange={(event) =>
                       setOverrides((previous) => ({
@@ -165,6 +186,7 @@ export default function AvailabilityPage() {
                       </option>
                     ))}
                   </select>
+                  </span>
                 </Td>
               </tr>
             ))}

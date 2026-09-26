@@ -113,7 +113,7 @@ export function ErrorMessage({ text }: { text: string }) {
 
 export function Th({ children }: { children: ReactNode }) {
   return (
-    <th className="py-2 pr-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+    <th className="sticky top-0 bg-white py-2 pr-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:bg-[#16171d] dark:text-gray-400">
       {children}
     </th>
   )

@@ -130,6 +130,16 @@ describe('AvailabilityPage', () => {
       ).toBe(true)
     })
   })
+
+  it('shows a color dot per status', async () => {
+    stubFetch()
+    renderPage()
+    await screen.findByText('Anna Muster')
+    const annaRow = screen.getByText('Anna Muster').closest('tr') as HTMLElement
+    const dot = annaRow.querySelector('[data-status-dot="yes"]')
+    expect(dot).toBeInTheDocument()
+    expect(dot).toHaveClass('bg-green-600')
+  })
 })
 
 describe('Aktiv-Kontext: Verfügbarkeit', () => {
