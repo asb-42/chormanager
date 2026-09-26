@@ -5,6 +5,7 @@ import EventsPage from './pages/EventsPage'
 import ProjectsPage from './pages/ProjectsPage'
 import RepertoirePage from './pages/RepertoirePage'
 import SingersPage from './pages/SingersPage'
+import WizardPage from './pages/WizardPage'
 
 function HomePage() {
   return (
@@ -43,6 +44,9 @@ export default function App() {
         <NavLink to="/availability" className={linkClass}>
           Verfügbarkeit
         </NavLink>
+        <NavLink to="/wizard" className={linkClass}>
+          Assistent
+        </NavLink>
       </nav>
       <Routes>
         <Route path="/" element={<HomePage />} />
@@ -52,6 +56,7 @@ export default function App() {
         <Route path="/besetzung" element={<BesetzungPage />} />
         <Route path="/repertoire" element={<RepertoirePage />} />
         <Route path="/availability" element={<AvailabilityPage />} />
+        <Route path="/wizard" element={<WizardPage />} />
       </Routes>
     </div>
   )

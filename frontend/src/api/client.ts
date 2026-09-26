@@ -140,6 +140,47 @@ export function deleteRepertoire(id: string): Promise<void> {
   return api<void>(`/api/repertoire/${id}`, { method: 'DELETE' })
 }
 
+export interface EventInput {
+  name: string
+  date: string
+  event_type: string
+  location?: string
+  description?: string
+  project_id?: string
+}
+
+export function createEvent(input: EventInput): Promise<EventItem> {
+  return api<EventItem>('/api/events', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
+export interface FormationDoc {
+  id: string
+  name?: string | null
+  rows: number
+  cols: number
+  event_id?: string | null
+}
+
+export interface FormationInput {
+  name?: string
+  rows: number
+  cols: number
+  staggered?: boolean
+  event_id?: string
+}
+
+export function createFormation(input: FormationInput): Promise<FormationDoc> {
+  return api<FormationDoc>('/api/formations', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
 export interface AvailabilityMatrixEntry {
   singer_id: string
   full_name: string
