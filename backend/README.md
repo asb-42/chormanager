@@ -56,6 +56,17 @@ API-Runde (CRUD, Bulk, ilike-Suche) und räumt per Downgrade ab.
 Credentials für Prod aus der Umgebung (M5); alle Typen portabel
 (Analyse §5.6).
 
+## Erstbefüllung aus der Desktop-DB
+
+```bash
+.venv/bin/python backend/tools/import_sqlite.py data/chor.db \
+  --dst "mysql+pymysql://chor:chor@127.0.0.1:3306/chor" --force
+```
+
+Ohne `--force` Abbruch bei nicht-leerem Ziel. Lange Texte
+(`description`) sind TEXT-Spalten (Revision 003) — VARCHAR würde
+echte Projektbeschreibungen kappen.
+
 ## Auth (Single-User-Stufe)
 
 Reads sind offen. Writes brauchen ohne gesetztes Token nichts
