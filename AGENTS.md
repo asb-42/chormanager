@@ -189,6 +189,7 @@ contract, update both the child and this index.
 | ``chormanager/history/`` | Undo/Redo history service. | [chormanager/history/AGENTS.md](chormanager/history/AGENTS.md) |
 | ``tests/`` | All test files. | [tests/AGENTS.md](tests/AGENTS.md) |
 | ``backend/`` | Web backend (FastAPI, M1+, Branch `web-migration`). | [backend/AGENTS.md](backend/AGENTS.md) |
+| ``frontend/`` | Web frontend (React + TS, M2+, Branch `web-migration`). | [frontend/AGENTS.md](frontend/AGENTS.md) |
 | ``docs/`` | User-facing documentation (Benutzerhandbuch) + code-review reports + plan documents (M-4, sub-plans, retrospective) under ``docs/plans/``. | [docs/AGENTS.md](docs/AGENTS.md) |
 
 ### Root files owned by this doc
