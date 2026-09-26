@@ -239,23 +239,54 @@ export interface RepertoireEntry {
   id: string
   title: string
   composer?: string | null
+  dates?: string | null
+  country?: string | null
+  publisher?: string | null
+  arrangement?: string | null
+  location?: string | null
   project_id?: string | null
 }
 
 export interface RepertoireInput {
   title: string
   composer?: string
+  dates?: string
+  country?: string
+  publisher?: string
+  arrangement?: string
+  location?: string
   project_id?: string
 }
 
-export function fetchRepertoire(projectId?: string): Promise<RepertoireEntry[]> {
-  const query = projectId ? `?project_id=${encodeURIComponent(projectId)}` : ''
+export function fetchRepertoire(
+  projectId?: string,
+  search?: string,
+  sort: string = 'title',
+  direction: 'asc' | 'desc' = 'asc',
+): Promise<RepertoireEntry[]> {
+  const params = new URLSearchParams()
+  if (projectId) params.set('project_id', projectId)
+  if (search) params.set('search', search)
+  params.set('sort', sort)
+  params.set('direction', direction)
+  const query = params.toString() ? `?${params.toString()}` : ''
   return api<RepertoireEntry[]>(`/api/repertoire${query}`)
 }
 
 export function createRepertoire(input: RepertoireInput): Promise<RepertoireEntry> {
   return api<RepertoireEntry>('/api/repertoire', {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
+export function updateRepertoire(
+  id: string,
+  input: Partial<RepertoireInput>,
+): Promise<RepertoireEntry> {
+  return api<RepertoireEntry>(`/api/repertoire/${id}`, {
+    method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
   })
