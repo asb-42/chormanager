@@ -130,3 +130,30 @@ export const dialogClassName =
 export function Loading({ text = 'Lädt …' }: { text?: string }) {
   return <p className="mt-4 text-gray-500">{text}</p>
 }
+
+export function IconButton({
+  label,
+  title,
+  onClick,
+  disabled = false,
+  children,
+}: {
+  label: string
+  title?: string
+  onClick: () => void
+  disabled?: boolean
+  children: ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title ?? label}
+      aria-label={label}
+      className="rounded p-1.5 hover:bg-gray-100 disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 dark:hover:bg-gray-800"
+    >
+      {children}
+    </button>
+  )
+}

@@ -131,7 +131,7 @@ describe('Aktiv-Kontext: Projekte/Termine', () => {
     renderWith('/projects', <ProjectsPage />)
     await screen.findByText('Hoffmann')
     await user.click(screen.getByRole('button', { name: 'Als aktiv setzen' }))
-    expect(await screen.findByText('Aktiv')).toBeInTheDocument()
+    expect(await screen.findByText('Aktiv', { selector: 'span' })).toBeInTheDocument()
     expect(window.localStorage.getItem('chor-active-project')).toBe('p-1')
   })
 

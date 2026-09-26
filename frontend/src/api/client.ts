@@ -437,6 +437,7 @@ export interface Project {
   description?: string | null
   is_active?: number | null
   spielzeit?: string | null
+  event_count?: number
 }
 
 export interface ProjectSummaryEvent {
@@ -470,6 +471,39 @@ export function fetchEvents(filter: EventFilter): Promise<EventItem[]> {
 
 export function fetchProjects(): Promise<Project[]> {
   return api<Project[]>('/api/projects')
+}
+
+export function fetchProject(id: string): Promise<Project> {
+  return api<Project>(`/api/projects/${id}`)
+}
+
+export interface ProjectInput {
+  name: string
+  description?: string
+  spielzeit?: string
+}
+
+export function createProject(input: ProjectInput): Promise<Project> {
+  return api<Project>('/api/projects', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
+export function updateProject(
+  id: string,
+  input: Partial<ProjectInput>,
+): Promise<Project> {
+  return api<Project>(`/api/projects/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
+export function deleteProject(id: string): Promise<void> {
+  return api<void>(`/api/projects/${id}`, { method: 'DELETE' })
 }
 
 export function fetchProjectSummary(id: string): Promise<ProjectSummary> {
