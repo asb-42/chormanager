@@ -1,6 +1,7 @@
 // M3 proper: formation editor surface (dnd-kit, DOM tiles).
-// M3.1: single move/swap + click select. M3.2 adds rubber band,
-// group drag, search highlight (spike-proven patterns).
+// M3.1: single move/swap + click select. M3.2: rubber band,
+// group drag, search highlight (spike-proven, desktop semantics).
+import { useEffect, useRef, useState } from 'react'
 import {
   DndContext,
   PointerSensor,
@@ -13,7 +14,10 @@ import {
 import type { DragEndEvent } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import type { Pos, PlacementMap } from './placements'
+import { applyGroupMove, applyMove } from './placements'
 import type { StoredSinger } from '../api/client'
+import { normalizeRect, tilesInRect } from './selection'
+import type { RawBand } from './selection'
 import { CELL_HEIGHT, CELL_WIDTH, MARGIN_LEFT, MARGIN_TOP, pixelPos } from './gridMath'
 
 export interface EditorColors {
@@ -31,6 +35,7 @@ function Tile({
   pos,
   staggered,
   selected,
+  highlighted,
   color,
   onSelect,
 }: {
@@ -38,6 +43,7 @@ function Tile({
   pos: Pos
   staggered: boolean
   selected: boolean
+  highlighted: boolean
   color: string
   onSelect: (id: string, toggle: boolean) => void
 }) {
@@ -46,10 +52,16 @@ function Tile({
     data: { singerId: singer.singer_id },
   })
   const point = pixelPos(pos.row, pos.col, staggered)
+  const border = highlighted
+    ? '3px solid #FF8C00'
+    : selected
+      ? '3px solid #0066cc'
+      : '1px solid #888'
   return (
     <div
       ref={setNodeRef}
       data-tile={singer.singer_id}
+      data-highlight={highlighted || undefined}
       onClick={(event) => onSelect(singer.singer_id, event.ctrlKey || event.metaKey)}
       style={{
         position: 'absolute',
@@ -59,7 +71,7 @@ function Tile({
         height: 60,
         transform: CSS.Translate.toString(transform),
         background: color,
-        border: selected ? '3px solid #0066cc' : '1px solid #888',
+        border,
         borderRadius: 4,
         padding: 4,
         fontSize: 12,
@@ -129,8 +141,10 @@ export default function FormationEditor({
   cols,
   staggered,
   colors,
-  onMove,
+  highlight,
+  onMapChange,
   onSelect,
+  onSelectMany,
 }: {
   singers: StoredSinger[]
   placements: PlacementMap
@@ -139,17 +153,95 @@ export default function FormationEditor({
   cols: number
   staggered: boolean
   colors: EditorColors
-  onMove: (singerId: string, target: Pos) => void
+  highlight: string[]
+  onMapChange: (next: PlacementMap) => void
   onSelect: (id: string, toggle: boolean) => void
+  onSelectMany: (ids: string[]) => void
 }) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   )
+  const [band, setBand] = useState<RawBand | null>(null)
+  const bandStart = useRef<{ x: number; y: number } | null>(null)
+  const dragActive = useRef(false)
+  const gridRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (highlight.length === 0) return
+    const first = gridRef.current?.querySelector('[data-highlight="true"]')
+    ;(first as HTMLElement | null)?.scrollIntoView?.({ block: 'nearest' })
+  }, [highlight])
+
+  function handleSelect(id: string, toggle: boolean) {
+    if (dragActive.current) {
+      dragActive.current = false
+      return
+    }
+    onSelect(id, toggle)
+  }
 
   function handleDragEnd(event: DragEndEvent) {
     const singerId = event.active.data.current?.singerId as string | undefined
     const target = event.over ? parseCell(String(event.over.id)) : null
-    if (singerId && target) onMove(singerId, target)
+    if (!singerId || !target) return
+    const group =
+      selected.includes(singerId) && selected.length > 1
+        ? [singerId, ...selected.filter((id) => id !== singerId)]
+        : [singerId]
+    const next =
+      group.length === 1
+        ? applyMove(placements, singerId, target, rows, cols)
+        : applyGroupMove(placements, group, target, rows, cols)
+    if (next) onMapChange(next)
+  }
+
+  function gridPoint(event: React.MouseEvent): { x: number; y: number } {
+    const rect = gridRef.current?.getBoundingClientRect() ?? { left: 0, top: 0 }
+    return { x: event.clientX - rect.left, y: event.clientY - rect.top }
+  }
+
+  function handleMouseDown(event: React.MouseEvent) {
+    if ((event.target as HTMLElement).closest('[data-tile]')) return
+    const point = gridPoint(event)
+    bandStart.current = point
+    setBand({ x0: point.x, y0: point.y, x1: point.x, y1: point.y })
+  }
+
+  function handleMouseMove(event: React.MouseEvent) {
+    if (!bandStart.current) return
+    const point = gridPoint(event)
+    setBand({
+      x0: bandStart.current.x,
+      y0: bandStart.current.y,
+      x1: point.x,
+      y1: point.y,
+    })
+  }
+
+  function handleMouseUp() {
+    if (!bandStart.current || !band || !gridRef.current) {
+      bandStart.current = null
+      return
+    }
+    const rect = normalizeRect(band)
+    const grid = gridRef.current.getBoundingClientRect()
+    const tiles: { id: string; x: number; y: number; w: number; h: number }[] = []
+    gridRef.current.querySelectorAll('[data-tile]').forEach((node) => {
+      const box = (node as HTMLElement).getBoundingClientRect()
+      const id = (node as HTMLElement).dataset.tile
+      if (id) {
+        tiles.push({
+          id,
+          x: box.left - grid.left,
+          y: box.top - grid.top,
+          w: box.width,
+          h: box.height,
+        })
+      }
+    })
+    onSelectMany(tilesInRect(tiles, rect))
+    bandStart.current = null
+    setBand(null)
   }
 
   const placedIds = new Set(
@@ -169,7 +261,14 @@ export default function FormationEditor({
   }
 
   return (
-    <DndContext sensors={sensors} collisionDetection={rectIntersection} onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={rectIntersection}
+      onDragStart={() => {
+        dragActive.current = true
+      }}
+      onDragEnd={handleDragEnd}
+    >
       <div style={{ display: 'flex', gap: 16 }}>
         <div style={{ width: 220 }}>
           <h2 className="font-semibold">Pool ({pool.length})</h2>
@@ -181,7 +280,13 @@ export default function FormationEditor({
             />
           ))}
         </div>
-        <div style={{ position: 'relative', width, height, userSelect: 'none' }}>
+        <div
+          ref={gridRef}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          style={{ position: 'relative', width, height, userSelect: 'none' }}
+        >
           {cells}
           {Object.entries(placements).map(([id, pos]) => {
             if (!pos) return null
@@ -194,11 +299,25 @@ export default function FormationEditor({
                 pos={pos}
                 staggered={staggered}
                 selected={selected.includes(id)}
+                highlighted={highlight.includes(id)}
                 color={colors[singer.voice_group ?? ''] ?? '#ccc'}
-                onSelect={onSelect}
+                onSelect={handleSelect}
               />
             )
           })}
+          {band && (
+            <div
+              style={{
+                position: 'absolute',
+                left: Math.min(band.x0, band.x1),
+                top: Math.min(band.y0, band.y1),
+                width: Math.abs(band.x1 - band.x0),
+                height: Math.abs(band.y1 - band.y0),
+                border: '1px solid #0066cc',
+                background: 'rgba(0,102,204,0.1)',
+              }}
+            />
+          )}
         </div>
       </div>
     </DndContext>

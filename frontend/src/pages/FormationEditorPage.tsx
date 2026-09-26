@@ -7,10 +7,9 @@ import {
   putPlacements,
 } from '../api/client'
 import type { FormationDoc } from '../api/client'
-import type { Pos } from '../formation/placements'
 import FormationEditor from '../formation/FormationEditor'
 import type { PlacementMap } from '../formation/placements'
-import { applyMove, toPutPayload } from '../formation/placements'
+import { toPutPayload } from '../formation/placements'
 
 function docToMap(doc: FormationDoc): {
   map: PlacementMap
@@ -37,6 +36,7 @@ export default function FormationEditorPage() {
   const [selected, setSelected] = useState<string[]>([])
   const [staggered, setStaggered] = useState(false)
   const [saveError, setSaveError] = useState(false)
+  const [search, setSearch] = useState('')
 
   const { data: doc, isLoading, isError } = useQuery({
     queryKey: ['formation', id],
@@ -101,13 +101,22 @@ export default function FormationEditorPage() {
     colors[group.id] = group.color_light
   }
   const singers = docToMap(loadedDoc).singers
+  const needle = search.trim().toLowerCase()
+  const highlight =
+    needle.length === 0
+      ? []
+      : singers
+          .filter((singer) => singer.name.toLowerCase().includes(needle))
+          .map((singer) => singer.singer_id)
 
-  function handleMove(singerId: string, target: Pos) {
-    const next = applyMove(loadedMap, singerId, target, loadedDoc.rows, loadedDoc.cols)
-    if (!next) return
+  function persist(next: PlacementMap, stagger: boolean) {
     setMap(next)
     setSaveError(false)
-    mutation.mutate({ placements: toPutPayload(next), staggered })
+    mutation.mutate({ placements: toPutPayload(next), staggered: stagger })
+  }
+
+  function handleMapChange(next: PlacementMap) {
+    persist(next, staggered)
   }
 
   function handleSelect(singerId: string, toggle: boolean) {
@@ -134,7 +143,7 @@ export default function FormationEditorPage() {
         ← Alle Aufstellungen
       </Link>
       <h1 className="mt-1 text-xl font-semibold">{loadedDoc.name ?? loadedDoc.id}</h1>
-      <div className="mt-2 flex items-center gap-4 text-sm">
+      <div className="mt-2 flex flex-wrap items-center gap-4 text-sm">
         <label>
           <input
             type="checkbox"
@@ -143,6 +152,13 @@ export default function FormationEditorPage() {
           />{' '}
           Versetzt
         </label>
+        <input
+          type="search"
+          placeholder="Suchen …"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          className="w-48 rounded border border-gray-300 px-2 py-1 dark:border-gray-600 dark:bg-gray-800"
+        />
         <span>
           {placedCount} platziert, {singers.length - placedCount} im Pool
         </span>
@@ -160,8 +176,10 @@ export default function FormationEditorPage() {
           cols={loadedDoc.cols}
           staggered={staggered}
           colors={colors}
-          onMove={handleMove}
+          highlight={highlight}
+          onMapChange={handleMapChange}
           onSelect={handleSelect}
+          onSelectMany={setSelected}
         />
       </div>
     </section>
