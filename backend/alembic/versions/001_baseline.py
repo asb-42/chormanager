@@ -124,8 +124,9 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # formations gehört 002 (idempotentes Nachziehen); hier nur die
+    # 7 Desktop-Tabellen, damit downgrade base nicht doppelt droppt.
     for table in (
-        "formations",
         "repertoire",
         "besetzung",
         "availability",

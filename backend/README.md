@@ -27,9 +27,15 @@ export CHORMANAGER_DATABASE_URL="sqlite:////pfad/chor.db"
 CHORMANAGER_DATABASE_URL="sqlite:////pfad/neu.db" \
   .venv/bin/alembic -c backend/alembic.ini upgrade head
 
-# Bestands-DB (Desktop-Schema) auf Baseline stempeln (ändert keine Daten):
+# Bestands-DB (Desktop-Schema, kennt nur die 7 Desktop-Tabellen):
+# 1. Baseline stempeln (Schema passt bereits, nichts läuft),
+# 2. upgrade head (Revision 002 zieht NUR die neue formations-Tabelle
+#    idempotent nach, Daten bleiben unangetastet).
+# NICHT "stamp head" — das würde formations nie erzeugen!
 CHORMANAGER_DATABASE_URL="sqlite:////pfad/chor.db" \
-  .venv/bin/alembic -c backend/alembic.ini stamp head
+  .venv/bin/alembic -c backend/alembic.ini stamp 001
+CHORMANAGER_DATABASE_URL="sqlite:////pfad/chor.db" \
+  .venv/bin/alembic -c backend/alembic.ini upgrade head
 ```
 
 Folge-Revisionen (z. B. `formations`-Tabelle für gestempelte
