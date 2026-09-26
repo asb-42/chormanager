@@ -4,7 +4,7 @@ Mirrors ``chormanager/data/database.py::create_tables``. Only
 ``String``/``Integer`` columns — no Postgres-only types, no
 server defaults that differ per dialect (Analyse §5.6).
 """
-from sqlalchemy import Column, Integer, MetaData, String, Table
+from sqlalchemy import Column, Integer, MetaData, String, Table, Text
 
 metadata = MetaData()
 
@@ -80,7 +80,7 @@ besetzung_table = Table(
     Column("id", String(64), primary_key=True),
     Column("name", String(255), nullable=False),
     Column("project_id", String(64)),
-    Column("singer_ids", String(4096), nullable=False),
+    Column("singer_ids", Text, nullable=False),
     Column("created_at", String(32), nullable=False),
     Column("updated_at", String(32), nullable=False),
 )
@@ -105,7 +105,7 @@ selbstdarstellung_table = Table(
     "selbstdarstellung",
     metadata,
     Column("id", String(64), primary_key=True),
-    Column("content", String(4096)),
+    Column("content", Text),
     Column("updated_at", String(32), nullable=False),
 )
 
@@ -117,10 +117,10 @@ formations_table = Table(
     Column("rows", Integer, nullable=False),
     Column("cols", Integer, nullable=False),
     Column("staggered", Integer),
-    Column("voicing_config", String(4096)),
-    Column("singers", String(16384)),
-    Column("placed", String(16384)),
-    Column("metadata", String(4096)),
+    Column("voicing_config", Text),
+    Column("singers", Text),
+    Column("placed", Text),
+    Column("metadata", Text),
     Column("event_id", String(64)),
     Column("created_at", String(32), nullable=False),
     Column("updated_at", String(32), nullable=False),

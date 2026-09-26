@@ -20,6 +20,21 @@ export CHORMANAGER_DATABASE_URL="sqlite:////pfad/chor.db"
 .venv/bin/python -m pytest backend/tests/ -q
 ```
 
+## Migrationen (Alembic)
+
+```bash
+# Neue leere DB aufsetzen:
+CHORMANAGER_DATABASE_URL="sqlite:////pfad/neu.db" \
+  .venv/bin/alembic -c backend/alembic.ini upgrade head
+
+# Bestands-DB (Desktop-Schema) auf Baseline stempeln (ändert keine Daten):
+CHORMANAGER_DATABASE_URL="sqlite:////pfad/chor.db" \
+  .venv/bin/alembic -c backend/alembic.ini stamp head
+```
+
+Folge-Revisionen (z. B. `formations`-Tabelle für gestempelte
+Bestands-DBs, `users`/`roles` mit dem Portal) kommen als `002+`.
+
 ## Auth (Single-User-Stufe)
 
 Reads sind offen. Writes brauchen ohne gesetztes Token nichts

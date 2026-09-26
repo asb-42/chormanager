@@ -13,9 +13,10 @@ den Bestand zunächst nur (SQLite-Datei des Desktops).
 
 ## Local Contracts
 
-* **Portable SQL only.** Nur ``String``/``Integer``-Spalten,
+* **Portable SQL only.** Nur ``String``/``Integer``/``Text``,
   keine Dialekt-Sondertypen (Analyse §5.6: SQLite heute,
-  MariaDB morgen, kein Lock-in).
+  MariaDB morgen, kein Lock-in). Große JSON-/Text-Spalten als
+  ``Text`` (MariaDB-Zeilengröße), nicht als langes VARCHAR.
 * **One module per resource.** ``app/routers/<name>.py`` je
   Ressource, Schemas in ``app/schemas.py``, Tabellen in
   ``app/tables.py`` (Spiegel von
