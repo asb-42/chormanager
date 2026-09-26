@@ -113,14 +113,14 @@ export function ErrorMessage({ text }: { text: string }) {
 
 export function Th({ children }: { children: ReactNode }) {
   return (
-    <th className="py-1 pr-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
+    <th className="py-2 pr-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
       {children}
     </th>
   )
 }
 
 export function Td({ children }: { children: ReactNode }) {
-  return <td className="py-1 pr-4">{children}</td>
+  return <td className="py-2 pr-4 tabular-nums">{children}</td>
 }
 
 export const dialogClassName =

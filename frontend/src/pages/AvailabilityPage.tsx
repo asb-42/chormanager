@@ -109,7 +109,7 @@ export default function AvailabilityPage() {
           </thead>
           <tbody>
             {matrix.entries.map((entry) => (
-              <tr key={entry.singer_id} className="border-b">
+              <tr key={entry.singer_id} className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/50">
                 <Td>{entry.full_name}</Td>
                 <Td>{entry.voice_group ?? '–'}</Td>
                 <Td>

@@ -71,7 +71,7 @@ export default function FormationsPage() {
           </thead>
           <tbody>
             {items.map((item) => (
-              <tr key={item.id} className="border-b">
+              <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/50">
                 <Td>
                   <Link
                     to={`/formations/${item.id}`}

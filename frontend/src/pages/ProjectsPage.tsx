@@ -58,7 +58,7 @@ export default function ProjectsPage() {
             </thead>
             <tbody>
               {summary.events.map((event) => (
-                <tr key={event.event_id} className="border-b">
+                <tr key={event.event_id} className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/50">
                   <Td>{formatDate(event.date)}</Td>
                   <Td>{event.name}</Td>
                   <Td>{event.yes}</Td>
@@ -79,7 +79,7 @@ export default function ProjectsPage() {
             <tbody>
               {Object.entries(summary.by_voice_group).map(
                 ([group, counts]) => (
-                  <tr key={group} className="border-b">
+                  <tr key={group} className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/50">
                     <Td>{group}</Td>
                     <Td>{counts.yes ?? 0}</Td>
                     <Td>{counts.conditional ?? 0}</Td>

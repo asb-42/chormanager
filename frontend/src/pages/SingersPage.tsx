@@ -7,7 +7,7 @@ import {
   fetchVoiceGroups,
   updateSinger,
 } from '../api/client'
-import type { Singer, SingerInput } from '../api/client'
+import type { Singer, SingerInput, SingerSortDirection, SingerSortField } from '../api/client'
 import SingerDialog from '../components/SingerDialog'
 import {
   Button,
@@ -24,13 +24,15 @@ type DialogState = { mode: 'new' } | { mode: 'edit'; singer: Singer } | null
 
 export default function SingersPage() {
   const [search, setSearch] = useState('')
+  const [sort, setSort] = useState<SingerSortField>('full_name')
+  const [direction, setDirection] = useState<SingerSortDirection>('asc')
   const [dialog, setDialog] = useState<DialogState>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
   const { data: singers = [], isLoading, isError } = useQuery({
-    queryKey: ['singers', search],
-    queryFn: () => fetchSingers(search),
+    queryKey: ['singers', search, sort, direction],
+    queryFn: () => fetchSingers(search, sort, direction),
   })
   const { data: voiceGroups = [] } = useQuery({
     queryKey: ['voice-groups'],
@@ -39,6 +41,20 @@ export default function SingersPage() {
 
   function invalidateSingers() {
     void queryClient.invalidateQueries({ queryKey: ['singers'] })
+  }
+
+  function toggleSort(field: SingerSortField) {
+    if (sort === field) {
+      setDirection((previous) => (previous === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSort(field)
+      setDirection('asc')
+    }
+  }
+
+  function sortIndicator(field: SingerSortField): string {
+    if (sort !== field) return ''
+    return direction === 'asc' ? ' ▲' : ' ▼'
   }
 
   const createMutation = useMutation({
@@ -93,15 +109,23 @@ export default function SingersPage() {
         <table className="mt-4 w-full border-collapse text-left">
           <thead>
             <tr className="border-b">
-              <Th>Name</Th>
+              <Th>
+                <button type="button" onClick={() => toggleSort('full_name')}>
+                  Name{sortIndicator('full_name')}
+                </button>
+              </Th>
               <Th>Kurzname</Th>
-              <Th>Stimmgruppe</Th>
+              <Th>
+                <button type="button" onClick={() => toggleSort('voice_group')}>
+                  Stimmgruppe{sortIndicator('voice_group')}
+                </button>
+              </Th>
               <Th>Aktionen</Th>
             </tr>
           </thead>
           <tbody>
             {singers.map((singer) => (
-              <tr key={singer.id} className="border-b">
+              <tr key={singer.id} className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/50">
                 <Td>{singer.full_name}</Td>
                 <Td>{singer.short_name ?? '–'}</Td>
                 <Td>{singer.voice_group ?? '–'}</Td>

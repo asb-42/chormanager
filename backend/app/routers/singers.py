@@ -9,7 +9,13 @@ from sqlalchemy.engine import Connection
 
 from ..auth import require_chorleiter
 from ..deps import get_db
-from ..schemas import SingerCreate, SingerOut, SingerUpdate
+from ..schemas import (
+    SingerCreate,
+    SingerOut,
+    SingerSortDirection,
+    SingerSortField,
+    SingerUpdate,
+)
 from ..tables import availability_table, singers_table
 
 router = APIRouter(prefix="/api/singers", tags=["singers"])
@@ -18,21 +24,46 @@ _READ_COLUMNS = [
     singers_table.c.id,
     singers_table.c.full_name,
     singers_table.c.short_name,
+    singers_table.c.birth_date,
     singers_table.c.voice_group,
     singers_table.c.height,
     singers_table.c.email,
+    singers_table.c.phone,
+    singers_table.c.street,
+    singers_table.c.postal_code,
+    singers_table.c.city,
+    singers_table.c.gender,
+    singers_table.c.guardian1,
+    singers_table.c.guardian1_phone,
+    singers_table.c.guardian2,
+    singers_table.c.guardian2_phone,
+    singers_table.c.social_contacts,
+    singers_table.c.joined_year,
+    singers_table.c.joined_month,
+    singers_table.c.left_year,
+    singers_table.c.left_month,
     singers_table.c.affinity_uuid,
 ]
+
+_SORT_COLUMNS = {
+    "full_name": singers_table.c.full_name,
+    "voice_group": singers_table.c.voice_group,
+    "height": singers_table.c.height,
+}
 
 
 @router.get("", response_model=List[SingerOut])
 def list_singers(
     search: Optional[str] = None,
     voice_group: Optional[str] = None,
+    sort: SingerSortField = "full_name",
+    direction: SingerSortDirection = "asc",
     db: Connection = Depends(get_db),
 ) -> List[SingerOut]:
-    """List singers, optionally filtered by search/voice group."""
-    stmt = select(*_READ_COLUMNS).order_by(singers_table.c.full_name)
+    """List singers, optionally filtered and sorted (Desktop-Parität)."""
+    order_column = _SORT_COLUMNS[sort]
+    order = order_column.desc() if direction == "desc" else order_column.asc()
+    stmt = select(*_READ_COLUMNS).order_by(order)
     if search:
         like = f"%{search}%"
         stmt = stmt.where(

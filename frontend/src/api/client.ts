@@ -4,9 +4,24 @@ export interface Singer {
   id: string
   full_name: string
   short_name?: string | null
+  birth_date?: string | null
   voice_group?: string | null
   height?: number | null
   email?: string | null
+  phone?: string | null
+  street?: string | null
+  postal_code?: string | null
+  city?: string | null
+  gender?: string | null
+  guardian1?: string | null
+  guardian1_phone?: string | null
+  guardian2?: string | null
+  guardian2_phone?: string | null
+  social_contacts?: string | null
+  joined_year?: number | null
+  joined_month?: number | null
+  left_year?: number | null
+  left_month?: number | null
   affinity_uuid?: string | null
 }
 
@@ -48,9 +63,19 @@ function authHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
-export function fetchSingers(search: string): Promise<Singer[]> {
-  const query = search ? `?search=${encodeURIComponent(search)}` : ''
-  return api<Singer[]>(`/api/singers${query}`)
+export type SingerSortField = 'full_name' | 'voice_group' | 'height'
+export type SingerSortDirection = 'asc' | 'desc'
+
+export function fetchSingers(
+  search: string,
+  sort: SingerSortField = 'full_name',
+  direction: SingerSortDirection = 'asc',
+): Promise<Singer[]> {
+  const params = new URLSearchParams()
+  if (search) params.set('search', search)
+  params.set('sort', sort)
+  params.set('direction', direction)
+  return api<Singer[]>(`/api/singers?${params.toString()}`)
 }
 
 export interface VoiceGroup {
@@ -89,9 +114,25 @@ export function putMarketing(content: string): Promise<MarketingText> {
 export interface SingerInput {
   full_name: string
   short_name?: string
+  birth_date?: string
   voice_group?: string
   height?: number
   email?: string
+  phone?: string
+  street?: string
+  postal_code?: string
+  city?: string
+  gender?: string
+  guardian1?: string
+  guardian1_phone?: string
+  guardian2?: string
+  guardian2_phone?: string
+  social_contacts?: string
+  joined_year?: number
+  joined_month?: number
+  left_year?: number
+  left_month?: number
+  affinity_uuid?: string
 }
 
 export function createSinger(input: SingerInput): Promise<Singer> {

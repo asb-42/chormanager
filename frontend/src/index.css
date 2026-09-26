@@ -2,11 +2,17 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Design-Fundament (UX-Pass): ruhige, kontrastreiche Basis.
+/* Design-Fundament (UX-Pass): Apple-first-Systemschrift
+   (Mac-Parität), enge Headlines, ruhige kontrastreiche Basis.
    Primär = Tiefblau (bg-blue-700), Gefahr = Rot (bg-red-700),
    Erfolg = Grün (bg-green-700); Radius überall rounded (4px);
    sichtbarer Fokus für Tastatur (AA-Basis). Komponenten in
    src/components/ui.tsx sind die einzige Quelle dafür. */
+@theme {
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+}
 body {
   background: #fff;
   color: #111;

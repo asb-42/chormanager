@@ -18,8 +18,13 @@ def _seed_db(path: str) -> None:
     conn = sqlite3.connect(path)
     conn.execute(
         """CREATE TABLE singers (id TEXT PRIMARY KEY, full_name TEXT NOT NULL,
-            short_name TEXT, voice_group TEXT, height INTEGER,
-            email TEXT, affinity_uuid TEXT,
+            short_name TEXT, birth_date TEXT, voice_group TEXT,
+            height INTEGER, email TEXT, phone TEXT, street TEXT,
+            postal_code TEXT, city TEXT, gender TEXT,
+            guardian1 TEXT, guardian1_phone TEXT,
+            guardian2 TEXT, guardian2_phone TEXT,
+            social_contacts TEXT, joined_year INTEGER, joined_month INTEGER,
+            left_year INTEGER, left_month INTEGER, affinity_uuid TEXT,
             created_at TEXT NOT NULL, updated_at TEXT NOT NULL)"""
     )
     conn.execute(

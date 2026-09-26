@@ -1,22 +1,62 @@
 """Pydantic response/request schemas (Pydantic v2)."""
-from typing import Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
-class SingerOut(BaseModel):
-    """Public singer shape for ``GET /api/singers*``."""
+def _to_str_or_none(value: Any) -> Optional[str]:
+    """Coerce loose SQLite values (e.g. int postal codes in TEXT
+    columns of real desktop DBs) to strings."""
+    if value is None:
+        return None
+    return value if isinstance(value, str) else str(value)
+
+
+class _StrCoercionMixin:
+    """Coerce contact/address fields that may hold ints in the wild."""
+
+    @field_validator(
+        "phone",
+        "street",
+        "postal_code",
+        "city",
+        "guardian1_phone",
+        "guardian2_phone",
+        mode="before",
+    )
+    @classmethod
+    def _coerce_stringy(cls, value: Any) -> Optional[str]:
+        return _to_str_or_none(value)
+
+
+class SingerOut(BaseModel, _StrCoercionMixin):
+    """Public singer shape for ``GET /api/singers*`` (volles Modell)."""
 
     id: str
     full_name: str
     short_name: Optional[str] = None
+    birth_date: Optional[str] = None
     voice_group: Optional[str] = None
     height: Optional[int] = None
     email: Optional[str] = None
+    phone: Optional[str] = None
+    street: Optional[str] = None
+    postal_code: Optional[str] = None
+    city: Optional[str] = None
+    gender: Optional[str] = None
+    guardian1: Optional[str] = None
+    guardian1_phone: Optional[str] = None
+    guardian2: Optional[str] = None
+    guardian2_phone: Optional[str] = None
+    social_contacts: Optional[str] = None
+    joined_year: Optional[int] = None
+    joined_month: Optional[int] = None
+    left_year: Optional[int] = None
+    left_month: Optional[int] = None
     affinity_uuid: Optional[str] = None
 
 
-class SingerCreate(BaseModel):
+class SingerCreate(BaseModel, _StrCoercionMixin):
     """Payload for ``POST /api/singers`` (id/timestamps server-side)."""
 
     full_name: str
@@ -30,10 +70,19 @@ class SingerCreate(BaseModel):
     postal_code: Optional[str] = None
     city: Optional[str] = None
     gender: Optional[str] = None
+    guardian1: Optional[str] = None
+    guardian1_phone: Optional[str] = None
+    guardian2: Optional[str] = None
+    guardian2_phone: Optional[str] = None
+    social_contacts: Optional[str] = None
+    joined_year: Optional[int] = None
+    joined_month: Optional[int] = None
+    left_year: Optional[int] = None
+    left_month: Optional[int] = None
     affinity_uuid: Optional[str] = None
 
 
-class SingerUpdate(BaseModel):
+class SingerUpdate(BaseModel, _StrCoercionMixin):
     """Payload for ``PUT /api/singers/{id}`` (partial)."""
 
     full_name: Optional[str] = None
@@ -47,7 +96,20 @@ class SingerUpdate(BaseModel):
     postal_code: Optional[str] = None
     city: Optional[str] = None
     gender: Optional[str] = None
+    guardian1: Optional[str] = None
+    guardian1_phone: Optional[str] = None
+    guardian2: Optional[str] = None
+    guardian2_phone: Optional[str] = None
+    social_contacts: Optional[str] = None
+    joined_year: Optional[int] = None
+    joined_month: Optional[int] = None
+    left_year: Optional[int] = None
+    left_month: Optional[int] = None
     affinity_uuid: Optional[str] = None
+
+
+SingerSortField = Literal["full_name", "voice_group", "height"]
+SingerSortDirection = Literal["asc", "desc"]
 
 
 class EventOut(BaseModel):

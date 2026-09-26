@@ -62,7 +62,7 @@ describe('SingersPage', () => {
     await waitFor(
       () => {
         const urls = fetchMock.mock.calls.map(([url]) => String(url))
-        expect(urls).toContain('/api/singers?search=Bert')
+        expect(urls.some((u) => u.includes('search=Bert'))).toBe(true)
       },
       { timeout: 5000 },
     )
