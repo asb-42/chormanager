@@ -1,6 +1,8 @@
 import { NavLink, Route, Routes } from 'react-router-dom'
+import BesetzungPage from './pages/BesetzungPage'
 import EventsPage from './pages/EventsPage'
 import ProjectsPage from './pages/ProjectsPage'
+import RepertoirePage from './pages/RepertoirePage'
 import SingersPage from './pages/SingersPage'
 
 function HomePage() {
@@ -31,12 +33,20 @@ export default function App() {
         <NavLink to="/projects" className={linkClass}>
           Projekte
         </NavLink>
+        <NavLink to="/besetzung" className={linkClass}>
+          Besetzung
+        </NavLink>
+        <NavLink to="/repertoire" className={linkClass}>
+          Repertoire
+        </NavLink>
       </nav>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/singers" element={<SingersPage />} />
         <Route path="/events" element={<EventsPage />} />
         <Route path="/projects" element={<ProjectsPage />} />
+        <Route path="/besetzung" element={<BesetzungPage />} />
+        <Route path="/repertoire" element={<RepertoirePage />} />
       </Routes>
     </div>
   )

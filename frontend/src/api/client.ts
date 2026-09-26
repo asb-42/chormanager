@@ -80,6 +80,66 @@ export function deleteSinger(id: string): Promise<void> {
   return api<void>(`/api/singers/${id}`, { method: 'DELETE' })
 }
 
+export interface Besetzung {
+  id: string
+  name: string
+  project_id?: string | null
+  singer_ids: string[]
+}
+
+export interface BesetzungInput {
+  name: string
+  project_id?: string
+  singer_ids: string[]
+}
+
+export function fetchBesetzungen(projectId?: string): Promise<Besetzung[]> {
+  const query = projectId ? `?project_id=${encodeURIComponent(projectId)}` : ''
+  return api<Besetzung[]>(`/api/besetzungen${query}`)
+}
+
+export function createBesetzung(input: BesetzungInput): Promise<Besetzung> {
+  return api<Besetzung>('/api/besetzungen', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
+export function deleteBesetzung(id: string): Promise<void> {
+  return api<void>(`/api/besetzungen/${id}`, { method: 'DELETE' })
+}
+
+export interface RepertoireEntry {
+  id: string
+  title: string
+  composer?: string | null
+  project_id?: string | null
+}
+
+export interface RepertoireInput {
+  title: string
+  composer?: string
+  project_id?: string
+}
+
+export function fetchRepertoire(projectId?: string): Promise<RepertoireEntry[]> {
+  const query = projectId ? `?project_id=${encodeURIComponent(projectId)}` : ''
+  return api<RepertoireEntry[]>(`/api/repertoire${query}`)
+}
+
+export function createRepertoire(input: RepertoireInput): Promise<RepertoireEntry> {
+  return api<RepertoireEntry>('/api/repertoire', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
+export function deleteRepertoire(id: string): Promise<void> {
+  return api<void>(`/api/repertoire/${id}`, { method: 'DELETE' })
+}
+
 export interface EventItem {
   id: string
   name: string
