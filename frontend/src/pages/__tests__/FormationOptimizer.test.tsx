@@ -110,6 +110,8 @@ describe('FormationEditorPage optimizer', () => {
       )
       expect(put?.body).toEqual({
         staggered: false,
+        rows: 4,
+        cols: 5,
         placements: [{ singer_id: 's-1', row: 1, col: 1 }],
       })
     })

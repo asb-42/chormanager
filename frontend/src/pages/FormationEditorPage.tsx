@@ -12,6 +12,13 @@ import type { FormationDoc, OptimizeResult } from '../api/client'
 import FormationEditor from '../formation/FormationEditor'
 import type { PlacementMap } from '../formation/placements'
 import { toPutPayload } from '../formation/placements'
+import {
+  clearHistory,
+  pushHistory,
+  redoHistory,
+  undoHistory,
+} from '../formation/history'
+import type { History, Snapshot } from '../formation/history'
 import OptimizerDialog from '../components/OptimizerDialog'
 
 function docToMap(doc: FormationDoc): {
@@ -38,6 +45,8 @@ export default function FormationEditorPage() {
   const [map, setMap] = useState<PlacementMap | null>(null)
   const [selected, setSelected] = useState<string[]>([])
   const [staggered, setStaggered] = useState(false)
+  const [dims, setDims] = useState({ rows: 4, cols: 5 })
+  const [history, setHistory] = useState<History>(clearHistory())
   const [saveError, setSaveError] = useState(false)
   const [search, setSearch] = useState('')
   const [savedAt, setSavedAt] = useState<Date | null>(null)
@@ -66,6 +75,8 @@ export default function FormationEditorPage() {
       const converted = docToMap(doc)
       setMap(converted.map)
       setStaggered(doc.staggered)
+      setDims({ rows: doc.rows, cols: doc.cols })
+      setHistory(clearHistory())
       setSelected([])
       setSaveError(false)
       setRowsInput(String(doc.rows))
@@ -106,6 +117,35 @@ export default function FormationEditorPage() {
     onSuccess: (result) => setPreview(result),
   })
 
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      const target = event.target as HTMLElement | null
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        return
+      }
+      const key = event.key.toLowerCase()
+      if ((event.ctrlKey || event.metaKey) && key === 'z') {
+        event.preventDefault()
+        if (event.shiftKey) {
+          redo()
+        } else {
+          undo()
+        }
+      } else if ((event.ctrlKey || event.metaKey) && key === 'y') {
+        event.preventDefault()
+        redo()
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  })
+
   if (isLoading || !doc || map === null) {
     return (
       <section>
@@ -138,19 +178,59 @@ export default function FormationEditorPage() {
           .filter((singer) => singer.name.toLowerCase().includes(needle))
           .map((singer) => singer.singer_id)
 
+  function snapshot(): Snapshot {
+    return { map: loadedMap, rows: dims.rows, cols: dims.cols, staggered }
+  }
+
+  function applySnapshot(snap: Snapshot) {
+    setMap(snap.map)
+    setDims({ rows: snap.rows, cols: snap.cols })
+    setStaggered(snap.staggered)
+    setRowsInput(String(snap.rows))
+    setColsInput(String(snap.cols))
+  }
+
   function persist(
     next: PlacementMap,
     stagger: boolean,
     rows?: number,
     cols?: number,
   ) {
-    setMap(next)
     setSaveError(false)
     mutation.mutate({ placements: toPutPayload(next), staggered: stagger, rows, cols })
   }
 
-  function handleMapChange(next: PlacementMap) {
-    persist(next, staggered)
+  function sendSnapshot(snap: Snapshot) {
+    applySnapshot(snap)
+    persist(snap.map, snap.staggered, snap.rows, snap.cols)
+  }
+
+  function commit(
+    next: PlacementMap,
+    patch: Partial<{ rows: number; cols: number; staggered: boolean }>,
+  ) {
+    setHistory((previous) => pushHistory(previous, snapshot()))
+    const snap: Snapshot = {
+      map: next,
+      rows: patch.rows ?? dims.rows,
+      cols: patch.cols ?? dims.cols,
+      staggered: patch.staggered ?? staggered,
+    }
+    sendSnapshot(snap)
+  }
+
+  function undo() {
+    const result = undoHistory(history, snapshot())
+    if (!result) return
+    setHistory(result.history)
+    sendSnapshot(result.snapshot)
+  }
+
+  function redo() {
+    const result = redoHistory(history, snapshot())
+    if (!result) return
+    setHistory(result.history)
+    sendSnapshot(result.snapshot)
   }
 
   function handleResize() {
@@ -167,7 +247,7 @@ export default function FormationEditorPage() {
       setResizeConfirm(excess)
       return
     }
-    persist(loadedMap, staggered, rows, cols)
+    commit(loadedMap, { rows, cols })
   }
 
   function confirmResize() {
@@ -180,7 +260,7 @@ export default function FormationEditorPage() {
         pos !== null && pos.row < rows && pos.col < cols ? pos : null
     }
     setResizeConfirm(null)
-    persist(pruned, staggered, rows, cols)
+    commit(pruned, { rows, cols })
   }
 
   function applyPreview() {
@@ -194,7 +274,11 @@ export default function FormationEditorPage() {
     }
     setPreview(null)
     setOptimizerOpen(false)
-    persist(next, staggered)
+    commit(next, {})
+  }
+
+  function handleMapChange(next: PlacementMap) {
+    commit(next, {})
   }
 
   function handleSelect(singerId: string, toggle: boolean) {
@@ -209,8 +293,7 @@ export default function FormationEditorPage() {
   }
 
   function handleStagger(checked: boolean) {
-    setStaggered(checked)
-    mutation.mutate({ placements: toPutPayload(loadedMap), staggered: checked })
+    commit(loadedMap, { staggered: checked })
   }
 
   const placedCount = Object.values(loadedMap).filter((pos) => pos !== null).length
@@ -222,6 +305,34 @@ export default function FormationEditorPage() {
       </Link>
       <h1 className="mt-1 text-xl font-semibold">{loadedDoc.name ?? loadedDoc.id}</h1>
       <div className="mt-2 flex flex-wrap items-center gap-4 text-sm">
+        <span className="flex gap-1" role="group" aria-label="Bearbeiten">
+          <button
+            type="button"
+            onClick={undo}
+            disabled={history.past.length === 0}
+            title="Rückgängig (Strg+Z)"
+            aria-label="Rückgängig"
+            className="rounded border px-2 py-1 disabled:opacity-40"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="9 14 4 9 9 4" />
+              <path d="M20 20v-7a4 4 0 0 0-4-4H4" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onClick={redo}
+            disabled={history.future.length === 0}
+            title="Wiederholen (Strg+Umschalt+Z)"
+            aria-label="Wiederholen"
+            className="rounded border px-2 py-1 disabled:opacity-40"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <polyline points="15 14 20 9 15 4" />
+              <path d="M4 20v-7a4 4 0 0 1 4-4h12" />
+            </svg>
+          </button>
+        </span>
         <label>
           <input
             type="checkbox"
@@ -307,8 +418,8 @@ export default function FormationEditorPage() {
           singers={singers}
           placements={loadedMap}
           selected={selected}
-          rows={loadedDoc.rows}
-          cols={loadedDoc.cols}
+          rows={dims.rows}
+          cols={dims.cols}
           staggered={staggered}
           colors={colors}
           highlight={highlight}

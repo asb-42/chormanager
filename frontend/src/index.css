@@ -11,3 +11,14 @@ body {
   background: #16171d;
   color: #f3f4f6;
 }
+
+/* Handy-Basis (§5.1 geschärft): Dirigenten-Views bleiben
+   Desktop-optimiert; Tabellen scrollen horizontal statt zu
+   brechen, damit Lesen + Sänger-Selbstbedienung funktionieren. */
+@media (max-width: 640px) {
+  section table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
