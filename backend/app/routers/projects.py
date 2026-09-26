@@ -26,8 +26,16 @@ _UNKNOWN_VOICE_GROUP = "Ohne Stimmgruppe"
 
 @router.get("", response_model=List[ProjectOut])
 def list_projects(db: Connection = Depends(get_db)) -> List[ProjectOut]:
-    """List projects ordered by name."""
-    stmt = select(projects_table).order_by(projects_table.c.name)
+    """List projects ordered by name, with event counts (portable
+    scalar subquery — no bare-column GROUP BY for MariaDB)."""
+    count_sub = (
+        select(func.count(events_table.c.id))
+        .where(events_table.c.project_id == projects_table.c.id)
+        .scalar_subquery()
+    )
+    stmt = select(
+        *projects_table.c, func.coalesce(count_sub, 0).label("event_count")
+    ).order_by(projects_table.c.name)
     rows = db.execute(stmt).mappings().all()
     return [ProjectOut(**dict(row)) for row in rows]
 

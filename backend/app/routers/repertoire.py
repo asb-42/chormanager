@@ -4,26 +4,56 @@ from datetime import datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Response
-from sqlalchemy import delete, insert, select, update
+from sqlalchemy import delete, insert, or_, select, update
 from sqlalchemy.engine import Connection
 
 from ..auth import require_chorleiter
 from ..deps import get_db
-from ..schemas import RepertoireCreate, RepertoireOut, RepertoireUpdate
+from ..schemas import (
+    RepertoireCreate,
+    RepertoireOut,
+    RepertoireSortDirection,
+    RepertoireSortField,
+    RepertoireUpdate,
+)
 from ..tables import repertoire_table
 
 router = APIRouter(prefix="/api/repertoire", tags=["repertoire"])
+
+_SORT_COLUMNS = {
+    "title": repertoire_table.c.title,
+    "composer": repertoire_table.c.composer,
+    "country": repertoire_table.c.country,
+    "location": repertoire_table.c.location,
+}
 
 
 @router.get("", response_model=List[RepertoireOut])
 def list_repertoire(
     project_id: Optional[str] = None,
+    search: Optional[str] = None,
+    sort: RepertoireSortField = "title",
+    direction: RepertoireSortDirection = "asc",
     db: Connection = Depends(get_db),
 ) -> List[RepertoireOut]:
-    """List repertoire entries, optionally filtered by project."""
-    stmt = select(repertoire_table).order_by(repertoire_table.c.title)
+    """List repertoire entries (Desktop-Suche + -Sortierung)."""
+    order_column = _SORT_COLUMNS[sort]
+    order = order_column.desc() if direction == "desc" else order_column.asc()
+    stmt = select(repertoire_table).order_by(order)
     if project_id:
         stmt = stmt.where(repertoire_table.c.project_id == project_id)
+    if search:
+        like = f"%{search}%"
+        stmt = stmt.where(
+            or_(
+                repertoire_table.c.composer.ilike(like),
+                repertoire_table.c.title.ilike(like),
+                repertoire_table.c.dates.ilike(like),
+                repertoire_table.c.country.ilike(like),
+                repertoire_table.c.publisher.ilike(like),
+                repertoire_table.c.arrangement.ilike(like),
+            )
+        )
     rows = db.execute(stmt).mappings().all()
     return [RepertoireOut(**dict(row)) for row in rows]
 

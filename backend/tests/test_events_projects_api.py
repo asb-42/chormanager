@@ -102,6 +102,19 @@ def test_list_events_project_filter(client):
     assert {e["id"] for e in response.json()} == {"e-1", "e-2"}
 
 
+def test_list_events_sorting(client):
+    by_date_desc = client.get(
+        "/api/events", params={"sort": "date", "direction": "desc"}
+    ).json()
+    assert [e["id"] for e in by_date_desc] == ["e-3", "e-2", "e-1"]
+    by_name_asc = client.get(
+        "/api/events", params={"sort": "name", "direction": "asc"}
+    ).json()
+    assert [e["id"] for e in by_name_asc] == ["e-3", "e-2", "e-1"]
+    bad = client.get("/api/events", params={"sort": "hacker"})
+    assert bad.status_code == 422
+
+
 def test_list_events_search_and_type_filter(client):
     response = client.get("/api/events", params={"search": "konz"})
     assert [e["id"] for e in response.json()] == ["e-2"]
@@ -117,6 +130,13 @@ def test_list_projects(client):
     response = client.get("/api/projects")
     assert response.status_code == 200
     assert {p["id"] for p in response.json()} == {"p-1", "p-2"}
+
+
+def test_list_projects_includes_event_count(client):
+    response = client.get("/api/projects")
+    by_id = {p["id"]: p for p in response.json()}
+    assert by_id["p-1"]["event_count"] == 2
+    assert by_id["p-2"]["event_count"] == 1
 
 
 def test_project_summary(client):

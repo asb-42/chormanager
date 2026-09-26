@@ -9,7 +9,7 @@ from sqlalchemy.engine import Connection
 
 from ..auth import require_chorleiter
 from ..deps import get_db
-from ..schemas import EventCreate, EventOut, EventUpdate
+from ..schemas import EventCreate, EventOut, EventSortDirection, EventSortField, EventUpdate
 from ..tables import availability_table, events_table
 
 router = APIRouter(prefix="/api/events", tags=["events"])
@@ -52,10 +52,17 @@ def list_events(
     project_id: Optional[str] = None,
     search: Optional[str] = None,
     event_type: Optional[str] = None,
+    sort: EventSortField = "date",
+    direction: EventSortDirection = "desc",
     db: Connection = Depends(get_db),
 ) -> List[EventOut]:
-    """List events (date desc), optionally filtered."""
-    stmt = select(*_READ_COLUMNS).order_by(events_table.c.date.desc())
+    """List events (default date desc, Desktop-Parität), optionally filtered."""
+    order_column = {
+        "date": events_table.c.date,
+        "name": events_table.c.name,
+    }[sort]
+    order = order_column.desc() if direction == "desc" else order_column.asc()
+    stmt = select(*_READ_COLUMNS).order_by(order)
     if project_id:
         stmt = stmt.where(events_table.c.project_id == project_id)
     if search:

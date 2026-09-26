@@ -134,6 +134,7 @@ class ProjectOut(BaseModel):
     description: Optional[str] = None
     is_active: Optional[int] = 0
     spielzeit: Optional[str] = None
+    event_count: int = 0
 
 
 class EventSummaryItem(BaseModel):
@@ -196,6 +197,7 @@ class BesetzungOut(BaseModel):
     name: str
     project_id: Optional[str] = None
     singer_ids: List[str] = []
+    updated_at: str = ""
 
 
 class RepertoireOut(BaseModel):
@@ -239,6 +241,10 @@ class EventUpdate(BaseModel):
     location: Optional[str] = None
     description: Optional[str] = None
     project_id: Optional[str] = None
+
+
+EventSortField = Literal["date", "name"]
+EventSortDirection = Literal["asc", "desc"]
 
 
 class ProjectCreate(BaseModel):
@@ -299,6 +305,10 @@ class RepertoireUpdate(BaseModel):
     arrangement: Optional[str] = None
     location: Optional[str] = None
     project_id: Optional[str] = None
+
+
+RepertoireSortField = Literal["title", "composer", "country", "location"]
+RepertoireSortDirection = Literal["asc", "desc"]
 
 
 class SelbstdarstellungPut(BaseModel):

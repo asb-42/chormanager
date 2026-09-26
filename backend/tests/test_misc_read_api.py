@@ -85,6 +85,12 @@ def test_list_besetzungen_project_filter(client):
     assert [b["id"] for b in response.json()] == ["b-1"]
 
 
+def test_besetzung_carries_updated_at(client):
+    response = client.get("/api/besetzungen/b-1")
+    assert response.status_code == 200
+    assert response.json()["updated_at"] == "2026-01-01"
+
+
 def test_get_besetzung_not_found(client):
     assert client.get("/api/besetzungen/nope").status_code == 404
 
@@ -94,6 +100,17 @@ def test_list_repertoire_project_filter(client):
     payload = response.json()
     assert [r["id"] for r in payload] == ["r-2"]
     assert payload[0]["composer"] == "Mozart"
+
+
+def test_list_repertoire_search_and_sort(client):
+    found = client.get("/api/repertoire", params={"search": "moz"}).json()
+    assert [r["id"] for r in found] == ["r-2"]
+    by_composer = client.get(
+        "/api/repertoire", params={"sort": "composer", "direction": "desc"}
+    ).json()
+    assert [r["id"] for r in by_composer] == ["r-2", "r-1"]
+    bad = client.get("/api/repertoire", params={"sort": "hacker"})
+    assert bad.status_code == 422
 
 
 def test_get_repertoire_not_found(client):

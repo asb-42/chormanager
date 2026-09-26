@@ -28,6 +28,7 @@ def _to_out(row) -> BesetzungOut:
         name=row["name"],
         project_id=row["project_id"],
         singer_ids=[str(s) for s in singer_ids],
+        updated_at=row.get("updated_at") or "",
     )
 
 
