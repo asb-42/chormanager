@@ -108,3 +108,20 @@ selbstdarstellung_table = Table(
     Column("content", String(4096)),
     Column("updated_at", String(32), nullable=False),
 )
+
+formations_table = Table(
+    "formations",
+    metadata,
+    Column("id", String(64), primary_key=True),
+    Column("name", String(255)),
+    Column("rows", Integer, nullable=False),
+    Column("cols", Integer, nullable=False),
+    Column("staggered", Integer),
+    Column("voicing_config", String(4096)),
+    Column("singers", String(16384)),
+    Column("placed", String(16384)),
+    Column("metadata", String(4096)),
+    Column("event_id", String(64)),
+    Column("created_at", String(32), nullable=False),
+    Column("updated_at", String(32), nullable=False),
+)

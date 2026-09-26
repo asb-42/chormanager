@@ -1,7 +1,7 @@
 """Pydantic response/request schemas (Pydantic v2)."""
 from typing import Dict, List, Literal, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class SingerOut(BaseModel):
@@ -243,3 +243,98 @@ class SelbstdarstellungPut(BaseModel):
     """Payload for ``PUT /api/selbstdarstellung`` (upsert)."""
 
     content: str
+
+
+class FormationCreate(BaseModel):
+    """Payload for ``POST /api/formations``."""
+
+    name: Optional[str] = None
+    rows: int = Field(ge=1, le=50)
+    cols: int = Field(ge=1, le=50)
+    staggered: bool = False
+    event_id: Optional[str] = None
+
+
+class FormationListItem(BaseModel):
+    """Compact shape for ``GET /api/formations``."""
+
+    id: str
+    name: Optional[str] = None
+    rows: int
+    cols: int
+    event_id: Optional[str] = None
+    updated_at: str
+
+
+class StoredSinger(BaseModel):
+    """Singer dict as stored inside a formation."""
+
+    singer_id: str
+    name: str = ""
+    voice_group: Optional[str] = None
+    height: Optional[int] = 0
+    affinity: str = ""
+
+
+class PlacedEntry(BaseModel):
+    """One placed singer (singer snapshot + position)."""
+
+    singer: StoredSinger
+    row: int
+    col: int
+
+
+class FormationDoc(BaseModel):
+    """Full formation document."""
+
+    id: str
+    name: Optional[str] = None
+    rows: int
+    cols: int
+    staggered: bool = False
+    voicing_config: List[str] = []
+    singers: List[StoredSinger] = []
+    placed: List[PlacedEntry] = []
+    metadata: Dict = {}
+    event_id: Optional[str] = None
+
+
+class PlacementIn(BaseModel):
+    """One placement within ``PlacementsPut``."""
+
+    singer_id: str
+    row: int
+    col: int
+
+
+class PlacementsPut(BaseModel):
+    """Payload for ``PUT /api/formations/{id}/placements``."""
+
+    rows: Optional[int] = Field(default=None, ge=1, le=50)
+    cols: Optional[int] = Field(default=None, ge=1, le=50)
+    staggered: Optional[bool] = None
+    placements: List[PlacementIn] = []
+
+
+class OptimizeIn(BaseModel):
+    """Payload for ``POST /api/formations/{id}/optimize``."""
+
+    rule_ids: List[str] = []
+
+
+class OptimizePreviewPlacement(BaseModel):
+    """One previewed position (not persisted)."""
+
+    singer_id: str
+    row: int
+    col: int
+
+
+class OptimizeOut(BaseModel):
+    """Optimizer preview (apply via placements PUT)."""
+
+    placements: List[OptimizePreviewPlacement] = []
+    swap_count: int = 0
+    cost: float = 0.0
+    applied_rules: List[str] = []
+    messages: List[str] = []
