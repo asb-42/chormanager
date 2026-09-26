@@ -144,19 +144,8 @@ export default function FormationEditorPage() {
       }
     }
     window.addEventListener('keydown', onKeyDown)
-    // Menü Bearbeiten (Menüleiste): Custom-Events aus dem globalen Menü.
-    function onUndoEvent() {
-      undo()
-    }
-    function onRedoEvent() {
-      redo()
-    }
-    window.addEventListener('chor:undo', onUndoEvent)
-    window.addEventListener('chor:redo', onRedoEvent)
     return () => {
       window.removeEventListener('keydown', onKeyDown)
-      window.removeEventListener('chor:undo', onUndoEvent)
-      window.removeEventListener('chor:redo', onRedoEvent)
     }
   })
 

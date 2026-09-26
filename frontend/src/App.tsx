@@ -15,7 +15,6 @@ import SingersPage from './pages/SingersPage'
 import WizardPage from './pages/WizardPage'
 import HelpPage from './pages/HelpPage'
 import MarketingPage from './pages/MarketingPage'
-import MenuBar from './components/MenuBar'
 import Sidebar from './components/Sidebar'
 import InfoBar from './components/InfoBar'
 import { ActiveProvider } from './active/active'
@@ -110,63 +109,63 @@ export default function App() {
 
   return (
     <ActiveProvider>
-      <div className="flex min-h-screen">
-        <div
-          className={`${
-            sidebarOpen ? '' : 'hidden'
-          } fixed inset-y-0 left-0 z-40 flex md:static md:flex`}
-        >
-          <Sidebar open={sidebarOpen} onNavigate={closeSidebarOnMobile} />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="mx-auto max-w-5xl p-4">
-            <div className="mb-2 flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setSidebarOpen((open) => !open)}
-                aria-label="Navigation"
-                aria-expanded={sidebarOpen}
-                className={`${themeButton} md:hidden`}
-              >
-                <MenuIcon />
-              </button>
-              <div className="min-w-0 flex-1">
-                <MenuBar theme={theme} onTheme={setTheme} />
-              </div>
-              <span className="flex gap-1" role="group" aria-label="Ansicht">
-                <button
-                  type="button"
-                  onClick={() => setTheme('light')}
-                  aria-pressed={theme === 'light'}
-                  aria-label="Hell"
-                  title="Hell"
-                  className={themeButton}
-                >
-                  <SunIcon />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTheme('dark')}
-                  aria-pressed={theme === 'dark'}
-                  aria-label="Dunkel"
-                  title="Dunkel"
-                  className={themeButton}
-                >
-                  <MoonIcon />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTheme('system')}
-                  aria-pressed={theme === 'system'}
-                  aria-label="Auto"
-                  title="Auto"
-                  className={themeButton}
-                >
-                  <MonitorIcon />
-                </button>
-              </span>
-            </div>
-            <InfoBar />
+      <div className="flex min-h-screen flex-col">
+        <header className="flex items-center gap-2 border-b border-gray-200 px-4 py-2 dark:border-gray-700">
+          <button
+            type="button"
+            onClick={() => setSidebarOpen((open) => !open)}
+            aria-label="Navigation"
+            aria-expanded={sidebarOpen}
+            className={`${themeButton} md:hidden`}
+          >
+            <MenuIcon />
+          </button>
+          <div className="font-bold tracking-tight md:w-52">Chormanager</div>
+          <div className="flex-1" />
+          <span className="flex gap-1" role="group" aria-label="Ansicht">
+            <button
+              type="button"
+              onClick={() => setTheme('light')}
+              aria-pressed={theme === 'light'}
+              aria-label="Hell"
+              title="Hell"
+              className={themeButton}
+            >
+              <SunIcon />
+            </button>
+            <button
+              type="button"
+              onClick={() => setTheme('dark')}
+              aria-pressed={theme === 'dark'}
+              aria-label="Dunkel"
+              title="Dunkel"
+              className={themeButton}
+            >
+              <MoonIcon />
+            </button>
+            <button
+              type="button"
+              onClick={() => setTheme('system')}
+              aria-pressed={theme === 'system'}
+              aria-label="Auto"
+              title="Auto"
+              className={themeButton}
+            >
+              <MonitorIcon />
+            </button>
+          </span>
+        </header>
+        <div className="flex min-h-0 flex-1">
+          <div
+            className={`${
+              sidebarOpen ? '' : 'hidden'
+            } fixed inset-y-0 left-0 z-40 flex md:static md:flex`}
+          >
+            <Sidebar open={sidebarOpen} onNavigate={closeSidebarOnMobile} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="mx-auto max-w-5xl p-4">
+              <InfoBar />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/singers" element={<SingersPage />} />
@@ -189,6 +188,7 @@ export default function App() {
       <footer className="mt-8 text-sm text-gray-500">
         ChorManager Web{version ? ` ${version.version}` : ''}
       </footer>
+            </div>
           </div>
         </div>
       </div>

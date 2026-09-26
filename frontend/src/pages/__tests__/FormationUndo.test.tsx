@@ -93,26 +93,4 @@ describe('FormationEditorPage undo', () => {
       expect((last.body as { rows?: number }).rows).toBe(4)
     })
   })
-
-  it('responds to the Bearbeiten menu events', async () => {
-    const user = userEvent.setup({ delay: 10 })
-    const { calls } = stubFetch()
-    renderPage()
-    await screen.findByText('Anna')
-    await user.clear(screen.getByLabelText('Reihen'))
-    await user.type(screen.getByLabelText('Reihen'), '3')
-    await user.click(screen.getByRole('button', { name: 'Anwenden' }))
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Rückgängig' })).toBeEnabled()
-    })
-    window.dispatchEvent(new CustomEvent('chor:undo'))
-    await waitFor(() => {
-      const puts = calls.filter(
-        (c) => c.method === 'PUT' && c.url.includes('/placements'),
-      )
-      expect(puts.length).toBeGreaterThanOrEqual(2)
-      const last = puts[puts.length - 1]
-      expect((last.body as { rows?: number }).rows).toBe(4)
-    })
-  })
 })
