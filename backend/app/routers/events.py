@@ -1,12 +1,15 @@
-"""``/api/events`` read endpoints (M1 increment 2a)."""
+"""``/api/events`` read + write endpoints (M1)."""
+import uuid
+from datetime import datetime
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import case, func, or_, select
+from fastapi import APIRouter, Depends, HTTPException, Response
+from sqlalchemy import case, delete, func, insert, or_, select, update
 from sqlalchemy.engine import Connection
 
+from ..auth import require_chorleiter
 from ..deps import get_db
-from ..schemas import EventOut
+from ..schemas import EventCreate, EventOut, EventUpdate
 from ..tables import availability_table, events_table
 
 router = APIRouter(prefix="/api/events", tags=["events"])
@@ -80,3 +83,70 @@ def get_event(
     if row is None:
         raise HTTPException(status_code=404, detail="Event not found")
     return EventOut(**dict(row))
+
+
+def _read_one(db: Connection, event_id: str) -> EventOut:
+    stmt = select(*_READ_COLUMNS).where(events_table.c.id == event_id)
+    row = db.execute(_with_counts(stmt)).mappings().first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Event not found")
+    return EventOut(**dict(row))
+
+
+@router.post("", response_model=EventOut, status_code=201)
+def create_event(
+    payload: EventCreate,
+    db: Connection = Depends(get_db),
+    _role: str = Depends(require_chorleiter),
+) -> EventOut:
+    """Create an event (id/timestamps generated server-side)."""
+    now = datetime.now().isoformat()
+    event_id = str(uuid.uuid4())
+    db.execute(
+        insert(events_table).values(
+            id=event_id,
+            created_at=now,
+            updated_at=now,
+            **payload.model_dump(exclude_unset=True),
+        )
+    )
+    db.commit()
+    return _read_one(db, event_id)
+
+
+@router.put("/{event_id}", response_model=EventOut)
+def update_event(
+    event_id: str,
+    payload: EventUpdate,
+    db: Connection = Depends(get_db),
+    _role: str = Depends(require_chorleiter),
+) -> EventOut:
+    """Partially update an event (404 when unknown)."""
+    _read_one(db, event_id)
+    values = payload.model_dump(exclude_unset=True)
+    if values:
+        db.execute(
+            update(events_table)
+            .where(events_table.c.id == event_id)
+            .values(updated_at=datetime.now().isoformat(), **values)
+        )
+        db.commit()
+    return _read_one(db, event_id)
+
+
+@router.delete("/{event_id}", status_code=204)
+def delete_event(
+    event_id: str,
+    db: Connection = Depends(get_db),
+    _role: str = Depends(require_chorleiter),
+) -> Response:
+    """Delete an event incl. availability rows (deterministic cascade)."""
+    _read_one(db, event_id)
+    db.execute(
+        delete(availability_table).where(
+            availability_table.c.event_id == event_id
+        )
+    )
+    db.execute(delete(events_table).where(events_table.c.id == event_id))
+    db.commit()
+    return Response(status_code=204)

@@ -1,12 +1,15 @@
-"""``/api/repertoire`` read endpoints (M1 increment 2c)."""
+"""``/api/repertoire`` read + write endpoints (M1)."""
+import uuid
+from datetime import datetime
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, HTTPException, Response
+from sqlalchemy import delete, insert, select, update
 from sqlalchemy.engine import Connection
 
+from ..auth import require_chorleiter
 from ..deps import get_db
-from ..schemas import RepertoireOut
+from ..schemas import RepertoireCreate, RepertoireOut, RepertoireUpdate
 from ..tables import repertoire_table
 
 router = APIRouter(prefix="/api/repertoire", tags=["repertoire"])
@@ -37,3 +40,71 @@ def get_repertoire(
     if row is None:
         raise HTTPException(status_code=404, detail="Repertoire not found")
     return RepertoireOut(**dict(row))
+
+
+def _read_one(db: Connection, repertoire_id: str) -> RepertoireOut:
+    stmt = select(repertoire_table).where(
+        repertoire_table.c.id == repertoire_id
+    )
+    row = db.execute(stmt).mappings().first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Repertoire not found")
+    return RepertoireOut(**dict(row))
+
+
+@router.post("", response_model=RepertoireOut, status_code=201)
+def create_repertoire(
+    payload: RepertoireCreate,
+    db: Connection = Depends(get_db),
+    _role: str = Depends(require_chorleiter),
+) -> RepertoireOut:
+    """Create a repertoire entry (id/timestamps server-side)."""
+    now = datetime.now().isoformat()
+    repertoire_id = str(uuid.uuid4())
+    db.execute(
+        insert(repertoire_table).values(
+            id=repertoire_id,
+            created_at=now,
+            updated_at=now,
+            **payload.model_dump(exclude_unset=True),
+        )
+    )
+    db.commit()
+    return _read_one(db, repertoire_id)
+
+
+@router.put("/{repertoire_id}", response_model=RepertoireOut)
+def update_repertoire(
+    repertoire_id: str,
+    payload: RepertoireUpdate,
+    db: Connection = Depends(get_db),
+    _role: str = Depends(require_chorleiter),
+) -> RepertoireOut:
+    """Partially update a repertoire entry (404 when unknown)."""
+    _read_one(db, repertoire_id)
+    values = payload.model_dump(exclude_unset=True)
+    if values:
+        db.execute(
+            update(repertoire_table)
+            .where(repertoire_table.c.id == repertoire_id)
+            .values(updated_at=datetime.now().isoformat(), **values)
+        )
+        db.commit()
+    return _read_one(db, repertoire_id)
+
+
+@router.delete("/{repertoire_id}", status_code=204)
+def delete_repertoire(
+    repertoire_id: str,
+    db: Connection = Depends(get_db),
+    _role: str = Depends(require_chorleiter),
+) -> Response:
+    """Delete a repertoire entry (404 when unknown)."""
+    _read_one(db, repertoire_id)
+    db.execute(
+        delete(repertoire_table).where(
+            repertoire_table.c.id == repertoire_id
+        )
+    )
+    db.commit()
+    return Response(status_code=204)

@@ -155,3 +155,91 @@ class SelbstdarstellungOut(BaseModel):
 
     id: Optional[str] = None
     content: str = ""
+
+
+class EventCreate(BaseModel):
+    """Payload for ``POST /api/events``."""
+
+    name: str
+    date: str
+    event_type: str
+    location: Optional[str] = None
+    description: Optional[str] = None
+    project_id: Optional[str] = None
+
+
+class EventUpdate(BaseModel):
+    """Payload for ``PUT /api/events/{id}`` (partial)."""
+
+    name: Optional[str] = None
+    date: Optional[str] = None
+    event_type: Optional[str] = None
+    location: Optional[str] = None
+    description: Optional[str] = None
+    project_id: Optional[str] = None
+
+
+class ProjectCreate(BaseModel):
+    """Payload for ``POST /api/projects``."""
+
+    name: str
+    description: Optional[str] = None
+    spielzeit: Optional[str] = None
+    is_active: Optional[int] = 0
+
+
+class ProjectUpdate(BaseModel):
+    """Payload for ``PUT /api/projects/{id}`` (partial)."""
+
+    name: Optional[str] = None
+    description: Optional[str] = None
+    spielzeit: Optional[str] = None
+    is_active: Optional[int] = None
+
+
+class BesetzungCreate(BaseModel):
+    """Payload for ``POST /api/besetzungen``."""
+
+    name: str
+    project_id: Optional[str] = None
+    singer_ids: List[str] = []
+
+
+class BesetzungUpdate(BaseModel):
+    """Payload for ``PUT /api/besetzungen/{id}`` (partial)."""
+
+    name: Optional[str] = None
+    project_id: Optional[str] = None
+    singer_ids: Optional[List[str]] = None
+
+
+class RepertoireCreate(BaseModel):
+    """Payload for ``POST /api/repertoire``."""
+
+    title: str
+    composer: Optional[str] = None
+    dates: Optional[str] = None
+    country: Optional[str] = None
+    publisher: Optional[str] = None
+    arrangement: Optional[str] = None
+    location: Optional[str] = None
+    project_id: Optional[str] = None
+
+
+class RepertoireUpdate(BaseModel):
+    """Payload for ``PUT /api/repertoire/{id}`` (partial)."""
+
+    title: Optional[str] = None
+    composer: Optional[str] = None
+    dates: Optional[str] = None
+    country: Optional[str] = None
+    publisher: Optional[str] = None
+    arrangement: Optional[str] = None
+    location: Optional[str] = None
+    project_id: Optional[str] = None
+
+
+class SelbstdarstellungPut(BaseModel):
+    """Payload for ``PUT /api/selbstdarstellung`` (upsert)."""
+
+    content: str

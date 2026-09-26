@@ -1,14 +1,23 @@
-"""``/api/projects`` read endpoints + summary (M1 increment 2a)."""
+"""``/api/projects`` read + write endpoints with summary (M1)."""
+import uuid
+from datetime import datetime
 from typing import Dict, List
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import case, func, select
+from fastapi import APIRouter, Depends, HTTPException, Response
+from sqlalchemy import case, delete, func, insert, select, update
 from sqlalchemy.engine import Connection
 
+from ..auth import require_chorleiter
 from ..deps import get_db
-from ..schemas import EventSummaryItem, ProjectOut, ProjectSummary
+from ..schemas import (
+    EventSummaryItem,
+    ProjectCreate,
+    ProjectOut,
+    ProjectSummary,
+    ProjectUpdate,
+)
 from ..tables import availability_table, events_table, projects_table
-from ..tables import singers_table
+from ..tables import besetzung_table, repertoire_table, singers_table
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
@@ -33,6 +42,77 @@ def get_project(
     if row is None:
         raise HTTPException(status_code=404, detail="Project not found")
     return ProjectOut(**dict(row))
+
+
+def _read_one(db: Connection, project_id: str) -> ProjectOut:
+    stmt = select(projects_table).where(projects_table.c.id == project_id)
+    row = db.execute(stmt).mappings().first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    return ProjectOut(**dict(row))
+
+
+@router.post("", response_model=ProjectOut, status_code=201)
+def create_project(
+    payload: ProjectCreate,
+    db: Connection = Depends(get_db),
+    _role: str = Depends(require_chorleiter),
+) -> ProjectOut:
+    """Create a project (id/timestamps generated server-side)."""
+    now = datetime.now().isoformat()
+    project_id = str(uuid.uuid4())
+    db.execute(
+        insert(projects_table).values(
+            id=project_id,
+            created_at=now,
+            updated_at=now,
+            **payload.model_dump(exclude_unset=True),
+        )
+    )
+    db.commit()
+    return _read_one(db, project_id)
+
+
+@router.put("/{project_id}", response_model=ProjectOut)
+def update_project(
+    project_id: str,
+    payload: ProjectUpdate,
+    db: Connection = Depends(get_db),
+    _role: str = Depends(require_chorleiter),
+) -> ProjectOut:
+    """Partially update a project (404 when unknown)."""
+    _read_one(db, project_id)
+    values = payload.model_dump(exclude_unset=True)
+    if values:
+        db.execute(
+            update(projects_table)
+            .where(projects_table.c.id == project_id)
+            .values(updated_at=datetime.now().isoformat(), **values)
+        )
+        db.commit()
+    return _read_one(db, project_id)
+
+
+@router.delete("/{project_id}", status_code=204)
+def delete_project(
+    project_id: str,
+    db: Connection = Depends(get_db),
+    _role: str = Depends(require_chorleiter),
+) -> Response:
+    """Delete a project; children keep existing with ``project_id``
+    set to NULL (explicit SET NULL, dialektneutral)."""
+    _read_one(db, project_id)
+    for table in (events_table, besetzung_table, repertoire_table):
+        db.execute(
+            update(table)
+            .where(table.c.project_id == project_id)
+            .values(project_id=None)
+        )
+    db.execute(
+        delete(projects_table).where(projects_table.c.id == project_id)
+    )
+    db.commit()
+    return Response(status_code=204)
 
 
 @router.get("/{project_id}/summary", response_model=ProjectSummary)
