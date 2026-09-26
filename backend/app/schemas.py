@@ -344,6 +344,8 @@ class FormationListItem(BaseModel):
     cols: int
     event_id: Optional[str] = None
     updated_at: str
+    metadata: Dict = {}
+    size: int = 0
 
 
 class FormationRuleOut(BaseModel):

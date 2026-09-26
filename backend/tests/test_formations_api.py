@@ -116,6 +116,8 @@ def test_list_and_get_detail(client):
     doc = _create(client)
     listed = client.get("/api/formations").json()
     assert [f["id"] for f in listed] == [doc["id"]]
+    assert listed[0]["metadata"]["event"] == "Probe"
+    assert listed[0]["size"] > 0
     detail = client.get(f"/api/formations/{doc['id']}").json()
     assert detail["singers"] == doc["singers"]
     assert client.get("/api/formations/nope").status_code == 404

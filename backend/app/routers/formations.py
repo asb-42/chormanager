@@ -92,17 +92,23 @@ def list_formations(
     stmt = select(formations_table).order_by(
         formations_table.c.updated_at.desc()
     )
-    return [
-        FormationListItem(
-            id=row["id"],
-            name=row["name"],
-            rows=row["rows"],
-            cols=row["cols"],
-            event_id=row["event_id"],
-            updated_at=row["updated_at"],
+    items = []
+    for row in db.execute(stmt).mappings().all():
+        singers_text = row["singers"] or "[]"
+        placed_text = row["placed"] or "[]"
+        items.append(
+            FormationListItem(
+                id=row["id"],
+                name=row["name"],
+                rows=row["rows"],
+                cols=row["cols"],
+                event_id=row["event_id"],
+                updated_at=row["updated_at"],
+                metadata=_loads(row["metadata"], {}),
+                size=len(singers_text) + len(placed_text),
+            )
         )
-        for row in db.execute(stmt).mappings().all()
-    ]
+    return items
 
 
 @router.post("", response_model=FormationDoc, status_code=201)

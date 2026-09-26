@@ -299,6 +299,8 @@ export interface FormationListItem {
   cols: number
   event_id?: string | null
   updated_at: string
+  metadata?: Record<string, string>
+  size?: number
 }
 
 export function fetchFormations(): Promise<FormationListItem[]> {
@@ -307,6 +309,10 @@ export function fetchFormations(): Promise<FormationListItem[]> {
 
 export function fetchFormation(id: string): Promise<FormationDoc> {
   return api<FormationDoc>(`/api/formations/${id}`)
+}
+
+export function deleteFormation(id: string): Promise<void> {
+  return api<void>(`/api/formations/${id}`, { method: 'DELETE' })
 }
 
 export interface PlacementPayload {
