@@ -208,6 +208,41 @@ export function putPlacements(
   })
 }
 
+export interface FormationRule {
+  id: string
+  name: string
+  primary: boolean
+}
+
+export function fetchRules(): Promise<FormationRule[]> {
+  return api<FormationRule[]>('/api/formations/rules')
+}
+
+export interface OptimizePreview {
+  singer_id: string
+  row: number
+  col: number
+}
+
+export interface OptimizeResult {
+  placements: OptimizePreview[]
+  swap_count: number
+  cost: number
+  applied_rules: string[]
+  messages: string[]
+}
+
+export function optimizeFormation(
+  id: string,
+  ruleIds: string[],
+): Promise<OptimizeResult> {
+  return api<OptimizeResult>(`/api/formations/${id}/optimize`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ rule_ids: ruleIds }),
+  })
+}
+
 export interface EventInput {
   name: string
   date: string

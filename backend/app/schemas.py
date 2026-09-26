@@ -266,6 +266,14 @@ class FormationListItem(BaseModel):
     updated_at: str
 
 
+class FormationRuleOut(BaseModel):
+    """Optimizer rule catalog entry."""
+
+    id: str
+    name: str
+    primary: bool
+
+
 class StoredSinger(BaseModel):
     """Singer dict as stored inside a formation."""
 

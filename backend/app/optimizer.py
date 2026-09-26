@@ -22,6 +22,15 @@ def valid_rule_ids() -> List[str]:
     return sorted(RULE_REGISTRY)
 
 
+def rule_info() -> List[Dict]:
+    """Return catalog entries (id, name, primary) for the dialog."""
+    return [
+        {"id": rule_id, "name": RULE_REGISTRY[rule_id].name,
+         "primary": RULE_REGISTRY[rule_id].is_primary}
+        for rule_id in sorted(RULE_REGISTRY)
+    ]
+
+
 def run_preview(
     singers: List[Dict],
     positions: Dict[str, Tuple[int, int]],

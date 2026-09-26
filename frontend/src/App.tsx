@@ -8,7 +8,6 @@ import ProjectsPage from './pages/ProjectsPage'
 import RepertoirePage from './pages/RepertoirePage'
 import SingersPage from './pages/SingersPage'
 import WizardPage from './pages/WizardPage'
-import FormationPrototype from './prototype/FormationPrototype'
 
 function HomePage() {
   return (
@@ -53,9 +52,6 @@ export default function App() {
         <NavLink to="/formations" className={linkClass}>
           Aufstellungen
         </NavLink>
-        <NavLink to="/prototype" className={linkClass}>
-          Prototyp
-        </NavLink>
       </nav>
       <Routes>
         <Route path="/" element={<HomePage />} />
@@ -68,7 +64,6 @@ export default function App() {
         <Route path="/wizard" element={<WizardPage />} />
         <Route path="/formations" element={<FormationsPage />} />
         <Route path="/formations/:id" element={<FormationEditorPage />} />
-        <Route path="/prototype" element={<FormationPrototype />} />
       </Routes>
     </div>
   )

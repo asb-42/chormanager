@@ -16,11 +16,12 @@ from sqlalchemy.engine import Connection
 
 from ..auth import require_chorleiter
 from ..deps import get_db
-from ..optimizer import run_preview
+from ..optimizer import run_preview, rule_info
 from ..schemas import (
     FormationCreate,
     FormationDoc,
     FormationListItem,
+    FormationRuleOut,
     OptimizeIn,
     OptimizeOut,
     OptimizePreviewPlacement,
@@ -193,6 +194,12 @@ def create_formation(
     )
     db.commit()
     return _to_doc(_read_row(db, formation_id))
+
+
+@router.get("/rules", response_model=List[FormationRuleOut])
+def list_rules() -> List[FormationRuleOut]:
+    """Optimizer rule catalog for the dialog (open, no auth)."""
+    return [FormationRuleOut(**entry) for entry in rule_info()]
 
 
 @router.get("/{formation_id}", response_model=FormationDoc)
