@@ -1,4 +1,5 @@
 import { NavLink, Route, Routes } from 'react-router-dom'
+import AvailabilityPage from './pages/AvailabilityPage'
 import BesetzungPage from './pages/BesetzungPage'
 import EventsPage from './pages/EventsPage'
 import ProjectsPage from './pages/ProjectsPage'
@@ -39,6 +40,9 @@ export default function App() {
         <NavLink to="/repertoire" className={linkClass}>
           Repertoire
         </NavLink>
+        <NavLink to="/availability" className={linkClass}>
+          Verfügbarkeit
+        </NavLink>
       </nav>
       <Routes>
         <Route path="/" element={<HomePage />} />
@@ -47,6 +51,7 @@ export default function App() {
         <Route path="/projects" element={<ProjectsPage />} />
         <Route path="/besetzung" element={<BesetzungPage />} />
         <Route path="/repertoire" element={<RepertoirePage />} />
+        <Route path="/availability" element={<AvailabilityPage />} />
       </Routes>
     </div>
   )

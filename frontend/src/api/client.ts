@@ -140,6 +140,41 @@ export function deleteRepertoire(id: string): Promise<void> {
   return api<void>(`/api/repertoire/${id}`, { method: 'DELETE' })
 }
 
+export interface AvailabilityMatrixEntry {
+  singer_id: string
+  full_name: string
+  short_name?: string | null
+  voice_group?: string | null
+  status: string
+}
+
+export interface AvailabilityMatrix {
+  event_id: string
+  entries: AvailabilityMatrixEntry[]
+}
+
+export function fetchAvailabilityMatrix(
+  eventId: string,
+): Promise<AvailabilityMatrix> {
+  return api<AvailabilityMatrix>(`/api/events/${eventId}/availability`)
+}
+
+export interface AvailabilityUpdate {
+  singer_id: string
+  status: string
+}
+
+export function putAvailabilityBulk(
+  eventId: string,
+  entries: AvailabilityUpdate[],
+): Promise<{ event_id: string; updated: number }> {
+  return api(`/api/events/${eventId}/availability`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ entries }),
+  })
+}
+
 export interface EventItem {
   id: string
   name: string
