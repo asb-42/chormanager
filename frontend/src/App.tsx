@@ -1,4 +1,6 @@
 import { NavLink, Route, Routes } from 'react-router-dom'
+import EventsPage from './pages/EventsPage'
+import ProjectsPage from './pages/ProjectsPage'
 import SingersPage from './pages/SingersPage'
 
 function HomePage() {
@@ -23,10 +25,18 @@ export default function App() {
         <NavLink to="/singers" className={linkClass}>
           Sänger
         </NavLink>
+        <NavLink to="/events" className={linkClass}>
+          Termine
+        </NavLink>
+        <NavLink to="/projects" className={linkClass}>
+          Projekte
+        </NavLink>
       </nav>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/singers" element={<SingersPage />} />
+        <Route path="/events" element={<EventsPage />} />
+        <Route path="/projects" element={<ProjectsPage />} />
       </Routes>
     </div>
   )

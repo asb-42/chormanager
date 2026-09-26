@@ -23,4 +23,67 @@ export function fetchSingers(search: string): Promise<Singer[]> {
   return api<Singer[]>(`/api/singers${query}`)
 }
 
+export interface EventItem {
+  id: string
+  name: string
+  date: string
+  event_type: string
+  location?: string | null
+  description?: string | null
+  project_id?: string | null
+  yes_count: number
+  conditional_count: number
+}
+
+export interface Project {
+  id: string
+  name: string
+  description?: string | null
+  is_active?: number | null
+  spielzeit?: string | null
+}
+
+export interface ProjectSummaryEvent {
+  event_id: string
+  name: string
+  date: string
+  yes: number
+  conditional: number
+}
+
+export interface ProjectSummary {
+  project_id: string
+  events: ProjectSummaryEvent[]
+  by_voice_group: Record<string, Record<string, number>>
+}
+
+export interface EventFilter {
+  project_id?: string
+  search?: string
+  event_type?: string
+}
+
+export function fetchEvents(filter: EventFilter): Promise<EventItem[]> {
+  const params = new URLSearchParams()
+  if (filter.project_id) params.set('project_id', filter.project_id)
+  if (filter.search) params.set('search', filter.search)
+  if (filter.event_type) params.set('event_type', filter.event_type)
+  const query = params.toString() ? `?${params.toString()}` : ''
+  return api<EventItem[]>(`/api/events${query}`)
+}
+
+export function fetchProjects(): Promise<Project[]> {
+  return api<Project[]>('/api/projects')
+}
+
+export function fetchProjectSummary(id: string): Promise<ProjectSummary> {
+  return api<ProjectSummary>(`/api/projects/${id}/summary`)
+}
+
+export function formatDate(iso: string): string {
+  const part = (iso || '').slice(0, 10).split('-')
+  if (part.length !== 3) return iso || ''
+  return `${part[2]}.${part[1]}.${part[0]}`
+}
+
 export const queryClient = new QueryClient()
