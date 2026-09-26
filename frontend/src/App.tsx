@@ -1,5 +1,6 @@
 import { NavLink, Route, Routes } from 'react-router-dom'
 import AvailabilityPage from './pages/AvailabilityPage'
+import BackupPage from './pages/BackupPage'
 import BesetzungPage from './pages/BesetzungPage'
 import EventsPage from './pages/EventsPage'
 import FormationEditorPage from './pages/FormationEditorPage'
@@ -49,6 +50,9 @@ export default function App() {
         <NavLink to="/wizard" className={linkClass}>
           Assistent
         </NavLink>
+        <NavLink to="/backup" className={linkClass}>
+          Backup
+        </NavLink>
         <NavLink to="/formations" className={linkClass}>
           Aufstellungen
         </NavLink>
@@ -62,6 +66,7 @@ export default function App() {
         <Route path="/repertoire" element={<RepertoirePage />} />
         <Route path="/availability" element={<AvailabilityPage />} />
         <Route path="/wizard" element={<WizardPage />} />
+        <Route path="/backup" element={<BackupPage />} />
         <Route path="/formations" element={<FormationsPage />} />
         <Route path="/formations/:id" element={<FormationEditorPage />} />
       </Routes>

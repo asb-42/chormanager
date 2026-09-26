@@ -245,6 +245,14 @@ class SelbstdarstellungPut(BaseModel):
     content: str
 
 
+class BackupOut(BaseModel):
+    """Backup file entry."""
+
+    id: str
+    size: int = 0
+    modified_at: str = ""
+
+
 class FormationCreate(BaseModel):
     """Payload for ``POST /api/formations``."""
 

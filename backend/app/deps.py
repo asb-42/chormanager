@@ -9,7 +9,7 @@ same code runs on SQLite and MariaDB/MySQL (Analyse §5.6).
 import os
 from functools import lru_cache
 from pathlib import Path
-from typing import Iterator, Optional
+from typing import Iterator, List, Optional
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Connection, Engine
@@ -40,7 +40,19 @@ def resolve_db_url(explicit: Optional[str] = None) -> str:
 @lru_cache(maxsize=8)
 def get_engine(db_url: Optional[str] = None) -> Engine:
     """Return a cached engine per URL (``cache_clear`` in tests)."""
-    return create_engine(resolve_db_url(db_url), future=True)
+    engine = create_engine(resolve_db_url(db_url), future=True)
+    _TRACKED_ENGINES.append(engine)
+    return engine
+
+
+_TRACKED_ENGINES: List[Engine] = []
+
+
+def dispose_engines() -> None:
+    """Close all pooled connections (needed before restoring the
+    DB file; engines stay usable and reconnect lazily)."""
+    for engine in _TRACKED_ENGINES:
+        engine.dispose()
 
 
 def get_db() -> Iterator[Connection]:

@@ -243,6 +243,28 @@ export function optimizeFormation(
   })
 }
 
+export interface BackupInfo {
+  id: string
+  size: number
+  modified_at: string
+}
+
+export function fetchBackups(): Promise<BackupInfo[]> {
+  return api<BackupInfo[]>('/api/backup')
+}
+
+export function createBackup(): Promise<BackupInfo> {
+  return api<BackupInfo>('/api/backup', { method: 'POST' })
+}
+
+export function restoreBackup(id: string): Promise<{ restored: string }> {
+  return api(`/api/backup/${id}/restore`, { method: 'POST' })
+}
+
+export function deleteBackup(id: string): Promise<void> {
+  return api<void>(`/api/backup/${id}`, { method: 'DELETE' })
+}
+
 export interface EventInput {
   name: string
   date: string
