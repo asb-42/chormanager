@@ -9,6 +9,14 @@ import {
 } from '../api/client'
 import type { Singer, SingerInput } from '../api/client'
 import SingerDialog from '../components/SingerDialog'
+import {
+  Button,
+  EmptyState,
+  ErrorMessage,
+  Loading,
+  PageHeader,
+  inputClassName,
+} from '../components/ui'
 
 type DialogState = { mode: 'new' } | { mode: 'edit'; singer: Singer } | null
 
@@ -56,27 +64,28 @@ export default function SingersPage() {
 
   return (
     <section>
-      <h1 className="text-xl font-semibold">Sänger</h1>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <input
-          type="search"
-          placeholder="Suchen …"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          className="w-64 rounded border border-gray-300 px-2 py-1 dark:border-gray-600 dark:bg-gray-800"
-        />
-        <button
-          type="button"
-          onClick={() => setDialog({ mode: 'new' })}
-          className="rounded bg-blue-600 px-3 py-1 text-white"
-        >
-          Neu
-        </button>
-      </div>
-      {isLoading && <p className="mt-4">Lädt …</p>}
-      {isError && <p className="mt-4 text-red-600">Fehler beim Laden.</p>}
+      <PageHeader
+        title="Sänger"
+        actions={
+          <>
+            <input
+              type="search"
+              placeholder="Suchen …"
+              aria-label="Suchen"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className={`${inputClassName} w-64`}
+            />
+            <Button variant="primary" onClick={() => setDialog({ mode: 'new' })}>
+              Neu
+            </Button>
+          </>
+        }
+      />
+      {isLoading && <Loading />}
+      {isError && <ErrorMessage text="Fehler beim Laden." />}
       {!isLoading && !isError && singers.length === 0 && (
-        <p className="mt-4">Keine Sänger gefunden.</p>
+        <EmptyState text="Keine Sänger gefunden." />
       )}
       {singers.length > 0 && (
         <table className="mt-4 w-full border-collapse text-left">
@@ -96,38 +105,26 @@ export default function SingersPage() {
                 <td className="py-1 pr-4">{singer.voice_group ?? '–'}</td>
                 <td className="py-1 pr-4">
                   <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setDialog({ mode: 'edit', singer })}
-                      className="rounded border px-2 py-0.5"
-                    >
+                    <Button size="sm" onClick={() => setDialog({ mode: 'edit', singer })}>
                       Bearbeiten
-                    </button>
+                    </Button>
                     {deleteConfirmId === singer.id ? (
                       <>
-                        <button
-                          type="button"
+                        <Button
+                          size="sm"
+                          variant="danger"
                           onClick={() => deleteMutation.mutate(singer.id)}
-                          className="rounded bg-red-600 px-2 py-0.5 text-white"
                         >
                           Wirklich löschen
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeleteConfirmId(null)}
-                          className="rounded border px-2 py-0.5"
-                        >
+                        </Button>
+                        <Button size="sm" onClick={() => setDeleteConfirmId(null)}>
                           Abbrechen
-                        </button>
+                        </Button>
                       </>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => setDeleteConfirmId(singer.id)}
-                        className="rounded border px-2 py-0.5"
-                      >
+                      <Button size="sm" onClick={() => setDeleteConfirmId(singer.id)}>
                         Löschen
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </td>

@@ -26,6 +26,12 @@ nachziehen.
   ``userEvent.type`` braucht ``{ delay: 10 }`` (jsdom
   kollabiert sonst Anschläge); kein 2. fetch-Argument
   erwarten (``expect.anything()`` matcht ``undefined`` nicht).
+* **UI nur via Primitives.** Buttons/Inputs/Labels/Header/
+  Empty-/Error-/Loading-States kommen aus
+  ``src/components/ui.tsx`` (Varianten primary/secondary/danger/
+  success/ghost, Größen md/sm). Keine Ad-hoc-Klassen in
+  Pages/Dialogen; Tokens (Farben, Radius, Fokus) in
+  ``src/index.css`` dokumentiert.
 * **Keine Platzhalter-Routen.** Nur Routen anlegen, die eine
   echte Seite haben (M2 baut tabweise aus).
 

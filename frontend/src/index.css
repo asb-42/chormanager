@@ -2,6 +2,11 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Design-Fundament (UX-Pass): ruhige, kontrastreiche Basis.
+   Primär = Tiefblau (bg-blue-700), Gefahr = Rot (bg-red-700),
+   Erfolg = Grün (bg-green-700); Radius überall rounded (4px);
+   sichtbarer Fokus für Tastatur (AA-Basis). Komponenten in
+   src/components/ui.tsx sind die einzige Quelle dafür. */
 body {
   background: #fff;
   color: #111;
@@ -10,6 +15,14 @@ body {
 .dark body {
   background: #16171d;
   color: #f3f4f6;
+}
+
+::selection {
+  background: #bfdbfe;
+}
+
+.dark ::selection {
+  background: #1e40af;
 }
 
 /* Handy-Basis (§5.1 geschärft): Dirigenten-Views bleiben

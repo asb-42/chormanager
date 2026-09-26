@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { Singer, SingerInput, VoiceGroup } from '../api/client'
+import { Button, Field, inputClassName } from './ui'
 
 interface SingerDialogProps {
   title: string
@@ -8,11 +9,6 @@ interface SingerDialogProps {
   onSubmit: (input: SingerInput) => void
   onClose: () => void
 }
-
-const inputClass =
-  'w-full rounded border border-gray-300 px-2 py-1 dark:border-gray-600 dark:bg-gray-800'
-
-const labelClass = 'block text-sm font-medium'
 
 export default function SingerDialog({
   title,
@@ -46,31 +42,28 @@ export default function SingerDialog({
   }
 
   return (
-    <div role="dialog" aria-label={title} className="mt-4 rounded border p-4">
+    <div role="dialog" aria-label={title} className="mt-4 max-w-md rounded border p-4">
       <h2 className="text-lg font-semibold">{title}</h2>
       <form onSubmit={handleSubmit} className="mt-2 space-y-2">
-        <label className={labelClass}>
-          Name
+        <Field label="Name">
           <input
             value={fullName}
             onChange={(event) => setFullName(event.target.value)}
-            className={inputClass}
+            className={inputClassName}
           />
-        </label>
-        <label className={labelClass}>
-          Kurzname
+        </Field>
+        <Field label="Kurzname">
           <input
             value={shortName}
             onChange={(event) => setShortName(event.target.value)}
-            className={inputClass}
+            className={inputClassName}
           />
-        </label>
-        <label className={labelClass}>
-          Stimmgruppe
+        </Field>
+        <Field label="Stimmgruppe">
           <select
             value={voiceGroup}
             onChange={(event) => setVoiceGroup(event.target.value)}
-            className={inputClass}
+            className={inputClassName}
           >
             <option value="">–</option>
             {voiceGroups.map((group) => (
@@ -79,39 +72,27 @@ export default function SingerDialog({
               </option>
             ))}
           </select>
-        </label>
-        <label className={labelClass}>
-          Größe (cm)
+        </Field>
+        <Field label="Größe (cm)">
           <input
             value={height}
             inputMode="numeric"
             onChange={(event) => setHeight(event.target.value)}
-            className={inputClass}
+            className={inputClassName}
           />
-        </label>
-        <label className={labelClass}>
-          E-Mail
+        </Field>
+        <Field label="E-Mail">
           <input
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            className={inputClass}
+            className={inputClassName}
           />
-        </label>
+        </Field>
         <div className="flex gap-2 pt-1">
-          <button
-            type="submit"
-            disabled={!valid}
-            className="rounded bg-blue-600 px-3 py-1 text-white disabled:opacity-40"
-          >
+          <Button type="submit" variant="primary" disabled={!valid}>
             Speichern
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded border px-3 py-1"
-          >
-            Abbrechen
-          </button>
+          </Button>
+          <Button onClick={onClose}>Abbrechen</Button>
         </div>
       </form>
     </div>
