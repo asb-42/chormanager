@@ -191,3 +191,27 @@ describe('Aktiv-Kontext: Verfügbarkeit', () => {
     expect(window.localStorage.getItem('chor-active-event')).toBe('e-1')
   })
 })
+describe('Aktiv-Kontext: Verfügbarkeit deep link', () => {
+  afterEach(() => {
+    cleanup()
+  })
+
+  it('preselects the event from ?event=', async () => {
+    stubFetch()
+    queryClient.clear()
+    window.localStorage.clear()
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/availability?event=e-2']}>
+          <ActiveProvider>
+            <AvailabilityPage />
+          </ActiveProvider>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+    await screen.findByText('Anna Muster')
+    expect(
+      (screen.getByLabelText('Termin') as HTMLSelectElement).value,
+    ).toBe('e-2')
+  })
+})

@@ -144,4 +144,14 @@ describe('EventsPage Qt-Tabelle', () => {
       ).toBe(true)
     })
   })
+
+  it('links availability capture from the row', async () => {
+    stubFetch()
+    renderPage()
+    await screen.findByText('Probe A')
+    const row = screen.getByText('Probe A').closest('tr') as HTMLElement
+    expect(
+      within(row).getByRole('link', { name: 'Verfügbarkeit' }),
+    ).toHaveAttribute('href', '/availability?event=e-1')
+  })
 })

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
 import {
   fetchAvailabilityMatrix,
   fetchBesetzungen,
@@ -43,7 +44,11 @@ const inputClass =
 
 export default function AvailabilityPage() {
   const active = useActive()
-  const [eventId, setEventId] = useState<string | null>(active.eventId)
+  const [searchParams] = useSearchParams()
+  const linkedEvent = searchParams.get('event')
+  const [eventId, setEventId] = useState<string | null>(
+    linkedEvent ?? active.eventId,
+  )
   const [overrides, setOverrides] = useState<Record<string, string>>({})
   const [savedMessage, setSavedMessage] = useState(false)
   const [showAll, setShowAll] = useState(false)
@@ -57,6 +62,14 @@ export default function AvailabilityPage() {
     queryKey: ['besetzungen', ''],
     queryFn: () => fetchBesetzungen(undefined),
   })
+
+  useEffect(() => {
+    if (linkedEvent) {
+      active.setEvent(linkedEvent)
+    }
+    // Einmalig beim Öffnen per Deep-Link (Desktop: Auswahl = aktiv).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [linkedEvent])
 
   useEffect(() => {
     if (eventId === null && events.length > 0) {

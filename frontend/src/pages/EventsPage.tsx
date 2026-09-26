@@ -206,7 +206,13 @@ export default function EventsPage() {
                   )}
                 </Td>
                 <Td>
-                  <div className="flex gap-1">
+                  <div className="flex items-center gap-1">
+                    <Link
+                      to={`/availability?event=${event.id}`}
+                      className="rounded px-2 py-1 text-sm text-blue-600 underline hover:bg-gray-100 dark:hover:bg-gray-800"
+                    >
+                      Verfügbarkeit
+                    </Link>
                     <IconButton
                       label="Bearbeiten"
                       onClick={() => setDialog({ mode: 'edit', event })}
