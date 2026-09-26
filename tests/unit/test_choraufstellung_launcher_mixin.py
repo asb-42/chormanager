@@ -1,32 +1,24 @@
-# TDD RED: Regression tests for M-1 Schritt 6 — ChorAufstellung-Spawning Mixin.
+# Regression tests for the ChorAufstellung entry points.
 #
-# We need to prove that the four "open choraufstellung" methods
-# survive the extraction byte-for-byte:
+# M-1 Schritt 6 extracted the four "open choraufstellung" methods
+# into the Mixin (byte-for-byte). M0 Phase 2 (increment 3/3) removed
+# the subprocess layer: every entry point now delegates to the
+# embedded tab editor:
 #
-#   * ``_open_choraufstellung``              → wraps ``_open_choraufstellung_file(None)``
-#   * ``_open_choraufstellung_selected_or_new`` → picks the row's file via
-#                                                ``_edit_formation`` or falls
-#                                                back to a fresh editor.
-#   * ``_open_choraufstellung_file``         → spawns the ``__main__.py``
-#                                                subprocess with the
-#                                                appropriate env vars.
-#   * ``_open_choraufstellung_for_event``    → builds a temp JSON file and
-#                                                hands it to the subshell.
+#   * ``_open_choraufstellung``              → tab ``_new_formation`` dialog
+#   * ``_open_choraufstellung_selected_or_new`` → row → ``_edit_formation``
+#                                                (embedded), else dialog
+#   * ``_open_choraufstellung_file``         → tab ``open_embedded``
+#                                                (fallback: dialog)
+#   * ``_open_choraufstellung_for_event``    → tab switch + tab
+#                                                ``open_new_for_event``
 #
-# We also assert that the methods are now defined on the new Mixin
-# (no longer in ``main_window``).
+# These tests run WITHOUT Qt event loops for the delegation paths —
+# a stub window records the calls.
 #
-# These tests run WITHOUT spawning a real subshell — every test
-# patches the subprocess and the QMessageBox to be a no-op.
-
 from __future__ import annotations
 
 import importlib
-import inspect
-import os
-import subprocess
-import sys
-import tempfile
 from pathlib import Path
 from typing import Iterator
 from unittest.mock import patch
@@ -207,6 +199,15 @@ class _RecordingWindow(ChorAufstellungLauncherMixin if False else object):
                 "_edit_formation": lambda self_: self.calls.append(
                     "choraufstellung_tab._edit_formation"
                 ),
+                "_new_formation": lambda self_: self.calls.append(
+                    "choraufstellung_tab._new_formation"
+                ),
+                "open_embedded": lambda self_, fp: self.calls.append(
+                    ("choraufstellung_tab.open_embedded", (fp,))
+                ) or True,
+                "open_new_for_event": lambda self_, ev: self.calls.append(
+                    ("choraufstellung_tab.open_new_for_event", (ev,))
+                ) or True,
             },
         )()
 
@@ -225,32 +226,15 @@ def stub_window() -> Iterator[_RecordingWindow]:
 
 
 class TestOpenChoraufstellungDelegates:
-    def test_open_choraufstellung_calls_file_with_none(
+    def test_open_choraufstellung_delegates_to_tab_new_formation(
         self, stub_window
     ):
-        """``_open_choraufstellung`` must delegate to
-        ``_open_choraufstellung_file(None)``."""
-
-        with patch.object(
-            _RecordingWindow,  # no-op: prevent inherited calls
-            "__getattribute__",
-            side_effect=lambda name: (
-                lambda *a, **kw: stub_window.calls.append(
-                    (name, a)
-                )
-            )
-            if name == "_open_choraufstellung_file"
-            else object.__getattribute__(stub_window, name),
-        ):
-            stub_window._open_choraufstellung()
-
-        assert any(
-            c[0] == "_open_choraufstellung_file" and c[1] == (None,)
-            for c in stub_window.calls
-        ), (
-            f"_open_choraufstellung must call "
-            f"_open_choraufstellung_file(None); got {stub_window.calls}"
-        )
+        """``_open_choraufstellung`` (fresh) routes to the tab's
+        new-formation dialog (no subprocess since 3/3)."""
+        stub_window._open_choraufstellung()
+        assert (
+            "choraufstellung_tab._new_formation" in stub_window.calls
+        ), f"expected tab._new_formation; got {stub_window.calls}"
 
     def test_open_choraufstellung_selected_or_new_no_row_falls_back(
         self, stub_window
@@ -302,74 +286,51 @@ class TestOpenChoraufstellungDelegates:
 
 
 # ---------------------------------------------------------------------------
-# 6. Subprocess-spawning methods do not raise when the choraufstellung
-#    path is missing — they must show a warning and return cleanly.
+# 6. Embedded delegation: no subprocess is ever spawned (3/3).
 # ---------------------------------------------------------------------------
 
-class TestOpenChoraufstellungFileNoSubshell:
-    def test_missing_choraufstellung_dir_shows_warning_and_returns(
-        self, stub_window, monkeypatch
+class TestOpenChoraufstellungFileEmbedded:
+    def test_open_file_delegates_to_embedded(self, stub_window):
+        """With a filepath, ``_open_choraufstellung_file`` opens it
+        embedded and does NOT fall back to the dialog."""
+        stub_window._open_choraufstellung_file("/tmp/foo.json")
+        assert (
+            ("choraufstellung_tab.open_embedded", ("/tmp/foo.json",))
+            in stub_window.calls
+        )
+        assert (
+            "choraufstellung_tab._new_formation" not in stub_window.calls
+        )
+
+    def test_open_file_without_filepath_falls_back_to_new(
+        self, stub_window
     ):
-        from PyQt6.QtWidgets import QMessageBox
-
-        with patch.object(QMessageBox, "warning") as warn, patch(
-            "os.path.exists", return_value=False
-        ), patch(
-            "os.path.isdir", return_value=False
-        ), patch(
-            "os.path.isfile", return_value=False
-        ):
-            stub_window._open_choraufstellung_file("/tmp/foo.json")
-        assert warn.called, (
-            "When the choraufstellung package directory is missing, "
-            "the method must show a QMessageBox.warning and return."
+        """Without a filepath, fall back to the new-formation dialog."""
+        stub_window._open_choraufstellung_file(None)
+        assert (
+            "choraufstellung_tab._new_formation" in stub_window.calls
         )
 
-    def test_spawns_subprocess_with_env(self, stub_window, monkeypatch):
-        """The happy path: subprocess.run is called with the
-        correct arguments, env contains CHOR_PROJECT, etc."""
-        from PyQt6.QtWidgets import QMessageBox
+    def test_no_subprocess_in_launcher_module(self):
+        """Direction guard: the launcher module must not spawn
+        subprocesses anymore (docstring mentions are fine)."""
+        import re
 
-        # Always claim the directory exists
-        monkeypatch.setattr(
-            "os.path.exists", lambda p: True, raising=True
-        )
-        # Set db_path on the stub
-        stub_window.db_path = "/tmp/test-chor.db"
-        captured = {}
-
-        def fake_run(cmd, cwd=None, env=None, **kw):
-            captured["cmd"] = cmd
-            captured["cwd"] = cwd
-            captured["env"] = env
-            return subprocess.CompletedProcess(cmd, 0)
-
-        monkeypatch.setattr(
-            "subprocess.run", fake_run, raising=True
-        )
-        with patch.object(QMessageBox, "warning") as warn:
-            stub_window._open_choraufstellung_file("/tmp/foo.json")
-
-        assert not warn.called, (
-            f"Unexpected warning shown: {warn.call_args}"
-        )
-        assert captured["cmd"][0] == sys.executable
-        assert captured["cmd"][1].endswith("__main__.py")
-        env = captured["env"]
-        # CHOR_FILE passed
-        assert env.get("CHOR_FILE") == "/tmp/foo.json"
-        # CHOR_DB_PATH passed
-        assert env.get("CHOR_DB_PATH") == "/tmp/test-chor.db"
-        # _load_formations was called after return
-        assert "choraufstellung_tab._load_formations" in stub_window.calls
+        src = Path(
+            "chormanager/ui/choraufstellung_launcher.py"
+        ).read_text(encoding="utf-8")
+        code = re.sub(r'""".*?"""', "", src, flags=re.DOTALL)
+        code = re.sub(r"#.*", "", code)
+        assert "subprocess" not in code
+        assert "CHOR_EVENT_DATA" not in code
+        assert "CHOR_FILE" not in code
 
 
 # ---------------------------------------------------------------------------
-# 7. The temp-file method builds a JSON document with the expected
-#    fields and writes to a real temp dir.
+# 7. for_event seeds the embedded editor (no temp JSON).
 # ---------------------------------------------------------------------------
 
-class TestOpenChoraufstellungForEvent:
+class TestOpenChoraufstellungForEventEmbedded:
     def _make_event(self):
         from dataclasses import dataclass
 
@@ -382,83 +343,22 @@ class TestOpenChoraufstellungForEvent:
 
         return _E()
 
-    def test_writes_temp_json_and_spawns_subprocess(
+    def test_for_event_switches_tab_and_seeds(
         self, stub_window, monkeypatch
     ):
-        from PyQt6.QtWidgets import QMessageBox
-
+        """``_open_choraufstellung_for_event`` switches to the
+        ChorAufstellung tab and seeds its embedded editor."""
+        switched = []
+        monkeypatch.setattr(
+            stub_window.content_stack,
+            "setCurrentIndex",
+            lambda i: switched.append(i),
+            raising=False,
+        )
         event = self._make_event()
-        # Set up project
-        from dataclasses import dataclass
-
-        @dataclass
-        class _P:
-            name: str = "TestChor"
-
-        stub_window.current_project = _P()
-
-        # Stub SingerRepository / AvailabilityRepository
-        class _S:
-            def __init__(self, db):
-                pass
-
-            def get_all(self):
-                return []
-
-        class _A:
-            def __init__(self, db):
-                pass
-
-            def get_by_ids(self, singer_id, event_id):
-                return None
-
-        monkeypatch.setattr(
-            "chormanager.domain.repository.SingerRepository", _S
+        stub_window._open_choraufstellung_for_event(event)
+        assert switched == [4]
+        assert (
+            ("choraufstellung_tab.open_new_for_event", (event,))
+            in stub_window.calls
         )
-        monkeypatch.setattr(
-            "chormanager.domain.repository.AvailabilityRepository", _A
-        )
-        monkeypatch.setattr("os.path.exists", lambda p: True)
-
-        captured = {}
-
-        def fake_run(cmd, cwd=None, env=None, **kw):
-            captured["env"] = env
-            return subprocess.CompletedProcess(cmd, 0)
-
-        monkeypatch.setattr("subprocess.run", fake_run)
-
-        with patch.object(QMessageBox, "warning") as warn:
-            stub_window._open_choraufstellung_for_event(event)
-
-        assert not warn.called
-        env = captured["env"]
-        # The temp file path is set as CHOR_EVENT_DATA
-        # (C1.3: now unique per call, see _make_event_temp_path)
-        assert env.get("CHOR_EVENT_DATA", "").endswith(".json")
-        # Filename pattern: choraufstellung_event-<pid>-<uuid8>.json
-        import re as _re
-        assert _re.search(
-            r"choraufstellung_event-\d+-\w+\.json$",
-            env.get("CHOR_EVENT_DATA", ""),
-        ), f"unexpected CHOR_EVENT_DATA: {env.get('CHOR_EVENT_DATA')!r}"
-        # Legacy env vars
-        assert env.get("CHOR_EVENT_NAME") == "Probe"
-        assert env.get("CHOR_EVENT_ID") == "ev-1"
-        assert env.get("CHOR_EVENT_DATE") == "2026-06-12"
-        assert env.get("CHOR_EVENT_TYPE") == "Probe"
-        assert env.get("CHOR_PROJECT") == "TestChor"
-
-        # The temp file was written
-        temp_file = env["CHOR_EVENT_DATA"]
-        assert os.path.exists(temp_file)
-        import json as _json
-        with open(temp_file, "r", encoding="utf-8") as f:
-            data = _json.load(f)
-        assert data["project"] == "TestChor"
-        assert data["event"]["id"] == "ev-1"
-        assert "singers" in data
-        assert "created_at" in data
-
-        # And _load_formations was triggered
-        assert "choraufstellung_tab._load_formations" in stub_window.calls

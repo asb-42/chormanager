@@ -36,6 +36,7 @@ from PyQt6.QtWidgets import QFileDialog, QMessageBox
 # (the methods call ``ExportDialog(...)`` directly). Keep the
 # same import here so the methods work byte-for-byte.
 from .export_dialog import ExportDialog
+from ..config import get_workdir
 from ..core.export_service import ExportService
 
 
@@ -432,7 +433,7 @@ class ExportCoreMixin:
         tab_file = tab_name_map.get(display_name, display_name.lower())
         ext = ext_map.get(fmt, 'csv')
         default_name = f'2026-04-26-{tab_file}.{ext}'
-        workdir = Path(__file__).parent.parent.parent / 'workdir'
+        workdir = get_workdir()
         workdir.mkdir(exist_ok=True)
         default_path = str(workdir / default_name)
 
@@ -663,7 +664,7 @@ class ExportTabSpecificMixin:
         from pathlib import Path
         from datetime import datetime
         today = datetime.now().strftime('%Y-%m-%d')
-        workdir = Path(__file__).parent.parent / 'workdir'
+        workdir = get_workdir()
         workdir.mkdir(exist_ok=True)
         ext_map = {'writer': 'odt', 'calc': 'ods', 'csv': 'csv'}
         ext = ext_map.get(fmt, 'csv')
@@ -751,7 +752,7 @@ class ExportTabSpecificMixin:
         from pathlib import Path
         from datetime import datetime
         today = datetime.now().strftime('%Y-%m-%d')
-        workdir = Path(__file__).parent.parent / 'workdir'
+        workdir = get_workdir()
         workdir.mkdir(exist_ok=True)
         ext_map = {'writer': 'odt', 'calc': 'ods', 'csv': 'csv'}
         ext = ext_map.get(fmt, 'csv')
@@ -852,7 +853,7 @@ class ExportTabSpecificMixin:
         from pathlib import Path
         from datetime import datetime
         today = datetime.now().strftime('%Y-%m-%d')
-        workdir = Path(__file__).parent.parent / 'workdir'
+        workdir = get_workdir()
         workdir.mkdir(exist_ok=True)
         ext_map = {'writer': 'odt', 'calc': 'ods', 'csv': 'csv'}
         ext = ext_map.get(fmt, 'csv')

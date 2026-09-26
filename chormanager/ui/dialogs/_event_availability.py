@@ -46,7 +46,7 @@ except ImportError:  # pragma: no cover - PyQt5 fallback
 
 # Module-level imports used by __init__ and lazy methods. The lazy ones
 # (ProjectRepository, ReportLab, ExportService) stay lazy in the methods.
-from ...config import load_voice_groups
+from ...config import get_workdir, load_voice_groups
 from ...domain.repository import (
     SingerRepository,
     AvailabilityRepository,
@@ -378,7 +378,6 @@ class EventAvailabilityDialog(QDialog):
         )
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.lib.units import cm
-        from pathlib import Path
 
         singers = self.singer_repo.get_active()
 
@@ -403,7 +402,7 @@ class EventAvailabilityDialog(QDialog):
             filename_str += f"-{project_name}"
         filename_str += ".pdf"
 
-        export_dir = Path("/media/data/coding/chormanager/workdir")
+        export_dir = get_workdir()
         export_dir.mkdir(parents=True, exist_ok=True)
         filename = export_dir / filename_str
 
@@ -436,7 +435,7 @@ class EventAvailabilityDialog(QDialog):
             filename_str += f"-{project_name}"
         filename_str += ".pdf"
 
-        export_dir = Path("/media/data/coding/chormanager/workdir")
+        export_dir = get_workdir()
         export_dir.mkdir(parents=True, exist_ok=True)
         filename = export_dir / filename_str
 
@@ -556,7 +555,6 @@ class EventAvailabilityDialog(QDialog):
 
         from ...core.export_service import ExportService
         from PyQt6.QtWidgets import QFileDialog
-        from pathlib import Path
         from datetime import datetime
 
         singers = self.singer_repo.get_active()
@@ -620,7 +618,7 @@ class EventAvailabilityDialog(QDialog):
         ext_map = {"writer": "odt", "calc": "ods", "csv": "csv"}
         ext = ext_map.get(fmt, "csv")
         default_name = f"{today}-verfuegbarkeit-{safe_event}.{ext}"
-        workdir = Path(__file__).parent.parent.parent / "workdir"
+        workdir = get_workdir()
         workdir.mkdir(exist_ok=True)
         default_path = str(workdir / default_name)
 

@@ -5,6 +5,19 @@ Alle nennenswerten Änderungen an ChorManager. Die Einträge folgen
 user-facing Änderungen und wichtige interne Fixes, gruppiert nach
 Datum (neueste zuerst).
 
+## Unreleased (Web-Migration, Branch `web-migration`)
+
+### Hinzugefügt
+- **Web-Version (MS4)**: FastAPI-Backend (alle Desktop-Daten les-
+  und schreibbar, Token-Auth, Alembic, MariaDB) + React-Frontend
+  (alle CRUD-Tabs, Verfügbarkeits-Matrix, Formation Editor mit
+  Drag & Drop/Undo/Optimizer, Assistent, Backup) als
+  Docker-Compose-Release (`docker compose up -d --build`).
+  Siehe [Web-Benutzerhandbuch](docs/benutzerhandbuch-web.md).
+- **Desktop eingebettet**: Choraufstellung läuft im Tab statt im
+  Subprozess (kein Temp-JSON/ENV mehr); `config.get_workdir()`
+  als Single Source für Export-Pfade.
+
 ## 2026-09-09
 
 ### Hinzugefügt

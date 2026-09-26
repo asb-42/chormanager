@@ -1,0 +1,50 @@
+# M5-Release: db + api + frontend (MS4).
+# Prod-Geheimnisse aus der Umgebung:
+#   MARIADB_ROOT_PASSWORD, MARIADB_PASSWORD, CHORMANAGER_API_TOKEN
+# Start:  docker compose up -d --build
+# Stopp:  docker compose down   (Daten bleiben in Volumes)
+services:
+  db:
+    image: mariadb:11
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-root}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-chor}
+      MARIADB_USER: ${MARIADB_USER:-chor}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-chor}
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      CHORMANAGER_DATABASE_URL: mysql+pymysql://${MARIADB_USER:-chor}:${MARIADB_PASSWORD:-chor}@db:3306/${MARIADB_DATABASE:-chor}
+      CHORMANAGER_API_TOKEN: ${CHORMANAGER_API_TOKEN:-}
+      CHORMANAGER_BACKUP_DIR: /srv/backups
+    volumes:
+      - api-backups:/srv/backups
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      - api
+
+volumes:
+  mariadb-data:
+  api-backups:

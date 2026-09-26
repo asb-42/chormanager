@@ -177,61 +177,88 @@ class TestOpenChoraufstellungEntryPoints:
             f"'Aus ChorManager laden' button still present: {buttons}"
         )
 
-    def test_load_from_chormanager_delegates_to_edit_formation(
-        self, choraufstellung_tab, choraufstellung_data_dir
+    def test_load_from_chormanager_event_goes_embedded(
+        self, choraufstellung_tab, choraufstellung_data_dir, tmp_path
     ):
-        """The legacy ``_load_from_chormanager`` (formerly wired to
-        the removed big button) must delegate to ``_edit_formation``
-        when a row is selected. It used to always spawn a fresh
-        editor (no CHOR_FILE) and that's the bug we are fixing.
-        """
-        choraufstellung_tab.table.selectRow(0)
-        fake = _FakeMainWindow()
-        _attach_fake_main_window(choraufstellung_tab, fake)
-        choraufstellung_tab._load_from_chormanager()
-        expected = os.path.join(
-            str(choraufstellung_data_dir),
-            "choraufstellung-2026-06-12_Probe.json",
-        )
-        assert fake.opened_file == expected, (
-            f"_load_from_chormanager opened {fake.opened_file!r}, "
-            f"expected {expected!r}"
+        """With an event, ``_load_from_chormanager`` seeds the embedded
+        editor from the repositories (no subprocess since 3/3)."""
+        from chormanager.data.database import Database
+        from chormanager.domain.repository import (
+            AvailabilityRepository,
+            EventRepository,
+            SingerRepository,
         )
 
-    def test_load_from_chormanager_no_selection_falls_back(
+        db = Database(str(tmp_path / "op.db"))
+        db.connect()
+        db.create_tables()
+        try:
+            event = EventRepository(db).create(
+                name="Probe", date="2026-06-12", event_type="Probe"
+            )
+            singer = SingerRepository(db).create(
+                full_name="Anna Muster", short_name="Anna",
+                voice_group="Sopran 1",
+            )
+            AvailabilityRepository(db).create(
+                singer_id=singer.id, event_id=event.id, status="yes"
+            )
+            choraufstellung_tab.db = db
+            fake = _FakeMainWindow()
+            _attach_fake_main_window(choraufstellung_tab, fake)
+            choraufstellung_tab._load_from_chormanager(event)
+            assert (
+                choraufstellung_tab._stack.currentWidget()
+                is choraufstellung_tab._editor_page
+            )
+            assert [
+                s.name for s in choraufstellung_tab.editor.singers
+            ] == ["Anna"]
+            assert fake.opened_file == "__not_called__"
+        finally:
+            db.close()
+
+    def test_load_from_chormanager_no_selection_opens_dialog_path(
         self, choraufstellung_tab
     ):
-        """If no row is selected, ``_load_from_chormanager`` must
-        fall back to a fresh editor (the original behaviour, useful
-        for creating a new formation from scratch)."""
-        # No row selected: rowCount=1, currentRow=-1
+        """No row selected: route to the new-formation dialog. The
+        fixture tab has no database, so the guarded no-op runs (no
+        crash, no subprocess, stays on the list page)."""
         assert choraufstellung_tab.table.rowCount() == 1
         assert choraufstellung_tab.table.currentRow() == -1
         fake = _FakeMainWindow()
         _attach_fake_main_window(choraufstellung_tab, fake)
         choraufstellung_tab._load_from_chormanager()
-        # ``_open_choraufstellung`` sets opened_file = None
-        assert fake.opened_file is None
+        assert fake.opened_file == "__not_called__"
+        assert (
+            choraufstellung_tab._stack.currentWidget()
+            is choraufstellung_tab._list_page
+        )
+        assert "Datenbank" in choraufstellung_tab.status_label.text()
 
-    def test_context_menu_edit_still_works(
+    def test_context_menu_edit_goes_embedded(
         self, choraufstellung_tab, choraufstellung_data_dir
     ):
-        """Sanity: the right-click 'Bearbeiten' still passes the
-        selected filepath (this was the working path)."""
+        """Right-click 'Bearbeiten' opens the file embedded (no
+        subprocess since 3/3) with placed singers restored."""
         choraufstellung_tab.table.selectRow(0)
         fake = _FakeMainWindow()
         _attach_fake_main_window(choraufstellung_tab, fake)
         choraufstellung_tab._edit_formation()
-        expected = os.path.join(
-            str(choraufstellung_data_dir),
-            "choraufstellung-2026-06-12_Probe.json",
+        assert (
+            choraufstellung_tab._stack.currentWidget()
+            is choraufstellung_tab._editor_page
         )
-        assert fake.opened_file == expected
+        assert (
+            "anna-1" in choraufstellung_tab.editor.placed_singer_ids()
+        )
+        assert fake.opened_file == "__not_called__"
 
-    def test_context_toolbar_edit_still_works(
+    def test_context_toolbar_edit_goes_embedded(
         self, choraufstellung_tab, choraufstellung_data_dir
     ):
-        """Sanity: MainWindow's _edit_formation wrapper still works."""
+        """MainWindow's _edit_formation wrapper reaches the embedded
+        editor through the tab."""
         choraufstellung_tab.table.selectRow(0)
         fake = _FakeMainWindow()
         _attach_fake_main_window(choraufstellung_tab, fake)
@@ -239,11 +266,11 @@ class TestOpenChoraufstellungEntryPoints:
             lambda: choraufstellung_tab._edit_formation()
         )
         fake._edit_formation()
-        expected = os.path.join(
-            str(choraufstellung_data_dir),
-            "choraufstellung-2026-06-12_Probe.json",
+        assert (
+            choraufstellung_tab._stack.currentWidget()
+            is choraufstellung_tab._editor_page
         )
-        assert fake.opened_file == expected
+        assert fake.opened_file == "__not_called__"
 
 
 class TestMainWindowMenuWiring:

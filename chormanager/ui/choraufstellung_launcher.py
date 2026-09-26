@@ -18,14 +18,16 @@ This module hosts two related pieces:
                                                    row's file, or
                                                    falls back to a
                                                    fresh editor.
-     * ``_open_choraufstellung_file``            → spawns the subshell
-                                                   subprocess with the
-                                                   right env vars.
-     * ``_open_choraufstellung_for_event``       → builds a temp JSON
-                                                   with the available
-                                                   singers for an
-                                                   event and hands it
-                                                   to the subshell.
+     * ``_open_choraufstellung_file``            → delegates to
+                                                   the embedded tab
+                                                   editor (no subprocess
+                                                   since 3/3).
+     * ``_open_choraufstellung_for_event``       → seeds the embedded
+                                                   tab editor with the
+                                                   available singers
+                                                   for an event (no
+                                                   temp JSON, no
+                                                   subprocess since 3/3).
      * ``_edit_formation``                       → thin wrapper around
                                                    ``self.choraufstellung_tab._edit_formation()``.
 
@@ -45,26 +47,8 @@ from __future__ import annotations
 
 import logging
 import os
-import subprocess
-import sys
-import tempfile
-import uuid
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
-
-
-def _make_event_temp_path() -> str:
-    """Return a fresh unique temp-file path for the event data (C1.3).
-
-    The old code used a hardcoded ``choraufstellung_event.json`` which
-    would be clobbered by a second concurrent spawn and leak on
-    crash. This helper includes the PID + a UUID4 suffix so that
-    two simultaneous ChorAufstellung spawns get two distinct files.
-    The caller is responsible for unlinking the file when done.
-    """
-    name = f"choraufstellung_event-{os.getpid()}-{uuid.uuid4().hex[:8]}.json"
-    return os.path.join(tempfile.gettempdir(), name)
 
 
 def validate_choraufstellung_path(path: str) -> bool:
@@ -204,8 +188,10 @@ class ChorAufstellungLauncherMixin:
     # ------------------------------------------------------------------
 
     def _open_choraufstellung(self):
-        """Open Choraufstellung app with current project/event data."""
-        self._open_choraufstellung_file(None)
+        """Fresh formation: pick an event first (no subprocess since 3/3)."""
+        tab = getattr(self, "choraufstellung_tab", None)
+        if tab is not None and hasattr(tab, "_new_formation"):
+            tab._new_formation()
 
     def _open_choraufstellung_selected_or_new(self):
         """Open the currently selected formation file, or a fresh
@@ -235,180 +221,30 @@ class ChorAufstellungLauncherMixin:
     # ------------------------------------------------------------------
 
     def _open_choraufstellung_file(self, filepath: str = None):
-        """Open ChorAufstellung app, optionally with a specific file."""
-        from PyQt6.QtCore import Qt
-        from PyQt6.QtWidgets import QMessageBox
+        """Backward-compat delegate to the embedded tab editor.
 
-        choraufstellung_path = (
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            + "/choraufstellung"
-        )
-
-        # M-7 Fix: Startup-Validierung mit Logging statt nur os.path.exists.
-        if not validate_choraufstellung_path(choraufstellung_path):
-            QMessageBox.warning(
-                self,
-                "Fehler",
-                f"Choraufstellung nicht gefunden unter:\n{choraufstellung_path}",
-            )
+        No subprocess since 3/3. ``filepath`` opens embedded; without
+        a file it falls back to the new-formation dialog.
+        """
+        tab = getattr(self, "choraufstellung_tab", None)
+        if (
+            filepath
+            and tab is not None
+            and hasattr(tab, "open_embedded")
+            and tab.open_embedded(filepath)
+        ):
             return
-
-        project = (
-            self.projects_tab.current_project if hasattr(self, "projects_tab") else None
-        )
-
-        event = None
-        event_id = None
-        current_row = (
-            self.events_tab.table.currentRow() if hasattr(self, "events_tab") else -1
-        )
-
-        if current_row >= 0:
-            item = self.events_tab.table.item(current_row, 0)
-            event_id = item.data(Qt.ItemDataRole.UserRole) if item else None
-            if event_id:
-                event = self.events_tab.event_repo.get_by_id(event_id)
-
-        vars_to_pass = []
-        if project:
-            vars_to_pass.append(f"CHOR_PROJECT={project.name}")
-        if event:
-            vars_to_pass.append(f"CHOR_EVENT_DATE={event.date[:10]}")
-            vars_to_pass.append(f"CHOR_EVENT_NAME={event.name}")
-            vars_to_pass.append(f"CHOR_EVENT_ID={event.id}")
-            vars_to_pass.append(f"CHOR_EVENT_TYPE={event.event_type}")
-        if filepath:
-            vars_to_pass.append(f"CHOR_FILE={filepath}")
-
-        env = os.environ.copy()
-        for var in vars_to_pass:
-            key, value = var.split("=", 1)
-            env[key] = value
-
-        db_path = self.db_path or os.path.expanduser(
-            "~/.local/share/chormanager/chor.db"
-        )
-        env["CHOR_DB_PATH"] = db_path
-
-        try:
-            main_py = os.path.join(choraufstellung_path, "__main__.py")
-            if os.path.exists(main_py):
-                subprocess.run(
-                    [sys.executable, main_py], cwd=choraufstellung_path, env=env
-                )
-                self.choraufstellung_tab._load_formations()
-        except Exception as e:
-            QMessageBox.warning(
-                self,
-                "Fehler",
-                f"Choraufstellung konnte nicht gestartet werden:\n{str(e)}",
-            )
+        self._open_choraufstellung()
 
     def _open_choraufstellung_for_event(self, event):
-        """Open ChorAufstellung with event data via temp file."""
-        import json
+        """Seed the embedded tab editor for an event.
 
-        from PyQt6.QtWidgets import QMessageBox
-
-        from ..domain.repository import AvailabilityRepository, SingerRepository
-
-        self.content_stack.setCurrentIndex(4)
-
-        # 1. Get project
-        project = getattr(self, "current_project", None) or (
-            self.projects_tab.current_project if hasattr(self, "projects_tab") else None
-        )
-
-        # 2. Get repositories
-        singer_repo = SingerRepository(self.db)
-        avail_repo = AvailabilityRepository(self.db)
-
-        # 3. Get available singers (status=yes or conditional)
-        singers = singer_repo.get_all()
-        available_singers = []
-
-        for singer in singers:
-            avail = avail_repo.get_by_ids(singer.id, event.id)
-            if avail and avail.status in ("yes", "conditional"):
-                available_singers.append({
-                    "singer_id": singer.id,
-                    "name": singer.full_name,
-                    "short_name": singer.short_name or "",
-                    "voice_group": singer.voice_group,
-                    "height": singer.height or 0,
-                    "affinity": singer.affinity_uuid or ""
-                })
-
-        # 3. Prepare data
-        data = {
-            "project": project.name if project else "",
-            "event": {
-                "id": event.id,
-                "name": event.name,
-                "date": event.date,
-                "event_type": event.event_type
-            },
-            "singers": available_singers,
-            "created_at": datetime.now().isoformat()
-        }
-
-        # 4. Write to temp JSON file (C1.3: unique per call, auto-cleaned).
-        # The old hardcoded path ``choraufstellung_event.json`` would
-        # be clobbered by a second concurrent spawn and leak on crash.
-        # Now we use a per-call unique temp file and unlink it in
-        # the finally block.
-        temp_file = _make_event_temp_path()
-        try:
-            with open(temp_file, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-        except Exception:
-            try:
-                if os.path.exists(temp_file):
-                    os.unlink(temp_file)
-            except OSError:
-                pass
-            raise
-
-        # 5. Pass via environment
-        env = os.environ.copy()
-        env["CHOR_EVENT_DATA"] = temp_file
-        env["CHOR_PROJECT"] = data.get("project", "")
-
-        # 6. Also set legacy env vars for compatibility
-        if event:
-            env["CHOR_EVENT_DATE"] = event.date[:10]
-            env["CHOR_EVENT_NAME"] = event.name
-            env["CHOR_EVENT_ID"] = event.id
-            env["CHOR_EVENT_TYPE"] = event.event_type
-
-        # 7. Get data directory for ChorAufstellung
-        choraufstellung_path = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "..", "choraufstellung"
-        )
-
-        # M-7 Fix: Startup-Validierung mit Logging.
-        if not validate_choraufstellung_path(choraufstellung_path):
-            QMessageBox.warning(
-                self,
-                "Fehler",
-                f"Choraufstellung nicht gefunden unter:\n{choraufstellung_path}",
-            )
-            return
-
-        # 8. Start ChorAufstellung
-        try:
-            main_py = os.path.join(choraufstellung_path, "__main__.py")
-            if os.path.exists(main_py):
-                subprocess.run(
-                    [sys.executable, main_py],
-                    cwd=choraufstellung_path,
-                    env=env
-                )
-                self.choraufstellung_tab._load_formations()
-        except Exception as e:
-            QMessageBox.warning(
-                self,
-                "Fehler",
-                f"Choraufstellung konnte nicht gestartet werden:\n{str(e)}"
-            )
+        No temp JSON, no subprocess since 3/3: switches to the
+        ChorAufstellung tab and lets it seed its editor directly
+        from the repositories.
+        """
+        if hasattr(self, "content_stack"):
+            self.content_stack.setCurrentIndex(4)
+        tab = getattr(self, "choraufstellung_tab", None)
+        if tab is not None and hasattr(tab, "open_new_for_event"):
+            tab.open_new_for_event(event)
