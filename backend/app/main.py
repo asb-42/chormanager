@@ -4,7 +4,9 @@ from fastapi import FastAPI
 from .routers import (
     availability,
     besetzung,
+    config,
     events,
+    export,
     formations,
     projects,
     repertoire,
@@ -28,6 +30,8 @@ def create_app() -> FastAPI:
     app.include_router(repertoire.router)
     app.include_router(selbstdarstellung.router)
     app.include_router(formations.router)
+    app.include_router(export.router)
+    app.include_router(config.router)
 
     @app.get("/api/health")
     def health() -> dict:
