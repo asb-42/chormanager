@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   createEvent,
   createFormation,
@@ -15,9 +15,9 @@ import SingerDialog from '../components/SingerDialog'
 import { useActive } from '../active/active'
 import { Button, PageHeader } from '../components/ui'
 
-type Workflow = 'formation' | 'event' | 'singer' | null
+type Workflow = 'formation' | 'event' | 'singer' | 'availability' | null
 
-const FLOWS: Exclude<Workflow, null>[] = ['formation', 'event', 'singer']
+const FLOWS: Exclude<Workflow, null>[] = ['formation', 'event', 'singer', 'availability']
 
 function initialWorkflow(flow: string | undefined): Workflow {
   return (FLOWS as string[]).includes(flow ?? '')
@@ -34,6 +34,7 @@ const cardClass =
 export default function WizardPage() {
   const params = useParams<{ flow?: string }>()
   const active = useActive()
+  const navigate = useNavigate()
   const [workflow, setWorkflow] = useState<Workflow>(() =>
     initialWorkflow(params.flow),
   )
@@ -51,7 +52,8 @@ export default function WizardPage() {
   const { data: events = [] } = useQuery({
     queryKey: ['events', projectId, '', ''],
     queryFn: () => fetchEvents({ project_id: projectId || undefined }),
-    enabled: workflow === 'formation' && step >= 2,
+    enabled:
+      (workflow === 'formation' && step >= 2) || workflow === 'availability',
   })
   const { data: voiceGroups = [] } = useQuery({
     queryKey: ['voice-groups'],
@@ -103,21 +105,28 @@ export default function WizardPage() {
             onClick={() => start('formation')}
             className={cardClass}
           >
-            Aufstellung planen
+            Eine Aufstellung für einen Auftritt planen
           </button>
           <button
             type="button"
             onClick={() => start('event')}
             className={cardClass}
           >
-            Termin eintragen
+            Einen neuen Termin eintragen
+          </button>
+          <button
+            type="button"
+            onClick={() => start('availability')}
+            className={cardClass}
+          >
+            Zusagen und Absagen für einen Termin erfassen
           </button>
           <button
             type="button"
             onClick={() => start('singer')}
             className={cardClass}
           >
-            Chormitglied aufnehmen
+            Ein Chormitglied aufnehmen
           </button>
         </div>
       </section>
@@ -173,12 +182,83 @@ export default function WizardPage() {
               onCreate={() => createFormationMutation.mutate()}
             />
           )}
+          {workflow === 'availability' && (
+            <AvailabilityFlow
+              step={step}
+              setStep={setStep}
+              eventId={eventId}
+              setEventId={setEventId}
+              events={events}
+              onOpen={() => {
+                active.setEvent(eventId)
+                navigate('/availability')
+              }}
+            />
+          )}
           <Button className="mt-4" onClick={reset}>
             Abbrechen
           </Button>
         </div>
       )}
     </section>
+  )
+}
+
+function AvailabilityFlow(props: {
+  step: number
+  setStep: (step: number) => void
+  eventId: string
+  setEventId: (id: string) => void
+  events: { id: string; name: string }[]
+  onOpen: () => void
+}) {
+  const { step, setStep, eventId, setEventId, events, onOpen } = props
+  return (
+    <div className="mt-4 max-w-md">
+      <p className="text-sm text-gray-600">Schritt {step} von 2</p>
+      {step === 1 && (
+        <label className="mt-2 block text-sm font-medium">
+          Termin
+          <select
+            value={eventId}
+            onChange={(event) => setEventId(event.target.value)}
+            className="ml-2 rounded border border-gray-300 px-2 py-1 dark:border-gray-600 dark:bg-gray-800"
+          >
+            <option value="">–</option>
+            {events.map((event) => (
+              <option key={event.id} value={event.id}>
+                {event.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      {step === 2 && (
+        <p className="mt-2">
+          Markieren Sie pro Sänger, ob er beim Termin dabei ist.
+          Mindestens eine Zusage ist nötig.
+        </p>
+      )}
+      <div className="mt-3 flex gap-2">
+        {step > 1 && (
+          <Button onClick={() => setStep(step - 1)}>Zurück</Button>
+        )}
+        {step === 1 && (
+          <Button
+            variant="primary"
+            onClick={() => setStep(2)}
+            disabled={!eventId}
+          >
+            Weiter
+          </Button>
+        )}
+        {step === 2 && (
+          <Button variant="primary" onClick={onOpen}>
+            Verfügbarkeit öffnen
+          </Button>
+        )}
+      </div>
+    </div>
   )
 }
 

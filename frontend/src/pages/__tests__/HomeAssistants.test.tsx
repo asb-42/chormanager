@@ -26,15 +26,19 @@ describe('HomePage assistants', () => {
       </QueryClientProvider>,
     )
     expect(screen.queryByText(/M2-Aufbau/)).not.toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Aufstellung planen/ })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Eine Aufstellung für einen Auftritt planen/ })).toHaveAttribute(
       'href',
       '/wizard/formation',
     )
-    expect(screen.getByRole('link', { name: /Termin eintragen/ })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Einen neuen Termin eintragen/ })).toHaveAttribute(
       'href',
       '/wizard/event',
     )
-    expect(screen.getByRole('link', { name: /Chormitglied aufnehmen/ })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: /Zusagen und Absagen für einen Termin erfassen/ })).toHaveAttribute(
+      'href',
+      '/wizard/availability',
+    )
+    expect(screen.getByRole('link', { name: /Ein Chormitglied aufnehmen/ })).toHaveAttribute(
       'href',
       '/wizard/singer',
     )

@@ -39,18 +39,23 @@ function HomePage() {
   const cards = [
     {
       to: '/wizard/formation',
-      title: 'Aufstellung planen',
-      text: 'Projekt → Termin → Zusagen → Aufstellung',
+      title: 'Eine Aufstellung für einen Auftritt planen',
+      text: 'Führt Sie Schritt für Schritt zum Sitzplan: Projekt, Termin, Besetzung, Zusagen – und öffnet dann die Aufstellung.',
     },
     {
       to: '/wizard/event',
-      title: 'Termin eintragen',
-      text: 'Neuer Termin mit Datum und Typ',
+      title: 'Einen neuen Termin eintragen',
+      text: 'Probe, Konzert oder Auftritt in den Kalender aufnehmen.',
+    },
+    {
+      to: '/wizard/availability',
+      title: 'Zusagen und Absagen für einen Termin erfassen',
+      text: 'Pro Sänger markieren, ob er zu einem Termin kommen kann.',
     },
     {
       to: '/wizard/singer',
-      title: 'Chormitglied aufnehmen',
-      text: 'Neues Chormitglied mit Stimmgruppe',
+      title: 'Ein Chormitglied aufnehmen',
+      text: 'Name und Stimmgruppe eines neuen Sängers/einer neuen Sängerin eintragen.',
     },
   ]
   return (

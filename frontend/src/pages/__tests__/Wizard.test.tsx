@@ -76,9 +76,9 @@ describe('WizardPage', () => {
   it('shows the three workflows', async () => {
     stubFetch()
     renderPage()
-    expect(await screen.findByText('Aufstellung planen')).toBeInTheDocument()
-    expect(screen.getByText('Termin eintragen')).toBeInTheDocument()
-    expect(screen.getByText('Chormitglied aufnehmen')).toBeInTheDocument()
+    expect(await screen.findByText(/Eine Aufstellung für einen Auftritt planen/)).toBeInTheDocument()
+    expect(screen.getByText(/Einen neuen Termin eintragen/)).toBeInTheDocument()
+    expect(screen.getByText(/Ein Chormitglied aufnehmen/)).toBeInTheDocument()
   })
 
   it('starts preselected from the route', async () => {
@@ -97,14 +97,14 @@ describe('WizardPage', () => {
       </QueryClientProvider>,
     )
     expect(await screen.findByLabelText('Name')).toBeInTheDocument()
-    expect(screen.queryByText('Aufstellung planen')).not.toBeInTheDocument()
+    expect(screen.queryByText(/Eine Aufstellung für einen Auftritt planen/)).not.toBeInTheDocument()
   })
 
   it('termin flow creates an event', async () => {
     const user = userEvent.setup({ delay: 10 })
     const { calls } = stubFetch()
     renderPage()
-    await user.click(await screen.findByText('Termin eintragen'))
+    await user.click(await screen.findByText(/Einen neuen Termin eintragen/))
     await user.type(screen.getByLabelText('Name'), 'Neue Probe')
     await user.type(screen.getByLabelText('Datum'), '2026-12-01')
     await user.click(screen.getByRole('button', { name: 'Anlegen' }))
@@ -125,7 +125,7 @@ describe('WizardPage', () => {
     const user = userEvent.setup({ delay: 10 })
     const { calls } = stubFetch()
     renderPage()
-    await user.click(await screen.findByText('Aufstellung planen'))
+    await user.click(await screen.findByText(/Eine Aufstellung für einen Auftritt planen/))
     await user.selectOptions(screen.getByLabelText('Projekt'), 'p-1')
     await user.click(screen.getByRole('button', { name: 'Weiter' }))
     await user.selectOptions(screen.getByLabelText('Termin'), 'e-1')
@@ -149,7 +149,7 @@ describe('WizardPage', () => {
     const user = userEvent.setup({ delay: 10 })
     const { calls } = stubFetch()
     renderPage()
-    await user.click(await screen.findByText('Chormitglied aufnehmen'))
+    await user.click(await screen.findByText(/Ein Chormitglied aufnehmen/))
     await user.type(screen.getByLabelText('Name'), 'Neu Mitglied')
     await user.click(screen.getByRole('button', { name: 'Speichern' }))
     await waitFor(() => {
@@ -166,8 +166,7 @@ describe('WizardPage', () => {
   })
 })
 
-describe('WizardPage Aktiv-Defaults', () => {
-  afterEach(() => {
+describe('WizardPage Aktiv-Defaults', () => {  afterEach(() => {
     cleanup()
   })
 
@@ -177,7 +176,7 @@ describe('WizardPage Aktiv-Defaults', () => {
     window.localStorage.setItem('chor-active-project', 'p-1')
     window.localStorage.setItem('chor-active-event', 'e-1')
     renderPage()
-    await user.click(await screen.findByText('Aufstellung planen'))
+    await user.click(await screen.findByText(/Eine Aufstellung für einen Auftritt planen/))
     await screen.findByRole('option', { name: 'Hoffmann' })
     expect(
       (screen.getByLabelText('Projekt') as HTMLSelectElement).value,
@@ -186,5 +185,43 @@ describe('WizardPage Aktiv-Defaults', () => {
     expect(
       (screen.getByLabelText('Termin') as HTMLSelectElement).value,
     ).toBe('e-1')
+  })
+})
+
+describe('WizardPage Verfuegbarkeit', () => {
+  afterEach(() => {
+    cleanup()
+  })
+
+  it('führt zum Erfassen mit aktivem Termin in die Matrix', async () => {
+    const user = userEvent.setup({ delay: 10 })
+    stubFetch()
+    queryClient.clear()
+    window.localStorage.clear()
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/wizard']}>
+          <ActiveProvider>
+            <Routes>
+              <Route path="/wizard" element={<WizardPage />} />
+              <Route path="/availability" element={<p>Matrix</p>} />
+            </Routes>
+          </ActiveProvider>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+    await user.click(
+      await screen.findByText('Zusagen und Absagen für einen Termin erfassen'),
+    )
+    await user.selectOptions(screen.getByLabelText('Termin'), 'e-1')
+    await user.click(screen.getByRole('button', { name: 'Weiter' }))
+    expect(
+      await screen.findByText(/Markieren Sie pro Sänger/),
+    ).toBeInTheDocument()
+    await user.click(
+      screen.getByRole('button', { name: 'Verfügbarkeit öffnen' }),
+    )
+    expect(await screen.findByText('Matrix')).toBeInTheDocument()
+    expect(window.localStorage.getItem('chor-active-event')).toBe('e-1')
   })
 })
