@@ -1,7 +1,7 @@
 """FastAPI application factory (M1)."""
 from fastapi import FastAPI
 
-from .routers import singers
+from .routers import events, projects, singers
 
 
 def create_app() -> FastAPI:
@@ -12,6 +12,8 @@ def create_app() -> FastAPI:
     """
     app = FastAPI(title="ChorManager API", version="0.1.0")
     app.include_router(singers.router)
+    app.include_router(events.router)
+    app.include_router(projects.router)
 
     @app.get("/api/health")
     def health() -> dict:

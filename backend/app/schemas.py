@@ -1,5 +1,5 @@
 """Pydantic response/request schemas (Pydantic v2)."""
-from typing import Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -14,3 +14,45 @@ class SingerOut(BaseModel):
     height: Optional[int] = None
     email: Optional[str] = None
     affinity_uuid: Optional[str] = None
+
+
+class EventOut(BaseModel):
+    """Public event shape incl. Zusagen counts (Desktop-Parität)."""
+
+    id: str
+    name: str
+    date: str
+    event_type: str
+    location: Optional[str] = None
+    description: Optional[str] = None
+    project_id: Optional[str] = None
+    yes_count: int = 0
+    conditional_count: int = 0
+
+
+class ProjectOut(BaseModel):
+    """Public project shape for ``GET /api/projects*``."""
+
+    id: str
+    name: str
+    description: Optional[str] = None
+    is_active: Optional[int] = 0
+    spielzeit: Optional[str] = None
+
+
+class EventSummaryItem(BaseModel):
+    """Per-event Zusagen counts within a project summary."""
+
+    event_id: str
+    name: str
+    date: str
+    yes: int = 0
+    conditional: int = 0
+
+
+class ProjectSummary(BaseModel):
+    """Zusagen-Auswertung je Termin und Stimmgruppe."""
+
+    project_id: str
+    events: List[EventSummaryItem] = []
+    by_voice_group: Dict[str, Dict[str, int]] = {}

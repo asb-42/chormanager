@@ -36,3 +36,40 @@ singers_table = Table(
     Column("created_at", String(32), nullable=False),
     Column("updated_at", String(32), nullable=False),
 )
+
+events_table = Table(
+    "events",
+    metadata,
+    Column("id", String(64), primary_key=True),
+    Column("name", String(255), nullable=False),
+    Column("date", String(32), nullable=False),
+    Column("event_type", String(64), nullable=False),
+    Column("location", String(255)),
+    Column("description", String(1024)),
+    Column("project_id", String(64)),
+    Column("created_at", String(32), nullable=False),
+    Column("updated_at", String(32), nullable=False),
+)
+
+projects_table = Table(
+    "projects",
+    metadata,
+    Column("id", String(64), primary_key=True),
+    Column("name", String(255), nullable=False),
+    Column("description", String(1024)),
+    Column("is_active", Integer),
+    Column("spielzeit", String(64)),
+    Column("created_at", String(32), nullable=False),
+    Column("updated_at", String(32), nullable=False),
+)
+
+availability_table = Table(
+    "availability",
+    metadata,
+    Column("id", String(64), primary_key=True),
+    Column("singer_id", String(64), nullable=False),
+    Column("event_id", String(64), nullable=False),
+    Column("status", String(32), nullable=False),
+    Column("created_at", String(32), nullable=False),
+    Column("updated_at", String(32), nullable=False),
+)
