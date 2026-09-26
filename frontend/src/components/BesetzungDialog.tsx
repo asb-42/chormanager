@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { BesetzungInput, Project, Singer } from '../api/client'
 import { Modal } from './Modal'
+import { Button, Field, inputClassName } from './ui'
 
 interface BesetzungDialogProps {
   projects: Project[]
@@ -8,9 +9,6 @@ interface BesetzungDialogProps {
   onSubmit: (input: BesetzungInput) => void
   onClose: () => void
 }
-
-const inputClass =
-  'w-full rounded border border-gray-300 px-2 py-1 dark:border-gray-600 dark:bg-gray-800'
 
 export default function BesetzungDialog({
   projects,
@@ -51,21 +49,19 @@ export default function BesetzungDialog({
     <Modal label="Besetzung anlegen" onClose={onClose}>
       <h2 className="text-lg font-semibold">Besetzung anlegen</h2>
       <h2 className="text-lg font-semibold">Besetzung anlegen</h2>
-      <form onSubmit={handleSubmit} className="mt-2 space-y-2">
-        <label className="block text-sm font-medium">
-          Name
+      <form onSubmit={handleSubmit} className="mt-3 space-y-3">
+        <Field label="Name">
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
-            className={inputClass}
+            className={inputClassName}
           />
-        </label>
-        <label className="block text-sm font-medium">
-          Projekt
+        </Field>
+        <Field label="Projekt">
           <select
             value={projectId}
             onChange={(event) => setProjectId(event.target.value)}
-            className={inputClass}
+            className={inputClassName}
           >
             <option value="">–</option>
             {projects.map((project) => (
@@ -74,7 +70,7 @@ export default function BesetzungDialog({
               </option>
             ))}
           </select>
-        </label>
+        </Field>
         <fieldset>
           <legend className="text-sm font-medium">Sänger</legend>
           <div className="max-h-48 space-y-1 overflow-y-auto">
@@ -91,20 +87,12 @@ export default function BesetzungDialog({
           </div>
         </fieldset>
         <div className="flex gap-2 pt-1">
-          <button
-            type="submit"
-            disabled={!valid}
-            className="rounded bg-blue-600 px-3 py-1 text-white disabled:opacity-40"
-          >
+          <Button type="submit" variant="primary" disabled={!valid}>
             Speichern
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded border px-3 py-1"
-          >
+          </Button>
+          <Button onClick={onClose}>
             Abbrechen
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>

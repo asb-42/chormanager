@@ -20,6 +20,7 @@ import {
 } from '../formation/history'
 import type { History, Snapshot } from '../formation/history'
 import OptimizerDialog from '../components/OptimizerDialog'
+import { Button } from '../components/ui'
 
 function docToMap(doc: FormationDoc): {
   map: PlacementMap
@@ -319,32 +320,30 @@ export default function FormationEditorPage() {
       <h1 className="mt-1 text-xl font-semibold">{loadedDoc.name ?? loadedDoc.id}</h1>
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
         <span className="flex gap-1" role="group" aria-label="Bearbeiten">
-          <button
-            type="button"
+          <Button
+            size="sm"
             onClick={undo}
             disabled={history.past.length === 0}
             title="Rückgängig (Strg+Z)"
             aria-label="Rückgängig"
-            className="rounded border px-2 py-1 disabled:opacity-40"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <polyline points="9 14 4 9 9 4" />
               <path d="M20 20v-7a4 4 0 0 0-4-4H4" />
             </svg>
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            size="sm"
             onClick={redo}
             disabled={history.future.length === 0}
             title="Wiederholen (Strg+Umschalt+Z)"
             aria-label="Wiederholen"
-            className="rounded border px-2 py-1 disabled:opacity-40"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <polyline points="15 14 20 9 15 4" />
               <path d="M4 20v-7a4 4 0 0 1 4-4h12" />
             </svg>
-          </button>
+          </Button>
         </span>
         <span aria-hidden="true" className="h-6 w-px bg-gray-200 dark:bg-gray-700" />
         <span className="flex items-center gap-2" role="group" aria-label="Raster">
@@ -381,25 +380,19 @@ export default function FormationEditorPage() {
             className="ml-2 w-16 rounded border border-gray-300 px-2 py-1 dark:border-gray-600 dark:bg-gray-800"
           />
         </label>
-        <button
-          type="button"
-          onClick={handleResize}
-          className="rounded border px-3 py-1"
-        >
+        <Button onClick={handleResize}>
           Anwenden
-        </button>
+        </Button>
         </span>
         <span aria-hidden="true" className="h-6 w-px bg-gray-200 dark:bg-gray-700" />
-        <button
-          type="button"
+        <Button
           onClick={() => {
             setPreview(null)
             setOptimizerOpen(true)
           }}
-          className="rounded border px-3 py-1"
         >
           Optimieren
-        </button>
+        </Button>
         <span className="ml-auto text-gray-500">
           {placedCount} platziert, {singers.length - placedCount} im Pool
         </span>
@@ -417,13 +410,13 @@ export default function FormationEditorPage() {
             {resizeConfirm} {resizeConfirm === 1 ? 'Sänger fällt' : 'Sänger fallen'}{' '}
             raus und zurück in den Pool.
           </p>
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            className="mt-1"
             onClick={confirmResize}
-            className="mt-1 rounded bg-blue-600 px-3 py-1 text-white"
           >
             Trotzdem anwenden
-          </button>
+          </Button>
         </div>
       )}
       <div className="mt-2">

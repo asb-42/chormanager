@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { fetchVersion } from '../api/client'
-import { PageHeader } from '../components/ui'
+import { Button, PageHeader } from '../components/ui'
 
 const inputClass =
   'w-full rounded border border-gray-300 px-2 py-1 dark:border-gray-600 dark:bg-gray-800'
@@ -53,20 +53,12 @@ export default function SettingsPage() {
           />
         </label>
         <div className="mt-2 flex gap-2">
-          <button
-            type="button"
-            onClick={saveToken}
-            className="rounded bg-blue-600 px-3 py-1 text-white"
-          >
+          <Button variant="primary" onClick={saveToken}>
             Token speichern
-          </button>
-          <button
-            type="button"
-            onClick={clearToken}
-            className="rounded border px-3 py-1"
-          >
+          </Button>
+          <Button onClick={clearToken}>
             Token löschen
-          </button>
+          </Button>
         </div>
         {message && <p className="mt-2">{message}</p>}
         <h2 className="mt-6 font-semibold">Server</h2>

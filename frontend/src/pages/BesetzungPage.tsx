@@ -29,27 +29,19 @@ function DeleteButtons({
 }) {
   if (!confirming) {
     return (
-      <button type="button" onClick={onAsk} className="rounded border px-2 py-0.5">
+      <Button size="sm" onClick={onAsk}>
         Löschen
-      </button>
+      </Button>
     )
   }
   return (
     <div className="flex gap-2">
-      <button
-        type="button"
-        onClick={onConfirm}
-        className="rounded bg-red-600 px-2 py-0.5 text-white"
-      >
+      <Button size="sm" variant="danger" onClick={onConfirm}>
         Wirklich löschen
-      </button>
-      <button
-        type="button"
-        onClick={onCancel}
-        className="rounded border px-2 py-0.5"
-      >
+      </Button>
+      <Button size="sm" onClick={onCancel}>
         Abbrechen
-      </button>
+      </Button>
     </div>
   )
 }
@@ -115,13 +107,9 @@ export default function BesetzungPage() {
             ))}
           </select>
         </label>
-        <button
-          type="button"
-          onClick={() => setShowDialog(true)}
-          className="rounded bg-blue-600 px-3 py-1 text-white"
-        >
+        <Button variant="primary" onClick={() => setShowDialog(true)}>
           Neu
-        </button>
+        </Button>
       </div>
       {isLoading && <p className="mt-4">Lädt …</p>}
       {isError && <p className="mt-4 text-red-600">Fehler beim Laden.</p>}

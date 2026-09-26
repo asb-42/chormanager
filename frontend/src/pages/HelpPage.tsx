@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { fetchVersion } from '../api/client'
-import { PageHeader } from '../components/ui'
+import { Button, PageHeader } from '../components/ui'
 
 export default function HelpPage() {
   const [checkedAt, setCheckedAt] = useState<Date | null>(null)
@@ -25,13 +25,9 @@ export default function HelpPage() {
       <p className="mt-1 text-sm">
         Chorverwaltung im Browser. {`Backend-Version: ${data ? data.version : '–'}`}
       </p>
-      <button
-        type="button"
-        onClick={() => void checkVersion()}
-        className="mt-2 rounded border px-3 py-1"
-      >
+      <Button className="mt-2" onClick={() => void checkVersion()}>
         Version prüfen
-      </button>
+      </Button>
       {checkedAt && (
         <p className="mt-1 text-sm">
           Geprüft um {checkedAt.toLocaleTimeString()}.

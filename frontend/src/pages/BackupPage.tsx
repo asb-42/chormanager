@@ -6,8 +6,7 @@ import {
   fetchBackups,
   restoreBackup,
 } from '../api/client'
-import { Th, Td,
-  PageHeader,} from '../components/ui'
+import { Button, PageHeader, Th, Td } from '../components/ui'
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Unbekannter Fehler'
@@ -58,13 +57,9 @@ export default function BackupPage() {
     <section>
       <PageHeader title="Backup" />
       <div className="mt-3">
-        <button
-          type="button"
-          onClick={() => createMutation.mutate()}
-          className="rounded bg-blue-600 px-3 py-1 text-white"
-        >
+        <Button variant="primary" onClick={() => createMutation.mutate()}>
           Backup anlegen
-        </button>
+        </Button>
       </div>
       {message && <p className="mt-2">{message}</p>}
       {isLoading && <p className="mt-4">Lädt …</p>}
@@ -92,55 +87,51 @@ export default function BackupPage() {
                   <div className="flex gap-2">
                     {restoreConfirmId === item.id ? (
                       <>
-                        <button
-                          type="button"
+                        <Button
+                          size="sm"
+                          variant="success"
                           onClick={() => restoreMutation.mutate(item.id)}
-                          className="rounded bg-green-700 px-2 py-0.5 text-white"
                         >
                           Wirklich wiederherstellen
-                        </button>
-                        <button
-                          type="button"
+                        </Button>
+                        <Button
+                          size="sm"
                           onClick={() => setRestoreConfirmId(null)}
-                          className="rounded border px-2 py-0.5"
-                        >
+                          >
                           Abbrechen
-                        </button>
+                        </Button>
                       </>
                     ) : (
-                      <button
-                        type="button"
+                      <Button
+                        size="sm"
                         onClick={() => setRestoreConfirmId(item.id)}
-                        className="rounded border px-2 py-0.5"
-                      >
+                        >
                         Wiederherstellen
-                      </button>
+                        </Button>
                     )}
                     {deleteConfirmId === item.id ? (
                       <>
-                        <button
-                          type="button"
+                        <Button
+                          size="sm"
+                          variant="danger"
                           onClick={() => deleteMutation.mutate(item.id)}
-                          className="rounded bg-red-600 px-2 py-0.5 text-white"
                         >
                           Wirklich löschen
-                        </button>
-                        <button
-                          type="button"
+                        </Button>
+                        <Button
+                          size="sm"
                           onClick={() => setDeleteConfirmId(null)}
-                          className="rounded border px-2 py-0.5"
-                        >
+                          >
                           Abbrechen
-                        </button>
+                        </Button>
                       </>
                     ) : (
-                      <button
-                        type="button"
+                      <Button
+                        size="sm"
                         onClick={() => setDeleteConfirmId(item.id)}
-                        className="rounded border px-2 py-0.5"
-                      >
+                        >
                         Löschen
-                      </button>
+                        </Button>
                     )}
                   </div>
                 </Td>

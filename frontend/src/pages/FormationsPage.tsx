@@ -2,12 +2,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { createFormation, fetchEvents, fetchFormations } from '../api/client'
-import { PageHeader } from '../components/ui'
-import { Th, Td } from '../components/ui'
+import { Button, Field, PageHeader, Th, Td, inputClassName } from '../components/ui'
 import { Modal } from '../components/Modal'
-
-const inputClass =
-  'w-full rounded border border-gray-300 px-2 py-1 dark:border-gray-600 dark:bg-gray-800'
 
 export default function FormationsPage() {
   const [showDialog, setShowDialog] = useState(false)
@@ -41,13 +37,9 @@ export default function FormationsPage() {
     <section>
       <PageHeader title="Aufstellungen" />
       <div className="mt-3">
-        <button
-          type="button"
-          onClick={() => setShowDialog(true)}
-          className="rounded bg-blue-600 px-3 py-1 text-white"
-        >
+        <Button variant="primary" onClick={() => setShowDialog(true)}>
           Neu
-        </button>
+        </Button>
       </div>
       {isLoading && <p className="mt-4">Lädt …</p>}
       {isError && <p className="mt-4 text-red-600">Fehler beim Laden.</p>}
@@ -92,41 +84,37 @@ export default function FormationsPage() {
         <Modal label="Aufstellung anlegen" onClose={() => setShowDialog(false)}>
           <h2 className="text-lg font-semibold">Aufstellung anlegen</h2>
           <h2 className="text-lg font-semibold">Aufstellung anlegen</h2>
-          <form onSubmit={(event) => void handleCreate(event)} className="mt-2 space-y-2">
-            <label className="block text-sm font-medium">
-              Name
+          <form onSubmit={(event) => void handleCreate(event)} className="mt-3 space-y-3">
+            <Field label="Name">
               <input
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                className={inputClass}
+                className={inputClassName}
               />
-            </label>
+            </Field>
             <div className="flex gap-2">
-              <label className="text-sm font-medium">
-                Reihen
+              <Field label="Reihen">
                 <input
                   value={rows}
                   inputMode="numeric"
                   onChange={(event) => setRows(event.target.value)}
-                  className={`${inputClass} ml-2 w-16`}
+                  className={`${inputClassName} w-16`}
                 />
-              </label>
-              <label className="text-sm font-medium">
-                Spalten
+              </Field>
+              <Field label="Spalten">
                 <input
                   value={cols}
                   inputMode="numeric"
                   onChange={(event) => setCols(event.target.value)}
-                  className={`${inputClass} ml-2 w-16`}
+                  className={`${inputClassName} w-16`}
                 />
-              </label>
+              </Field>
             </div>
-            <label className="block text-sm font-medium">
-              Termin (Zusagen übernehmen)
+            <Field label="Termin (Zusagen übernehmen)">
               <select
                 value={eventId}
                 onChange={(event) => setEventId(event.target.value)}
-                className={inputClass}
+                className={inputClassName}
               >
                 <option value="">–</option>
                 {events.map((event) => (
@@ -135,21 +123,14 @@ export default function FormationsPage() {
                   </option>
                 ))}
               </select>
-            </label>
+            </Field>
             <div className="flex gap-2 pt-1">
-              <button
-                type="submit"
-                className="rounded bg-blue-600 px-3 py-1 text-white"
-              >
+              <Button type="submit" variant="primary">
                 Anlegen
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowDialog(false)}
-                className="rounded border px-3 py-1"
-              >
+              </Button>
+              <Button onClick={() => setShowDialog(false)}>
                 Abbrechen
-              </button>
+              </Button>
             </div>
           </form>
         </Modal>

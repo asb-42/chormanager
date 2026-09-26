@@ -109,9 +109,9 @@ export default function SingerDialog({
   }
 
   return (
-    <Modal label={title} onClose={onClose}>
+    <Modal label={title} onClose={onClose} wide>
       <h2 className="text-lg font-semibold">{title}</h2>
-      <form onSubmit={handleSubmit} className="mt-2 space-y-4">
+      <form onSubmit={handleSubmit} className="mt-3 space-y-4">
         <fieldset>
           <legend className="text-sm font-semibold uppercase tracking-wider text-gray-500">
             Person

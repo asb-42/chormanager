@@ -44,4 +44,19 @@ describe('Modal', () => {
     )
     expect(await screen.findByLabelText('Name')).toHaveFocus()
   })
+
+  it('constrains width (default lg, wide 2xl)', () => {
+    const { rerender } = render(
+      <Modal label="T" onClose={() => {}}>
+        <p>x</p>
+      </Modal>,
+    )
+    expect(screen.getByRole('dialog')).toHaveClass('max-w-lg')
+    rerender(
+      <Modal label="T" onClose={() => {}} wide>
+        <p>x</p>
+      </Modal>,
+    )
+    expect(screen.getByRole('dialog')).toHaveClass('max-w-2xl')
+  })
 })

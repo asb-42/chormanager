@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { EventInput, Project } from '../api/client'
+import { Button, Field, inputClassName } from './ui'
 
 interface EventDialogProps {
   projects: Project[]
@@ -7,9 +8,6 @@ interface EventDialogProps {
   onSubmit: (input: EventInput) => void
   onClose?: () => void
 }
-
-const inputClass =
-  'w-full rounded border border-gray-300 px-2 py-1 dark:border-gray-600 dark:bg-gray-800'
 
 const EVENT_TYPES = ['GP', 'OP', 'SOFA', 'Probe', 'Konzert', 'Auftritt']
 
@@ -39,30 +37,27 @@ export default function EventDialog({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-2 space-y-2">
-      <label className="block text-sm font-medium">
-        Name
+    <form onSubmit={handleSubmit} className="mt-3 space-y-3">
+      <Field label="Name">
         <input
           value={name}
           onChange={(event) => setName(event.target.value)}
-          className={inputClass}
+          className={inputClassName}
         />
-      </label>
-      <label className="block text-sm font-medium">
-        Datum
+      </Field>
+      <Field label="Datum">
         <input
           type="date"
           value={date}
           onChange={(event) => setDate(event.target.value)}
-          className={inputClass}
+          className={inputClassName}
         />
-      </label>
-      <label className="block text-sm font-medium">
-        Typ
+      </Field>
+      <Field label="Typ">
         <select
           value={eventType}
           onChange={(event) => setEventType(event.target.value)}
-          className={inputClass}
+          className={inputClassName}
         >
           {EVENT_TYPES.map((type) => (
             <option key={type} value={type}>
@@ -70,13 +65,12 @@ export default function EventDialog({
             </option>
           ))}
         </select>
-      </label>
-      <label className="block text-sm font-medium">
-        Projekt
+      </Field>
+      <Field label="Projekt">
         <select
           value={projectId}
           onChange={(event) => setProjectId(event.target.value)}
-          className={inputClass}
+          className={inputClassName}
         >
           <option value="">–</option>
           {projects.map((project) => (
@@ -85,23 +79,15 @@ export default function EventDialog({
             </option>
           ))}
         </select>
-      </label>
+      </Field>
       <div className="flex gap-2 pt-1">
-        <button
-          type="submit"
-          disabled={!valid}
-          className="rounded bg-blue-600 px-3 py-1 text-white disabled:opacity-40"
-        >
+        <Button type="submit" variant="primary" disabled={!valid}>
           {submitLabel}
-        </button>
+        </Button>
         {onClose && (
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded border px-3 py-1"
-          >
+          <Button onClick={onClose}>
             Abbrechen
-          </button>
+          </Button>
         )}
       </div>
     </form>

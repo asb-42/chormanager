@@ -13,7 +13,7 @@ import type { EventInput, SingerInput } from '../api/client'
 import EventDialog from '../components/EventDialog'
 import SingerDialog from '../components/SingerDialog'
 import { useActive } from '../active/active'
-import { PageHeader } from '../components/ui'
+import { Button, PageHeader } from '../components/ui'
 
 type Workflow = 'formation' | 'event' | 'singer' | null
 
@@ -27,8 +27,6 @@ function initialWorkflow(flow: string | undefined): Workflow {
 
 const inputClass =
   'rounded border border-gray-300 px-2 py-1 dark:border-gray-600 dark:bg-gray-800'
-
-const buttonClass = 'rounded bg-blue-600 px-3 py-1 text-white'
 
 const cardClass =
   'rounded border p-4 text-left hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -132,9 +130,9 @@ export default function WizardPage() {
       {done ? (
         <div>
           <p className="mt-4">{done}</p>
-          <button type="button" onClick={reset} className={`${buttonClass} mt-3`}>
+          <Button variant="primary" className="mt-3" onClick={reset}>
             Neuer Vorgang
-          </button>
+          </Button>
         </div>
       ) : (
         <div>
@@ -175,13 +173,9 @@ export default function WizardPage() {
               onCreate={() => createFormationMutation.mutate()}
             />
           )}
-          <button
-            type="button"
-            onClick={reset}
-            className="mt-4 rounded border px-3 py-1"
-          >
+          <Button className="mt-4" onClick={reset}>
             Abbrechen
-          </button>
+          </Button>
         </div>
       )}
     </section>
@@ -287,30 +281,23 @@ function FormationFlow(props: {
       )}
       <div className="mt-3 flex gap-2">
         {step > 1 && (
-          <button
-            type="button"
-            onClick={() => setStep(step - 1)}
-            className="rounded border px-3 py-1"
-          >
-            Zurück
-          </button>
+          <Button onClick={() => setStep(step - 1)}>Zurück</Button>
         )}
         {step < 4 && (
-          <button
-            type="button"
+          <Button
+            variant="primary"
             onClick={() => setStep(step + 1)}
             disabled={
               (step === 1 && !projectId) || (step === 2 && !eventId)
             }
-            className={`${buttonClass} disabled:opacity-40`}
           >
             Weiter
-          </button>
+          </Button>
         )}
         {step === 4 && (
-          <button type="button" onClick={onCreate} className={buttonClass}>
+          <Button variant="primary" onClick={onCreate}>
             Aufstellung anlegen
-          </button>
+          </Button>
         )}
       </div>
     </div>

@@ -7,10 +7,12 @@ import { dialogClassName } from './ui'
 export function Modal({
   label,
   onClose,
+  wide = false,
   children,
 }: {
   label: string
   onClose: () => void
+  wide?: boolean
   children: ReactNode
 }) {
   const boxRef = useRef<HTMLDivElement>(null)
@@ -44,7 +46,9 @@ export function Modal({
         role="dialog"
         aria-label={label}
         aria-modal="true"
-        className={`${dialogClassName} max-h-[90vh] w-full overflow-y-auto`}
+        className={`${dialogClassName} max-h-[90vh] w-full overflow-y-auto ${
+          wide ? 'max-w-2xl' : 'max-w-lg'
+        }`}
       >
         {children}
       </div>

@@ -7,8 +7,7 @@ import {
   fetchProjects,
   fetchRepertoire,
 } from '../api/client'
-import { Th, Td,
-  PageHeader,} from '../components/ui'
+import { Button, PageHeader, Th, Td } from '../components/ui'
 import type { RepertoireInput } from '../api/client'
 import RepertoireDialog from '../components/RepertoireDialog'
 
@@ -71,13 +70,9 @@ export default function RepertoirePage() {
             ))}
           </select>
         </label>
-        <button
-          type="button"
-          onClick={() => setShowDialog(true)}
-          className="rounded bg-blue-600 px-3 py-1 text-white"
-        >
+        <Button variant="primary" onClick={() => setShowDialog(true)}>
           Neu
-        </button>
+        </Button>
       </div>
       {isLoading && <p className="mt-4">Lädt …</p>}
       {isError && <p className="mt-4 text-red-600">Fehler beim Laden.</p>}
@@ -114,29 +109,21 @@ export default function RepertoirePage() {
                 <Td>
                   {deleteConfirmId === item.id ? (
                     <div className="flex gap-2">
-                      <button
-                        type="button"
+                      <Button
+                        size="sm"
+                        variant="danger"
                         onClick={() => deleteMutation.mutate(item.id)}
-                        className="rounded bg-red-600 px-2 py-0.5 text-white"
                       >
                         Wirklich löschen
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setDeleteConfirmId(null)}
-                        className="rounded border px-2 py-0.5"
-                      >
+                      </Button>
+                      <Button size="sm" onClick={() => setDeleteConfirmId(null)}>
                         Abbrechen
-                      </button>
+                      </Button>
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => setDeleteConfirmId(item.id)}
-                      className="rounded border px-2 py-0.5"
-                    >
+                    <Button size="sm" onClick={() => setDeleteConfirmId(item.id)}>
                       Löschen
-                    </button>
+                    </Button>
                   )}
                 </Td>
               </tr>

@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { fetchMarketing, putMarketing } from '../api/client'
-import { PageHeader } from '../components/ui'
+import { Button, PageHeader } from '../components/ui'
 
 export default function MarketingPage() {
   const [saved, setSaved] = useState(false)
@@ -35,13 +35,13 @@ export default function MarketingPage() {
               className="mt-1 w-full rounded border border-gray-300 px-2 py-1 dark:border-gray-600 dark:bg-gray-800"
             />
           </label>
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            className="mt-2"
             onClick={() => mutation.mutate(text ?? data.content)}
-            className="mt-2 rounded bg-blue-600 px-3 py-1 text-white"
           >
             Speichern
-          </button>
+          </Button>
           {saved && <p className="mt-2">Gespeichert.</p>}
         </div>
       )}

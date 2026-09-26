@@ -5,6 +5,7 @@ import type {
   StoredSinger,
 } from '../api/client'
 import type { PlacementMap } from '../formation/placements'
+import { Button } from './ui'
 import { Modal } from './Modal'
 
 interface OptimizerDialogProps {
@@ -55,7 +56,7 @@ export default function OptimizerDialog({
   const refinement = rules.filter((rule) => !rule.primary)
 
   return (
-    <Modal label="Aufstellung optimieren" onClose={onClose}>
+    <Modal label="Aufstellung optimieren" onClose={onClose} wide>
       <h2 className="text-lg font-semibold">Aufstellung optimieren</h2>
       <h2 className="text-lg font-semibold">Aufstellung optimieren</h2>
       <fieldset className="mt-2">
@@ -85,21 +86,16 @@ export default function OptimizerDialog({
         ))}
       </fieldset>
       <div className="mt-2 flex gap-2">
-        <button
-          type="button"
+        <Button
+          variant="primary"
           onClick={() => onPreview(checked)}
           disabled={checked.length === 0 || previewPending}
-          className="rounded bg-blue-600 px-3 py-1 text-white disabled:opacity-40"
         >
           Vorschau
-        </button>
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded border px-3 py-1"
-        >
+        </Button>
+        <Button onClick={onClose}>
           Abbrechen
-        </button>
+        </Button>
       </div>
       {preview && (
         <div className="mt-3">
@@ -118,13 +114,13 @@ export default function OptimizerDialog({
               )
             })}
           </ul>
-          <button
-            type="button"
+          <Button
+            variant="success"
+            className="mt-2"
             onClick={onApply}
-            className="mt-2 rounded bg-green-700 px-3 py-1 text-white"
           >
             Übernehmen
-          </button>
+          </Button>
         </div>
       )}
     </Modal>
