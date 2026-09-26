@@ -69,6 +69,23 @@ export function fetchVersion(): Promise<{ version: string }> {
   return api<{ version: string }>('/api/version')
 }
 
+export interface MarketingText {
+  id: string | null
+  content: string
+}
+
+export function fetchMarketing(): Promise<MarketingText> {
+  return api<MarketingText>('/api/selbstdarstellung')
+}
+
+export function putMarketing(content: string): Promise<MarketingText> {
+  return api<MarketingText>('/api/selbstdarstellung', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content }),
+  })
+}
+
 export interface SingerInput {
   full_name: string
   short_name?: string

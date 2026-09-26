@@ -1,13 +1,13 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 body {
   background: #fff;
   color: #111;
 }
 
-@media (prefers-color-scheme: dark) {
-  body {
-    background: #16171d;
-    color: #f3f4f6;
-  }
+.dark body {
+  background: #16171d;
+  color: #f3f4f6;
 }

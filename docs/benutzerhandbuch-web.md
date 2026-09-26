@@ -14,6 +14,7 @@
 - [Exporte und PDF](#exporte-und-pdf)
 - [Backup](#backup)
 - [Assistent](#assistent)
+- [Ansicht, Konfiguration, Marketing, Hilfe](#ansicht-konfiguration-marketing-hilfe)
 - [Problemlösung](#problemlösung)
 
 ## Start und Anmeldung
@@ -87,6 +88,17 @@ Der Assistent führt in Schritten durch: Aufstellung planen
 (Projekt → Termin → Zusagen-Hinweis → Raster anlegen), Termin
 eintragen, Chormitglied aufnehmen. Jeder Schritt lässt sich
 abbrechen.
+
+## Ansicht, Konfiguration, Marketing, Hilfe
+
+- **Ansicht:** Oben rechts zwischen Hell, Dunkel und Auto
+  (Systemeinstellung) wechseln. Die Wahl bleibt gespeichert.
+- **Konfiguration:** API-Token hinterlegen (vom Chorleiter
+  vergeben; ohne Token läuft der offene Entwicklungsbetrieb)
+  und Backend-Version einsehen.
+- **Marketing:** Selbstdarstellungstext lesen und speichern.
+- **Hilfe:** Versionen einsehen, „Version prüfen" stellt den
+  Prüfzeitpunkt fest.
 
 ## Problemlösung
 
