@@ -6,7 +6,12 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { queryClient } from '../../api/client'
+
+import { ActiveProvider } from '../../active/active'
 import WizardPage from '../WizardPage'
+beforeEach(() => {
+  window.localStorage.clear()
+})
 
 const PROJECTS = [{ id: 'p-1', name: 'Hoffmann' }]
 const EVENTS = [
@@ -51,7 +56,9 @@ function renderPage() {
   render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>
-        <WizardPage />
+        <ActiveProvider>
+          <WizardPage />
+        </ActiveProvider>
       </MemoryRouter>
     </QueryClientProvider>,
   )
@@ -77,12 +84,15 @@ describe('WizardPage', () => {
   it('starts preselected from the route', async () => {
     stubFetch()
     queryClient.clear()
+    window.localStorage.clear()
     render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter initialEntries={['/wizard/event']}>
-          <Routes>
-            <Route path="/wizard/:flow" element={<WizardPage />} />
-          </Routes>
+          <ActiveProvider>
+            <Routes>
+              <Route path="/wizard/:flow" element={<WizardPage />} />
+            </Routes>
+          </ActiveProvider>
         </MemoryRouter>
       </QueryClientProvider>,
     )
@@ -153,5 +163,28 @@ describe('WizardPage', () => {
       ).toBe(true)
     })
     expect(await screen.findByText(/aufgenommen/i)).toBeInTheDocument()
+  })
+})
+
+describe('WizardPage Aktiv-Defaults', () => {
+  afterEach(() => {
+    cleanup()
+  })
+
+  it('nimmt Projekt und Termin aus dem Aktiv-Kontext vorweg', async () => {
+    const user = userEvent.setup({ delay: 10 })
+    stubFetch()
+    window.localStorage.setItem('chor-active-project', 'p-1')
+    window.localStorage.setItem('chor-active-event', 'e-1')
+    renderPage()
+    await user.click(await screen.findByText('Aufstellung planen'))
+    await screen.findByRole('option', { name: 'Hoffmann' })
+    expect(
+      (screen.getByLabelText('Projekt') as HTMLSelectElement).value,
+    ).toBe('p-1')
+    await user.click(screen.getByRole('button', { name: 'Weiter' }))
+    expect(
+      (screen.getByLabelText('Termin') as HTMLSelectElement).value,
+    ).toBe('e-1')
   })
 })

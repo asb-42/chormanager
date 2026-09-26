@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { fetchEvents, fetchProjects, formatDate } from '../api/client'
-import { Th, Td,
-  PageHeader,} from '../components/ui'
+import { Button, PageHeader, Th, Td } from '../components/ui'
+import { useActive } from '../active/active'
 
 const EVENT_TYPES = ['GP', 'OP', 'SOFA', 'Probe', 'Konzert', 'Auftritt']
 
@@ -14,6 +14,7 @@ export default function EventsPage() {
   const [projectId, setProjectId] = useState('')
   const [search, setSearch] = useState('')
   const [eventType, setEventType] = useState('')
+  const active = useActive()
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -88,6 +89,7 @@ export default function EventsPage() {
               <Th>Projekt</Th>
               <Th>Zusagen</Th>
               <Th>Vorbehalt</Th>
+              <Th>Status</Th>
             </tr>
           </thead>
           <tbody>
@@ -110,6 +112,17 @@ export default function EventsPage() {
                 </Td>
                 <Td>{event.yes_count}</Td>
                 <Td>{event.conditional_count}</Td>
+                <Td>
+                  {active.eventId === event.id ? (
+                    <span className="rounded bg-orange-500 px-2 py-0.5 text-xs font-semibold text-white">
+                      Aktiv
+                    </span>
+                  ) : (
+                    <Button size="sm" onClick={() => active.setEvent(event.id)}>
+                      Aktiv
+                    </Button>
+                  )}
+                </Td>
               </tr>
             ))}
           </tbody>

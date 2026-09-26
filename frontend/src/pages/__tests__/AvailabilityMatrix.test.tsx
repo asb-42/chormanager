@@ -6,7 +6,14 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { queryClient } from '../../api/client'
+
+
+import { ActiveProvider } from '../../active/active'
 import AvailabilityPage from '../AvailabilityPage'
+
+beforeEach(() => {
+  window.localStorage.clear()
+})
 
 const EVENTS = [
   { id: 'e-1', name: 'Probe A', date: '2026-09-01', event_type: 'Probe', yes_count: 1, conditional_count: 0 },
@@ -58,7 +65,9 @@ function renderPage() {
   render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter>
-        <AvailabilityPage />
+        <ActiveProvider>
+          <AvailabilityPage />
+        </ActiveProvider>
       </MemoryRouter>
     </QueryClientProvider>,
   )
@@ -120,5 +129,55 @@ describe('AvailabilityPage', () => {
         calls.some((c) => c.url.includes('/api/events/e-2/availability')),
       ).toBe(true)
     })
+  })
+})
+
+describe('Aktiv-Kontext: Verfügbarkeit', () => {
+  beforeEach(() => {
+    matrixEntries = [
+      { singer_id: 's-1', full_name: 'Anna Muster', short_name: 'Anna', voice_group: 'Sopran 1', status: 'yes' },
+      { singer_id: 's-2', full_name: 'Berta B', short_name: 'Berta', voice_group: 'Bass 2', status: 'none' },
+    ]
+  })
+
+  afterEach(() => {
+    cleanup()
+  })
+
+  it('filtert auf die aktive Besetzung, opt-out möglich', async () => {
+    const user = userEvent.setup({ delay: 10 })
+    const { calls } = stubFetch()
+    window.localStorage.setItem('chor-active-besetzung', 'x-9')
+    // Besetzungsliste kennt x-9 mit nur s-1.
+    const origFetch = window.fetch
+    window.fetch = (async (url: string, init?: RequestInit) => {
+      if (String(url).includes('/api/besetzungen')) {
+        return {
+          ok: true,
+          json: async () => [{ id: 'x-9', name: 'Kern', singer_ids: ['s-1'] }],
+        }
+      }
+      return (origFetch as typeof fetch)(url, init)
+    }) as typeof fetch
+    renderPage()
+    expect(await screen.findByText(/Gefiltert auf Besetzung/)).toBeInTheDocument()
+    expect(await screen.findByText('Anna Muster')).toBeInTheDocument()
+    expect(screen.queryByText('Berta B')).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Alle Sänger zeigen' }))
+    expect(await screen.findByText('Berta B')).toBeInTheDocument()
+    expect(calls.length).toBeGreaterThan(0)
+  })
+
+  it('wählt den aktiven Termin vor und setzt ihn bei Wechsel', async () => {
+    const user = userEvent.setup({ delay: 10 })
+    stubFetch()
+    window.localStorage.setItem('chor-active-event', 'e-2')
+    renderPage()
+    await screen.findByText('Anna Muster')
+    expect(
+      (screen.getByLabelText('Termin') as HTMLSelectElement).value,
+    ).toBe('e-2')
+    await user.selectOptions(screen.getByLabelText('Termin'), 'e-1')
+    expect(window.localStorage.getItem('chor-active-event')).toBe('e-1')
   })
 })

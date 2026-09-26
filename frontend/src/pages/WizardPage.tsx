@@ -12,6 +12,7 @@ import {
 import type { EventInput, SingerInput } from '../api/client'
 import EventDialog from '../components/EventDialog'
 import SingerDialog from '../components/SingerDialog'
+import { useActive } from '../active/active'
 import { PageHeader } from '../components/ui'
 
 type Workflow = 'formation' | 'event' | 'singer' | null
@@ -34,12 +35,13 @@ const cardClass =
 
 export default function WizardPage() {
   const params = useParams<{ flow?: string }>()
+  const active = useActive()
   const [workflow, setWorkflow] = useState<Workflow>(() =>
     initialWorkflow(params.flow),
   )
   const [step, setStep] = useState(1)
-  const [projectId, setProjectId] = useState('')
-  const [eventId, setEventId] = useState('')
+  const [projectId, setProjectId] = useState(active.projectId ?? '')
+  const [eventId, setEventId] = useState(active.eventId ?? '')
   const [rows, setRows] = useState('4')
   const [cols, setCols] = useState('5')
   const [done, setDone] = useState<string | null>(null)
@@ -62,8 +64,8 @@ export default function WizardPage() {
   function reset() {
     setWorkflow(null)
     setStep(1)
-    setProjectId('')
-    setEventId('')
+    setProjectId(active.projectId ?? '')
+    setEventId(active.eventId ?? '')
     setRows('4')
     setCols('5')
     setDone(null)

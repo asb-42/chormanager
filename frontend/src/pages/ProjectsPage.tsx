@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useParams } from 'react-router-dom'
 import { fetchProjects, fetchProjectSummary, formatDate } from '../api/client'
-import { Th, Td,
-  PageHeader,} from '../components/ui'
+import { Button, PageHeader, Th, Td } from '../components/ui'
+import { useActive } from '../active/active'
 
 export default function ProjectsPage() {
   const params = useParams<{ id?: string }>()
   const [selectedId, setSelectedId] = useState<string | null>(params.id ?? null)
+  const active = useActive()
   const { data: projects = [], isLoading, isError } = useQuery({
     queryKey: ['projects'],
     queryFn: fetchProjects,
@@ -29,7 +30,7 @@ export default function ProjectsPage() {
       {isError && <p className="mt-4 text-red-600">Fehler beim Laden.</p>}
       <ul className="mt-4 space-y-1">
         {projects.map((project) => (
-          <li key={project.id}>
+          <li key={project.id} className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setSelectedId(project.id)}
@@ -41,6 +42,15 @@ export default function ProjectsPage() {
             >
               {project.name}
             </button>
+            {active.projectId === project.id ? (
+              <span className="rounded bg-blue-600 px-2 py-0.5 text-xs font-semibold text-white">
+                Aktiv
+              </span>
+            ) : (
+              <Button size="sm" onClick={() => active.setProject(project.id)}>
+                Als aktiv setzen
+              </Button>
+            )}
           </li>
         ))}
       </ul>

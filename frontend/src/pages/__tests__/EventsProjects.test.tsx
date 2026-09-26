@@ -4,10 +4,17 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { queryClient } from '../../api/client'
+
+
+import { ActiveProvider } from '../../active/active'
 import EventsPage from '../EventsPage'
 import ProjectsPage from '../ProjectsPage'
+
+beforeEach(() => {
+  window.localStorage.clear()
+})
 
 const EVENTS = [
   { id: 'e-1', name: 'Probe A', date: '2026-09-01', event_type: 'Probe', project_id: 'p-1', yes_count: 3, conditional_count: 1 },
@@ -38,7 +45,9 @@ function renderWith(path: string, page: React.ReactNode) {
   queryClient.clear()
   render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[path]}>{page}</MemoryRouter>
+      <MemoryRouter initialEntries={[path]}>
+        <ActiveProvider>{page}</ActiveProvider>
+      </MemoryRouter>
     </QueryClientProvider>,
   )
 }
@@ -95,15 +104,43 @@ describe('ProjectsPage', () => {
   it('preselects the project from the route', async () => {
     stubFetch()
     queryClient.clear()
+    window.localStorage.clear()
     render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter initialEntries={['/projects/p-1']}>
+          <ActiveProvider>
           <Routes>
             <Route path="/projects/:id" element={<ProjectsPage />} />
           </Routes>
+          </ActiveProvider>
         </MemoryRouter>
       </QueryClientProvider>,
     )
     expect(await screen.findByText('Sopran 1')).toBeInTheDocument()
+  })
+})
+
+describe('Aktiv-Kontext: Projekte/Termine', () => {
+  afterEach(() => {
+    cleanup()
+  })
+
+  it('setzt ein Projekt aktiv (Badge + Persistenz)', async () => {
+    const user = userEvent.setup({ delay: 10 })
+    stubFetch()
+    renderWith('/projects', <ProjectsPage />)
+    await screen.findByText('Hoffmann')
+    await user.click(screen.getByRole('button', { name: 'Als aktiv setzen' }))
+    expect(await screen.findByText('Aktiv')).toBeInTheDocument()
+    expect(window.localStorage.getItem('chor-active-project')).toBe('p-1')
+  })
+
+  it('markiert den aktiven Termin und setzt ihn', async () => {
+    const user = userEvent.setup({ delay: 10 })
+    stubFetch()
+    renderWith('/events', <EventsPage />)
+    await screen.findByText('Probe A')
+    await user.click(screen.getByRole('button', { name: 'Aktiv' }))
+    expect(window.localStorage.getItem('chor-active-event')).toBe('e-1')
   })
 })

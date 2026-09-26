@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   fetchAvailabilityMatrix,
+  fetchBesetzungen,
   fetchEvents,
   putAvailabilityBulk,
 } from '../api/client'
-import { Th, Td,
-  PageHeader,} from '../components/ui'
+import { Button, PageHeader, Th, Td } from '../components/ui'
+import { useActive } from '../active/active'
 
 const STATUSES = [
   { value: 'yes', label: '✓ Zusage' },
@@ -21,21 +22,30 @@ const inputClass =
   'rounded border border-gray-300 px-2 py-1 dark:border-gray-600 dark:bg-gray-800'
 
 export default function AvailabilityPage() {
-  const [eventId, setEventId] = useState<string | null>(null)
+  const active = useActive()
+  const [eventId, setEventId] = useState<string | null>(active.eventId)
   const [overrides, setOverrides] = useState<Record<string, string>>({})
   const [savedMessage, setSavedMessage] = useState(false)
+  const [showAll, setShowAll] = useState(false)
   const queryClient = useQueryClient()
 
   const { data: events = [] } = useQuery({
     queryKey: ['events', '', '', ''],
     queryFn: () => fetchEvents({}),
   })
+  const { data: besetzungen = [] } = useQuery({
+    queryKey: ['besetzungen', ''],
+    queryFn: () => fetchBesetzungen(undefined),
+  })
 
   useEffect(() => {
     if (eventId === null && events.length > 0) {
-      setEventId(events[0].id)
+      const initial = active.eventId ?? events[0].id
+      setEventId(initial)
     }
-  }, [eventId, events])
+    // Absichtlich nur beim Laden der Terminliste (aktiver Termin sonst).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [events])
 
   const { data: matrix, isLoading, isError } = useQuery({
     queryKey: ['availability', eventId],
@@ -61,9 +71,21 @@ export default function AvailabilityPage() {
 
   function pickEvent(id: string) {
     setEventId(id)
+    active.setEvent(id)
     setOverrides({})
     setSavedMessage(false)
+    setShowAll(false)
   }
+
+  const activeBesetzung = besetzungen.find(
+    (besetzung) => besetzung.id === active.besetzungId,
+  )
+  const visibleEntries = (matrix?.entries ?? []).filter(
+    (entry) =>
+      showAll ||
+      !activeBesetzung ||
+      activeBesetzung.singer_ids.includes(entry.singer_id),
+  )
 
   return (
     <section>
@@ -92,13 +114,26 @@ export default function AvailabilityPage() {
           Speichern
         </button>
         {savedMessage && <span>Gespeichert.</span>}
+        {activeBesetzung && (
+          <span className="text-sm text-gray-600">
+            Gefiltert auf Besetzung {activeBesetzung.name} (
+            {visibleEntries.length} von {matrix?.entries.length ?? 0}).{' '}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowAll((previous) => !previous)}
+            >
+              {showAll ? 'Nur Besetzung zeigen' : 'Alle Sänger zeigen'}
+            </Button>
+          </span>
+        )}
       </div>
       {isLoading && <p className="mt-4">Lädt …</p>}
       {isError && <p className="mt-4 text-red-600">Fehler beim Laden.</p>}
       {saveMutation.isError && (
         <p className="mt-4 text-red-600">Speichern fehlgeschlagen.</p>
       )}
-      {matrix && matrix.entries.length > 0 && (
+      {matrix && visibleEntries.length > 0 && (
         <table className="mt-4 w-full border-collapse text-left">
           <thead>
             <tr className="border-b">
@@ -108,7 +143,7 @@ export default function AvailabilityPage() {
             </tr>
           </thead>
           <tbody>
-            {matrix.entries.map((entry) => (
+            {visibleEntries.map((entry) => (
               <tr key={entry.singer_id} className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/50">
                 <Td>{entry.full_name}</Td>
                 <Td>{entry.voice_group ?? '–'}</Td>

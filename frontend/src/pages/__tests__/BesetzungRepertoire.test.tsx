@@ -6,8 +6,15 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { queryClient } from '../../api/client'
+
+
+import { ActiveProvider } from '../../active/active'
 import BesetzungPage from '../BesetzungPage'
 import RepertoirePage from '../RepertoirePage'
+
+beforeEach(() => {
+  window.localStorage.clear()
+})
 
 let besetzungen = [{ id: 'b-1', name: 'Stamm', project_id: 'p-1', singer_ids: ['s-1'] }]
 let repertoire = [{ id: 'r-1', title: 'Motette', composer: 'Bach', project_id: 'p-1' }]
@@ -70,7 +77,9 @@ function renderPage(page: React.ReactNode) {
   queryClient.clear()
   render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>{page}</MemoryRouter>
+      <MemoryRouter>
+        <ActiveProvider>{page}</ActiveProvider>
+      </MemoryRouter>
     </QueryClientProvider>,
   )
 }
@@ -194,5 +203,25 @@ describe('RepertoirePage', () => {
         ),
       ).toBe(true)
     })
+  })
+})
+
+describe('Aktiv-Kontext: Besetzung', () => {
+  beforeEach(() => {
+    besetzungen = [{ id: 'b-1', name: 'Stamm', project_id: 'p-1', singer_ids: ['s-1'] }]
+  })
+
+  afterEach(() => {
+    cleanup()
+  })
+
+  it('setzt eine Besetzung aktiv', async () => {
+    const user = userEvent.setup({ delay: 10 })
+    stubFetch()
+    renderPage(<BesetzungPage />)
+    await screen.findByText('Stamm')
+    await user.click(screen.getByRole('button', { name: 'Als aktiv setzen' }))
+    expect(await screen.findByText('Aktiv')).toBeInTheDocument()
+    expect(window.localStorage.getItem('chor-active-besetzung')).toBe('b-1')
   })
 })

@@ -8,10 +8,10 @@ import {
   fetchProjects,
   fetchSingers,
 } from '../api/client'
-import { Th, Td,
-  PageHeader,} from '../components/ui'
+import { Button, PageHeader, Th, Td } from '../components/ui'
 import type { BesetzungInput } from '../api/client'
 import BesetzungDialog from '../components/BesetzungDialog'
+import { useActive } from '../active/active'
 
 const inputClass =
   'rounded border border-gray-300 px-2 py-1 dark:border-gray-600 dark:bg-gray-800'
@@ -59,6 +59,7 @@ export default function BesetzungPage() {
   const [showDialog, setShowDialog] = useState(false)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const queryClient = useQueryClient()
+  const active = useActive()
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -155,12 +156,23 @@ export default function BesetzungPage() {
                 </Td>
                 <Td>{item.singer_ids.length}</Td>
                 <Td>
-                  <DeleteButtons
-                    confirming={deleteConfirmId === item.id}
-                    onAsk={() => setDeleteConfirmId(item.id)}
-                    onConfirm={() => deleteMutation.mutate(item.id)}
-                    onCancel={() => setDeleteConfirmId(null)}
-                  />
+                  <div className="flex items-center gap-2">
+                    {active.besetzungId === item.id ? (
+                      <span className="rounded bg-blue-600 px-2 py-0.5 text-xs font-semibold text-white">
+                        Aktiv
+                      </span>
+                    ) : (
+                      <Button size="sm" onClick={() => active.setBesetzung(item.id)}>
+                        Als aktiv setzen
+                      </Button>
+                    )}
+                    <DeleteButtons
+                      confirming={deleteConfirmId === item.id}
+                      onAsk={() => setDeleteConfirmId(item.id)}
+                      onConfirm={() => deleteMutation.mutate(item.id)}
+                      onCancel={() => setDeleteConfirmId(null)}
+                    />
+                  </div>
                 </Td>
               </tr>
             ))}
