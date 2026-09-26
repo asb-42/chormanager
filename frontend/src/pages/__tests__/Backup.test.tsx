@@ -106,4 +106,25 @@ describe('BackupPage', () => {
       expect(screen.queryByText('chor-backup_1.db')).not.toBeInTheDocument()
     })
   })
+
+  it('shows the backend detail on failure', async () => {
+    const user = userEvent.setup({ delay: 10 })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_url: string, init?: RequestInit) => {
+        if ((init?.method ?? 'GET') === 'POST') {
+          return {
+            ok: false,
+            status: 400,
+            json: async () => ({ detail: 'Nur für SQLite-Dateien' }),
+          }
+        }
+        return { ok: true, json: async () => backups }
+      }),
+    )
+    renderPage()
+    await screen.findByText('chor-backup_1.db')
+    await user.click(screen.getByRole('button', { name: 'Backup anlegen' }))
+    expect(await screen.findByText(/Nur für SQLite-Dateien/)).toBeInTheDocument()
+  })
 })

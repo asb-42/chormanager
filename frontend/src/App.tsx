@@ -70,6 +70,7 @@ export default function App() {
         <Route path="/singers" element={<SingersPage />} />
         <Route path="/events" element={<EventsPage />} />
         <Route path="/projects" element={<ProjectsPage />} />
+        <Route path="/projects/:id" element={<ProjectsPage />} />
         <Route path="/besetzung" element={<BesetzungPage />} />
         <Route path="/repertoire" element={<RepertoirePage />} />
         <Route path="/availability" element={<AvailabilityPage />} />

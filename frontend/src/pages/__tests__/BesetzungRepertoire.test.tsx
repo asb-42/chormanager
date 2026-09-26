@@ -92,6 +92,16 @@ describe('BesetzungPage', () => {
     expect(screen.getByText('1')).toBeInTheDocument()
   })
 
+  it('links the project to its summary', async () => {
+    stubFetch()
+    renderPage(<BesetzungPage />)
+    await screen.findByText('Stamm')
+    expect(screen.getByRole('link', { name: 'Hoffmann' })).toHaveAttribute(
+      'href',
+      '/projects/p-1',
+    )
+  })
+
   it('creates a lineup with checked singers', async () => {
     const user = userEvent.setup({ delay: 10 })
     const { calls } = stubFetch()
@@ -150,6 +160,10 @@ describe('RepertoirePage', () => {
     const { calls } = stubFetch()
     renderPage(<RepertoirePage />)
     expect(await screen.findByText('Motette')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Hoffmann' })).toHaveAttribute(
+      'href',
+      '/projects/p-1',
+    )
     await user.click(screen.getByRole('button', { name: 'Neu' }))
     await user.type(screen.getByLabelText('Titel'), 'Messe')
     await user.click(screen.getByRole('button', { name: 'Speichern' }))

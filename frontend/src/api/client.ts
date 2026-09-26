@@ -16,12 +16,28 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
     headers: { ...authHeaders(), ...init?.headers },
   })
   if (!response.ok) {
-    throw new Error(`API ${response.status}: ${path}`)
+    throw new Error(`API ${response.status}: ${await errorDetail(response, path)}`)
   }
   if (response.status === 204) {
     return undefined as T
   }
   return response.json() as Promise<T>
+}
+
+async function errorDetail(
+  response: { json: () => Promise<unknown> },
+  path: string,
+): Promise<string> {
+  try {
+    const data = await response.json()
+    if (data && typeof data === 'object' && 'detail' in data) {
+      const detail = (data as { detail: unknown }).detail
+      if (typeof detail === 'string' && detail.length > 0) return detail
+    }
+  } catch {
+    // Kein JSON-Body (z. B. nginx-Fehlerseite): Pfad nennen.
+  }
+  return path
 }
 
 function authHeaders(): Record<string, string> {

@@ -3,7 +3,7 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { queryClient } from '../../api/client'
 import EventsPage from '../EventsPage'
@@ -65,6 +65,17 @@ describe('EventsPage', () => {
       expect(calls.some((u) => u.includes('project_id=p-1'))).toBe(true)
     })
   })
+
+  it('links the project to its summary', async () => {
+    stubFetch()
+    renderWith('/events', <EventsPage />)
+    await screen.findByText('Probe A')
+    // Hoffmann erscheint in Filter-Dropdown und Tabellenzelle.
+    expect(screen.getAllByRole('link', { name: 'Hoffmann' })[0]).toHaveAttribute(
+      'href',
+      '/projects/p-1',
+    )
+  })
 })
 
 describe('ProjectsPage', () => {
@@ -79,5 +90,20 @@ describe('ProjectsPage', () => {
     await userEvent.click(await screen.findByText('Hoffmann'))
     expect(await screen.findByText('Sopran 1')).toBeInTheDocument()
     expect(screen.getByText('2')).toBeInTheDocument()
+  })
+
+  it('preselects the project from the route', async () => {
+    stubFetch()
+    queryClient.clear()
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/projects/p-1']}>
+          <Routes>
+            <Route path="/projects/:id" element={<ProjectsPage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+    expect(await screen.findByText('Sopran 1')).toBeInTheDocument()
   })
 })

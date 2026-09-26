@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import {
   createBesetzung,
   deleteBesetzung,
@@ -139,7 +140,16 @@ export default function BesetzungPage() {
               <tr key={item.id} className="border-b">
                 <td className="py-1 pr-4">{item.name}</td>
                 <td className="py-1 pr-4">
-                  {projectNames[item.project_id ?? ''] ?? '–'}
+                  {item.project_id ? (
+                    <Link
+                      to={`/projects/${item.project_id}`}
+                      className="text-blue-600 underline"
+                    >
+                      {projectNames[item.project_id] ?? item.project_id}
+                    </Link>
+                  ) : (
+                    '–'
+                  )}
                 </td>
                 <td className="py-1 pr-4">{item.singer_ids.length}</td>
                 <td className="py-1 pr-4">

@@ -77,6 +77,9 @@ die Tastatur erreichbar; Tabellen lassen sich durchsuchen.
 „Backup" listet Sicherungen (neueste zuerst). „Backup anlegen"
 sichert sofort. „Wiederherstellen" fragt zweimal nach und ersetzt
 die laufende Datenbank — danach kurz warten und neu laden.
+Hinweis: Auf MariaDB-Servern meldet die Seite ggf.
+„Backups nur für SQLite-Dateien" — dort sichert der Admin die
+Datenbank mit den datenbankeigenen Werkzeugen.
 
 ## Assistent
 

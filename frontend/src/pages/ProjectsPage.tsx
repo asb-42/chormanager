@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useParams } from 'react-router-dom'
 import { fetchProjects, fetchProjectSummary, formatDate } from '../api/client'
 
 export default function ProjectsPage() {
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const params = useParams<{ id?: string }>()
+  const [selectedId, setSelectedId] = useState<string | null>(params.id ?? null)
   const { data: projects = [], isLoading, isError } = useQuery({
     queryKey: ['projects'],
     queryFn: fetchProjects,
@@ -13,6 +15,10 @@ export default function ProjectsPage() {
     queryFn: () => fetchProjectSummary(selectedId as string),
     enabled: selectedId !== null,
   })
+
+  useEffect(() => {
+    if (params.id) setSelectedId(params.id)
+  }, [params.id])
 
   return (
     <section>

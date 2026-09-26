@@ -7,13 +7,17 @@ import {
   restoreBackup,
 } from '../api/client'
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Unbekannter Fehler'
+}
+
 export default function BackupPage() {
   const [restoreConfirmId, setRestoreConfirmId] = useState<string | null>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const queryClient = useQueryClient()
 
-  const { data: items = [], isLoading, isError } = useQuery({
+  const { data: items = [], isLoading, isError, error } = useQuery({
     queryKey: ['backups'],
     queryFn: fetchBackups,
   })
@@ -28,7 +32,7 @@ export default function BackupPage() {
       setMessage(null)
       invalidate()
     },
-    onError: () => setMessage('Anlegen fehlgeschlagen.'),
+    onError: (error) => setMessage(`Anlegen fehlgeschlagen: ${errorMessage(error)}`),
   })
   const restoreMutation = useMutation({
     mutationFn: (id: string) => restoreBackup(id),
@@ -37,7 +41,7 @@ export default function BackupPage() {
       setMessage('Wiederhergestellt.')
       invalidate()
     },
-    onError: () => setMessage('Wiederherstellen fehlgeschlagen.'),
+    onError: (error) => setMessage(`Wiederherstellen fehlgeschlagen: ${errorMessage(error)}`),
   })
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteBackup(id),
@@ -45,7 +49,7 @@ export default function BackupPage() {
       setDeleteConfirmId(null)
       invalidate()
     },
-    onError: () => setMessage('Löschen fehlgeschlagen.'),
+    onError: (error) => setMessage(`Löschen fehlgeschlagen: ${errorMessage(error)}`),
   })
 
   return (
@@ -62,7 +66,9 @@ export default function BackupPage() {
       </div>
       {message && <p className="mt-2">{message}</p>}
       {isLoading && <p className="mt-4">Lädt …</p>}
-      {isError && <p className="mt-4 text-red-600">Fehler beim Laden.</p>}
+      {isError && (
+        <p className="mt-4 text-red-600">Fehler beim Laden: {errorMessage(error)}</p>
+      )}
       {!isLoading && !isError && items.length === 0 && (
         <p className="mt-4">Keine Backups vorhanden.</p>
       )}

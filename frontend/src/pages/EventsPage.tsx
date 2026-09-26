@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import { fetchEvents, fetchProjects, formatDate } from '../api/client'
 
 const EVENT_TYPES = ['GP', 'OP', 'SOFA', 'Probe', 'Konzert', 'Auftritt']
@@ -94,7 +95,16 @@ export default function EventsPage() {
                 <td className="py-1 pr-4">{event.name}</td>
                 <td className="py-1 pr-4">{event.event_type}</td>
                 <td className="py-1 pr-4">
-                  {projectNames[event.project_id ?? ''] ?? '–'}
+                  {event.project_id ? (
+                    <Link
+                      to={`/projects/${event.project_id}`}
+                      className="text-blue-600 underline"
+                    >
+                      {projectNames[event.project_id] ?? event.project_id}
+                    </Link>
+                  ) : (
+                    '–'
+                  )}
                 </td>
                 <td className="py-1 pr-4">{event.yes_count}</td>
                 <td className="py-1 pr-4">{event.conditional_count}</td>

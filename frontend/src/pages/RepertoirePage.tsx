@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Link } from 'react-router-dom'
 import {
   createRepertoire,
   deleteRepertoire,
@@ -97,7 +98,16 @@ export default function RepertoirePage() {
                 <td className="py-1 pr-4">{item.title}</td>
                 <td className="py-1 pr-4">{item.composer ?? '–'}</td>
                 <td className="py-1 pr-4">
-                  {projectNames[item.project_id ?? ''] ?? '–'}
+                  {item.project_id ? (
+                    <Link
+                      to={`/projects/${item.project_id}`}
+                      className="text-blue-600 underline"
+                    >
+                      {projectNames[item.project_id] ?? item.project_id}
+                    </Link>
+                  ) : (
+                    '–'
+                  )}
                 </td>
                 <td className="py-1 pr-4">
                   {deleteConfirmId === item.id ? (
