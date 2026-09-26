@@ -14,6 +14,8 @@ services:
       MARIADB_DATABASE: ${MARIADB_DATABASE:-chor}
       MARIADB_USER: ${MARIADB_USER:-chor}
       MARIADB_PASSWORD: ${MARIADB_PASSWORD:-chor}
+    ports:
+      - "${MARIADB_PORT:-3306}:3306"
     volumes:
       - mariadb-data:/var/lib/mysql
     healthcheck:
