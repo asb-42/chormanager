@@ -1,5 +1,5 @@
 """Pydantic response/request schemas (Pydantic v2)."""
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel
 
@@ -56,3 +56,38 @@ class ProjectSummary(BaseModel):
     project_id: str
     events: List[EventSummaryItem] = []
     by_voice_group: Dict[str, Dict[str, int]] = {}
+
+
+AvailabilityStatus = Literal[
+    "yes", "no", "none", "conditional", "unknown", "maybe"
+]
+
+
+class AvailabilityEntry(BaseModel):
+    """One singer status within a bulk update."""
+
+    singer_id: str
+    status: AvailabilityStatus
+
+
+class AvailabilityBulk(BaseModel):
+    """Bulk payload for ``PUT /api/events/{id}/availability``."""
+
+    entries: List[AvailabilityEntry] = []
+
+
+class AvailabilityMatrixEntry(BaseModel):
+    """One matrix row (missing availability reads as ``none``)."""
+
+    singer_id: str
+    full_name: str
+    short_name: Optional[str] = None
+    voice_group: Optional[str] = None
+    status: str
+
+
+class AvailabilityMatrix(BaseModel):
+    """Full availability matrix of one event."""
+
+    event_id: str
+    entries: List[AvailabilityMatrixEntry] = []
