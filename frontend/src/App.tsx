@@ -1,4 +1,4 @@
-import { NavLink, Route, Routes } from 'react-router-dom'
+import { Link, NavLink, Route, Routes } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import AvailabilityPage from './pages/AvailabilityPage'
 import BackupPage from './pages/BackupPage'
@@ -13,10 +13,35 @@ import WizardPage from './pages/WizardPage'
 import { fetchVersion } from './api/client'
 
 function HomePage() {
+  const cards = [
+    {
+      to: '/wizard/formation',
+      title: 'Aufstellung planen',
+      text: 'Projekt → Termin → Zusagen → Aufstellung',
+    },
+    {
+      to: '/wizard/event',
+      title: 'Termin eintragen',
+      text: 'Neuer Termin mit Datum und Typ',
+    },
+    {
+      to: '/wizard/singer',
+      title: 'Chormitglied aufnehmen',
+      text: 'Neues Chormitglied mit Stimmgruppe',
+    },
+  ]
   return (
     <section>
       <h1 className="text-xl font-semibold">ChorManager</h1>
-      <p className="mt-2">Chorverwaltung im Browser (M2-Aufbau).</p>
+      <p className="mt-2">Womit soll es losgehen?</p>
+      <div className="mt-4 grid max-w-2xl gap-2">
+        {cards.map((card) => (
+          <Link key={card.to} to={card.to} className="rounded border p-4 hover:bg-gray-100 dark:hover:bg-gray-800">
+            <span className="font-semibold">{card.title}</span>
+            <span className="block text-sm text-gray-600">{card.text}</span>
+          </Link>
+        ))}
+      </div>
     </section>
   )
 }
@@ -75,6 +100,7 @@ export default function App() {
         <Route path="/repertoire" element={<RepertoirePage />} />
         <Route path="/availability" element={<AvailabilityPage />} />
         <Route path="/wizard" element={<WizardPage />} />
+        <Route path="/wizard/:flow" element={<WizardPage />} />
         <Route path="/backup" element={<BackupPage />} />
         <Route path="/formations" element={<FormationsPage />} />
         <Route path="/formations/:id" element={<FormationEditorPage />} />

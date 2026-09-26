@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import {
   createEvent,
   createFormation,
@@ -15,6 +15,14 @@ import SingerDialog from '../components/SingerDialog'
 
 type Workflow = 'formation' | 'event' | 'singer' | null
 
+const FLOWS: Exclude<Workflow, null>[] = ['formation', 'event', 'singer']
+
+function initialWorkflow(flow: string | undefined): Workflow {
+  return (FLOWS as string[]).includes(flow ?? '')
+    ? (flow as Exclude<Workflow, null>)
+    : null
+}
+
 const inputClass =
   'rounded border border-gray-300 px-2 py-1 dark:border-gray-600 dark:bg-gray-800'
 
@@ -24,7 +32,10 @@ const cardClass =
   'rounded border p-4 text-left hover:bg-gray-100 dark:hover:bg-gray-800'
 
 export default function WizardPage() {
-  const [workflow, setWorkflow] = useState<Workflow>(null)
+  const params = useParams<{ flow?: string }>()
+  const [workflow, setWorkflow] = useState<Workflow>(() =>
+    initialWorkflow(params.flow),
+  )
   const [step, setStep] = useState(1)
   const [projectId, setProjectId] = useState('')
   const [eventId, setEventId] = useState('')

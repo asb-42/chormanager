@@ -3,7 +3,7 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { queryClient } from '../../api/client'
 import WizardPage from '../WizardPage'
@@ -72,6 +72,22 @@ describe('WizardPage', () => {
     expect(await screen.findByText('Aufstellung planen')).toBeInTheDocument()
     expect(screen.getByText('Termin eintragen')).toBeInTheDocument()
     expect(screen.getByText('Chormitglied aufnehmen')).toBeInTheDocument()
+  })
+
+  it('starts preselected from the route', async () => {
+    stubFetch()
+    queryClient.clear()
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/wizard/event']}>
+          <Routes>
+            <Route path="/wizard/:flow" element={<WizardPage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+    expect(await screen.findByLabelText('Name')).toBeInTheDocument()
+    expect(screen.queryByText('Aufstellung planen')).not.toBeInTheDocument()
   })
 
   it('termin flow creates an event', async () => {
