@@ -35,6 +35,21 @@ CHORMANAGER_DATABASE_URL="sqlite:////pfad/chor.db" \
 Folge-Revisionen (z. B. `formations`-Tabelle für gestempelte
 Bestands-DBs, `users`/`roles` mit dem Portal) kommen als `002+`.
 
+## MariaDB (M1-Abschluss, verifiziert)
+
+```bash
+docker compose -f backend/docker-compose.yml up -d
+CHORMANAGER_DATABASE_URL="mysql+pymysql://chor:chor@127.0.0.1:3306/chor" \
+  .venv/bin/alembic -c backend/alembic.ini upgrade head
+CHORMANAGER_TEST_MARIADB_URL="mysql+pymysql://chor:chor@127.0.0.1:3306/chor" \
+  .venv/bin/python -m pytest backend/tests/test_mariadb_smoke.py -q
+```
+
+Der Smoke-Test fährt head hoch, prüft utf8mb4, dreht eine
+API-Runde (CRUD, Bulk, ilike-Suche) und räumt per Downgrade ab.
+Credentials für Prod aus der Umgebung (M5); alle Typen portabel
+(Analyse §5.6).
+
 ## Auth (Single-User-Stufe)
 
 Reads sind offen. Writes brauchen ohne gesetztes Token nichts

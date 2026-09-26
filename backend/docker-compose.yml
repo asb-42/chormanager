@@ -1,0 +1,31 @@
+# MariaDB für M1-Dev/Smoke (M5 baut daraus das volle Deployment).
+#
+#   docker compose -f backend/docker-compose.yml up -d
+#   CHORMANAGER_DATABASE_URL="mysql+pymysql://chor:chor@127.0.0.1:3306/chor" \
+#     .venv/bin/alembic -c backend/alembic.ini upgrade head
+#
+# Prod-Credentials kommen aus der Umgebung (M5); die Defaults hier
+# gelten nur für lokale Entwicklung.
+services:
+  db:
+    image: mariadb:11
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-root}
+      MARIADB_DATABASE: ${MARIADB_DATABASE:-chor}
+      MARIADB_USER: ${MARIADB_USER:-chor}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD:-chor}
+    ports:
+      - "${MARIADB_PORT:-3306}:3306"
+    volumes:
+      - mariadb-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  mariadb-data:
