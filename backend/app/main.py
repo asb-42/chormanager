@@ -1,7 +1,15 @@
 """FastAPI application factory (M1)."""
 from fastapi import FastAPI
 
-from .routers import availability, events, projects, singers
+from .routers import (
+    availability,
+    besetzung,
+    events,
+    projects,
+    repertoire,
+    selbstdarstellung,
+    singers,
+)
 
 
 def create_app() -> FastAPI:
@@ -15,6 +23,9 @@ def create_app() -> FastAPI:
     app.include_router(events.router)
     app.include_router(projects.router)
     app.include_router(availability.router)
+    app.include_router(besetzung.router)
+    app.include_router(repertoire.router)
+    app.include_router(selbstdarstellung.router)
 
     @app.get("/api/health")
     def health() -> dict:

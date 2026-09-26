@@ -91,3 +91,33 @@ class AvailabilityMatrix(BaseModel):
 
     event_id: str
     entries: List[AvailabilityMatrixEntry] = []
+
+
+class BesetzungOut(BaseModel):
+    """Public lineup shape (``singer_ids`` parsed to a list)."""
+
+    id: str
+    name: str
+    project_id: Optional[str] = None
+    singer_ids: List[str] = []
+
+
+class RepertoireOut(BaseModel):
+    """Public repertoire shape."""
+
+    id: str
+    composer: Optional[str] = None
+    title: str
+    dates: Optional[str] = None
+    country: Optional[str] = None
+    publisher: Optional[str] = None
+    arrangement: Optional[str] = None
+    location: Optional[str] = None
+    project_id: Optional[str] = None
+
+
+class SelbstdarstellungOut(BaseModel):
+    """Marketing text (empty table reads as blank content)."""
+
+    id: Optional[str] = None
+    content: str = ""

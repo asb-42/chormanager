@@ -73,3 +73,38 @@ availability_table = Table(
     Column("created_at", String(32), nullable=False),
     Column("updated_at", String(32), nullable=False),
 )
+
+besetzung_table = Table(
+    "besetzung",
+    metadata,
+    Column("id", String(64), primary_key=True),
+    Column("name", String(255), nullable=False),
+    Column("project_id", String(64)),
+    Column("singer_ids", String(4096), nullable=False),
+    Column("created_at", String(32), nullable=False),
+    Column("updated_at", String(32), nullable=False),
+)
+
+repertoire_table = Table(
+    "repertoire",
+    metadata,
+    Column("id", String(64), primary_key=True),
+    Column("composer", String(255)),
+    Column("title", String(255), nullable=False),
+    Column("dates", String(255)),
+    Column("country", String(128)),
+    Column("publisher", String(255)),
+    Column("arrangement", String(255)),
+    Column("location", String(255)),
+    Column("project_id", String(64)),
+    Column("created_at", String(32), nullable=False),
+    Column("updated_at", String(32), nullable=False),
+)
+
+selbstdarstellung_table = Table(
+    "selbstdarstellung",
+    metadata,
+    Column("id", String(64), primary_key=True),
+    Column("content", String(4096)),
+    Column("updated_at", String(32), nullable=False),
+)
