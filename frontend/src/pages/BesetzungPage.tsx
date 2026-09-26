@@ -7,10 +7,13 @@ import {
   fetchBesetzungen,
   fetchProjects,
   fetchSingers,
+  formatDateTime,
+  updateBesetzung,
 } from '../api/client'
-import { Button, PageHeader, Th, Td } from '../components/ui'
-import type { BesetzungInput } from '../api/client'
+import { Button, IconButton, PageHeader, Th, Td } from '../components/ui'
+import type { Besetzung, BesetzungInput } from '../api/client'
 import BesetzungDialog from '../components/BesetzungDialog'
+import { DeleteIcon, DuplicateIcon, EditIcon } from '../components/icons'
 import { useActive } from '../active/active'
 
 const inputClass =
@@ -29,9 +32,9 @@ function DeleteButtons({
 }) {
   if (!confirming) {
     return (
-      <Button size="sm" onClick={onAsk}>
-        Löschen
-      </Button>
+      <IconButton label="Löschen" onClick={onAsk}>
+        <DeleteIcon />
+      </IconButton>
     )
   }
   return (
@@ -48,7 +51,7 @@ function DeleteButtons({
 
 export default function BesetzungPage() {
   const [projectId, setProjectId] = useState('')
-  const [showDialog, setShowDialog] = useState(false)
+  const [dialog, setDialog] = useState<null | { mode: 'new' } | { mode: 'edit'; item: Besetzung }>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const queryClient = useQueryClient()
   const active = useActive()
@@ -76,7 +79,15 @@ export default function BesetzungPage() {
   const createMutation = useMutation({
     mutationFn: (input: BesetzungInput) => createBesetzung(input),
     onSuccess: () => {
-      setShowDialog(false)
+      setDialog(null)
+      invalidate()
+    },
+  })
+  const updateMutation = useMutation({
+    mutationFn: ({ id, input }: { id: string; input: BesetzungInput }) =>
+      updateBesetzung(id, input),
+    onSuccess: () => {
+      setDialog(null)
       invalidate()
     },
   })
@@ -87,6 +98,14 @@ export default function BesetzungPage() {
       invalidate()
     },
   })
+
+  async function duplicateBesetzung(item: Besetzung) {
+    await createMutation.mutateAsync({
+      name: `${item.name} (Kopie)`,
+      project_id: item.project_id ?? undefined,
+      singer_ids: [...item.singer_ids],
+    })
+  }
 
   return (
     <section>
@@ -107,8 +126,8 @@ export default function BesetzungPage() {
             ))}
           </select>
         </label>
-        <Button variant="primary" onClick={() => setShowDialog(true)}>
-          Neu
+        <Button variant="primary" onClick={() => setDialog({ mode: 'new' })}>
+          Hinzufügen
         </Button>
       </div>
       {isLoading && <p className="mt-4">Lädt …</p>}
@@ -123,6 +142,7 @@ export default function BesetzungPage() {
               <Th>Name</Th>
               <Th>Projekt</Th>
               <Th>Sänger</Th>
+              <Th>Zuletzt gespeichert</Th>
               <Th>Aktionen</Th>
             </tr>
           </thead>
@@ -143,8 +163,9 @@ export default function BesetzungPage() {
                   )}
                 </Td>
                 <Td>{item.singer_ids.length}</Td>
+                <Td>{formatDateTime(item.updated_at)}</Td>
                 <Td>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
                     {active.besetzungId === item.id ? (
                       <span className="rounded bg-blue-600 px-2 py-0.5 text-xs font-semibold text-white">
                         Aktiv
@@ -154,6 +175,18 @@ export default function BesetzungPage() {
                         Als aktiv setzen
                       </Button>
                     )}
+                    <IconButton
+                      label="Bearbeiten"
+                      onClick={() => setDialog({ mode: 'edit', item })}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      label="Duplizieren"
+                      onClick={() => void duplicateBesetzung(item)}
+                    >
+                      <DuplicateIcon />
+                    </IconButton>
                     <DeleteButtons
                       confirming={deleteConfirmId === item.id}
                       onAsk={() => setDeleteConfirmId(item.id)}
@@ -167,12 +200,28 @@ export default function BesetzungPage() {
           </tbody>
         </table>
       )}
-      {showDialog && (
+      {dialog?.mode === 'new' && (
         <BesetzungDialog
           projects={projects}
           singers={singers}
           onSubmit={(input) => createMutation.mutate(input)}
-          onClose={() => setShowDialog(false)}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog?.mode === 'edit' && (
+        <BesetzungDialog
+          title="Besetzung bearbeiten"
+          initial={{
+            name: dialog.item.name,
+            project_id: dialog.item.project_id ?? undefined,
+            singer_ids: dialog.item.singer_ids,
+          }}
+          projects={projects}
+          singers={singers}
+          onSubmit={(input) =>
+            updateMutation.mutate({ id: dialog.item.id, input })
+          }
+          onClose={() => setDialog(null)}
         />
       )}
     </section>

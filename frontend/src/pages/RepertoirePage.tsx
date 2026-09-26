@@ -71,7 +71,7 @@ export default function RepertoirePage() {
           </select>
         </label>
         <Button variant="primary" onClick={() => setShowDialog(true)}>
-          Neu
+          Hinzufügen
         </Button>
       </div>
       {isLoading && <p className="mt-4">Lädt …</p>}

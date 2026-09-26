@@ -116,7 +116,7 @@ describe('BesetzungPage', () => {
     const { calls } = stubFetch()
     renderPage(<BesetzungPage />)
     await screen.findByText('Stamm')
-    await user.click(screen.getByRole('button', { name: 'Neu' }))
+    await user.click(screen.getByRole('button', { name: 'Hinzufügen' }))
     await user.type(screen.getByLabelText('Name'), 'Gäste')
     await user.click(screen.getByRole('checkbox', { name: /Berta/ }))
     await user.click(screen.getByRole('button', { name: 'Speichern' }))
@@ -173,7 +173,7 @@ describe('RepertoirePage', () => {
       'href',
       '/projects/p-1',
     )
-    await user.click(screen.getByRole('button', { name: 'Neu' }))
+    await user.click(screen.getByRole('button', { name: 'Hinzufügen' }))
     await user.type(screen.getByLabelText('Titel'), 'Messe')
     await user.click(screen.getByRole('button', { name: 'Speichern' }))
     await waitFor(() => {

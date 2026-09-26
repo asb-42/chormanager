@@ -116,6 +116,19 @@ export function joinedDisplay(
   return `${String(month).padStart(2, '0')}/${year}`
 }
 
+export function formatDateTime(iso: string | null | undefined): string {
+  if (!iso) return '–'
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+  return date.toLocaleString('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 export interface MarketingText {
   id: string | null
   content: string
@@ -185,12 +198,24 @@ export interface Besetzung {
   name: string
   project_id?: string | null
   singer_ids: string[]
+  updated_at?: string
 }
 
 export interface BesetzungInput {
   name: string
   project_id?: string
   singer_ids: string[]
+}
+
+export function updateBesetzung(
+  id: string,
+  input: BesetzungInput,
+): Promise<Besetzung> {
+  return api<Besetzung>(`/api/besetzungen/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
 }
 
 export function fetchBesetzungen(projectId?: string): Promise<Besetzung[]> {

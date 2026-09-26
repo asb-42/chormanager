@@ -4,6 +4,9 @@ import { Modal } from './Modal'
 import { Button, Field, inputClassName } from './ui'
 
 interface BesetzungDialogProps {
+  title?: string
+  submitLabel?: string
+  initial?: { name?: string; project_id?: string; singer_ids?: string[] }
   projects: Project[]
   singers: Singer[]
   onSubmit: (input: BesetzungInput) => void
@@ -11,14 +14,19 @@ interface BesetzungDialogProps {
 }
 
 export default function BesetzungDialog({
+  title = 'Besetzung anlegen',
+  submitLabel = 'Speichern',
+  initial = {},
   projects,
   singers,
   onSubmit,
   onClose,
 }: BesetzungDialogProps) {
-  const [name, setName] = useState('')
-  const [projectId, setProjectId] = useState('')
-  const [checked, setChecked] = useState<Set<string>>(new Set())
+  const [name, setName] = useState(initial.name ?? '')
+  const [projectId, setProjectId] = useState(initial.project_id ?? '')
+  const [checked, setChecked] = useState<Set<string>>(
+    () => new Set(initial.singer_ids ?? []),
+  )
 
   const valid = name.trim().length > 0
 
@@ -46,9 +54,8 @@ export default function BesetzungDialog({
   }
 
   return (
-    <Modal label="Besetzung anlegen" onClose={onClose}>
-      <h2 className="text-lg font-semibold">Besetzung anlegen</h2>
-      <h2 className="text-lg font-semibold">Besetzung anlegen</h2>
+    <Modal label={title} onClose={onClose}>
+      <h2 className="text-lg font-semibold">{title}</h2>
       <form onSubmit={handleSubmit} className="mt-3 space-y-3">
         <Field label="Name">
           <input
@@ -88,7 +95,7 @@ export default function BesetzungDialog({
         </fieldset>
         <div className="flex gap-2 pt-1">
           <Button type="submit" variant="primary" disabled={!valid}>
-            Speichern
+            {submitLabel}
           </Button>
           <Button onClick={onClose}>
             Abbrechen
