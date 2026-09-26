@@ -1,24 +1,78 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { fetchSingers } from '../api/client'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  createSinger,
+  deleteSinger,
+  fetchSingers,
+  fetchVoiceGroups,
+  updateSinger,
+} from '../api/client'
+import type { Singer, SingerInput } from '../api/client'
+import SingerDialog from '../components/SingerDialog'
+
+type DialogState = { mode: 'new' } | { mode: 'edit'; singer: Singer } | null
 
 export default function SingersPage() {
   const [search, setSearch] = useState('')
+  const [dialog, setDialog] = useState<DialogState>(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const queryClient = useQueryClient()
+
   const { data: singers = [], isLoading, isError } = useQuery({
     queryKey: ['singers', search],
     queryFn: () => fetchSingers(search),
+  })
+  const { data: voiceGroups = [] } = useQuery({
+    queryKey: ['voice-groups'],
+    queryFn: fetchVoiceGroups,
+  })
+
+  function invalidateSingers() {
+    void queryClient.invalidateQueries({ queryKey: ['singers'] })
+  }
+
+  const createMutation = useMutation({
+    mutationFn: (input: SingerInput) => createSinger(input),
+    onSuccess: () => {
+      setDialog(null)
+      invalidateSingers()
+    },
+  })
+  const updateMutation = useMutation({
+    mutationFn: ({ id, input }: { id: string; input: Partial<SingerInput> }) =>
+      updateSinger(id, input),
+    onSuccess: () => {
+      setDialog(null)
+      invalidateSingers()
+    },
+  })
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteSinger(id),
+    onSuccess: () => {
+      setDeleteConfirmId(null)
+      invalidateSingers()
+    },
   })
 
   return (
     <section>
       <h1 className="text-xl font-semibold">Sänger</h1>
-      <input
-        type="search"
-        placeholder="Suchen …"
-        value={search}
-        onChange={(event) => setSearch(event.target.value)}
-        className="mt-3 w-64 rounded border border-gray-300 px-2 py-1 dark:border-gray-600 dark:bg-gray-800"
-      />
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <input
+          type="search"
+          placeholder="Suchen …"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          className="w-64 rounded border border-gray-300 px-2 py-1 dark:border-gray-600 dark:bg-gray-800"
+        />
+        <button
+          type="button"
+          onClick={() => setDialog({ mode: 'new' })}
+          className="rounded bg-blue-600 px-3 py-1 text-white"
+        >
+          Neu
+        </button>
+      </div>
       {isLoading && <p className="mt-4">Lädt …</p>}
       {isError && <p className="mt-4 text-red-600">Fehler beim Laden.</p>}
       {!isLoading && !isError && singers.length === 0 && (
@@ -31,6 +85,7 @@ export default function SingersPage() {
               <th className="py-1 pr-4">Name</th>
               <th className="py-1 pr-4">Kurzname</th>
               <th className="py-1 pr-4">Stimmgruppe</th>
+              <th className="py-1 pr-4">Aktionen</th>
             </tr>
           </thead>
           <tbody>
@@ -39,10 +94,67 @@ export default function SingersPage() {
                 <td className="py-1 pr-4">{singer.full_name}</td>
                 <td className="py-1 pr-4">{singer.short_name ?? '–'}</td>
                 <td className="py-1 pr-4">{singer.voice_group ?? '–'}</td>
+                <td className="py-1 pr-4">
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDialog({ mode: 'edit', singer })}
+                      className="rounded border px-2 py-0.5"
+                    >
+                      Bearbeiten
+                    </button>
+                    {deleteConfirmId === singer.id ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => deleteMutation.mutate(singer.id)}
+                          className="rounded bg-red-600 px-2 py-0.5 text-white"
+                        >
+                          Wirklich löschen
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteConfirmId(null)}
+                          className="rounded border px-2 py-0.5"
+                        >
+                          Abbrechen
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setDeleteConfirmId(singer.id)}
+                        className="rounded border px-2 py-0.5"
+                      >
+                        Löschen
+                      </button>
+                    )}
+                  </div>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
+      )}
+      {dialog?.mode === 'new' && (
+        <SingerDialog
+          title="Sänger anlegen"
+          initial={{}}
+          voiceGroups={voiceGroups}
+          onSubmit={(input) => createMutation.mutate(input)}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog?.mode === 'edit' && (
+        <SingerDialog
+          title="Sänger bearbeiten"
+          initial={dialog.singer}
+          voiceGroups={voiceGroups}
+          onSubmit={(input) =>
+            updateMutation.mutate({ id: dialog.singer.id, input })
+          }
+          onClose={() => setDialog(null)}
+        />
       )}
     </section>
   )

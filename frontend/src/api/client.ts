@@ -11,16 +11,73 @@ export interface Singer {
 }
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(path, init)
+  const response = await fetch(path, {
+    ...init,
+    headers: { ...authHeaders(), ...init?.headers },
+  })
   if (!response.ok) {
     throw new Error(`API ${response.status}: ${path}`)
   }
+  if (response.status === 204) {
+    return undefined as T
+  }
   return response.json() as Promise<T>
+}
+
+function authHeaders(): Record<string, string> {
+  const token =
+    localStorage.getItem('chor-api-token') ??
+    import.meta.env.VITE_API_TOKEN ??
+    ''
+  return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
 export function fetchSingers(search: string): Promise<Singer[]> {
   const query = search ? `?search=${encodeURIComponent(search)}` : ''
   return api<Singer[]>(`/api/singers${query}`)
+}
+
+export interface VoiceGroup {
+  id: string
+  short?: string | null
+  order?: number | null
+  color_light: string
+  color_dark: string
+}
+
+export function fetchVoiceGroups(): Promise<VoiceGroup[]> {
+  return api<VoiceGroup[]>('/api/config/voice-groups')
+}
+
+export interface SingerInput {
+  full_name: string
+  short_name?: string
+  voice_group?: string
+  height?: number
+  email?: string
+}
+
+export function createSinger(input: SingerInput): Promise<Singer> {
+  return api<Singer>('/api/singers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
+export function updateSinger(
+  id: string,
+  input: Partial<SingerInput>,
+): Promise<Singer> {
+  return api<Singer>(`/api/singers/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
+export function deleteSinger(id: string): Promise<void> {
+  return api<void>(`/api/singers/${id}`, { method: 'DELETE' })
 }
 
 export interface EventItem {
