@@ -2,6 +2,7 @@
 // Arbeitskontext unter der Menüleiste, mit Zurücksetzen.
 // Namen löst die Bar selbst per API auf (keine Prop-Kaskade).
 import { Link } from 'react-router-dom'
+import { useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useActive } from '../active/active'
 import { fetchBesetzungen, fetchEvents, fetchProjects } from '../api/client'
@@ -72,6 +73,35 @@ export default function InfoBar() {
     besetzungen.find((besetzung) => besetzung.id === active.besetzungId)?.name ?? null
   const eventName =
     events.find((event) => event.id === active.eventId)?.name ?? null
+
+  // Verwaiste IDs aufräumen (Desktop-Parität: gelöschte Aktive
+  // dürfen nicht als Karteileichen liegen bleiben). Zusätzlich gilt
+  // Projektbindung: Eine Besetzung gehört zu genau einem Projekt —
+  // passt sie nicht zum aktiven Projekt, wird sie zurückgesetzt.
+  useEffect(() => {
+    if (active.projectId && projects.length > 0 && !projectName) {
+      active.clearProject()
+    }
+    const activeBesetzungRow = besetzungen.find(
+      (besetzung) => besetzung.id === active.besetzungId,
+    )
+    if (active.besetzungId && besetzungen.length > 0 && !activeBesetzungRow) {
+      active.clearBesetzung()
+    }
+    if (
+      activeBesetzungRow &&
+      active.projectId &&
+      activeBesetzungRow.project_id &&
+      activeBesetzungRow.project_id !== active.projectId
+    ) {
+      active.clearBesetzung()
+    }
+    if (active.eventId && events.length > 0 && !eventName) {
+      active.clearEvent()
+    }
+    // Nur auf Datenwechsel reagieren (nicht auf jede active-Änderung).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projects, besetzungen, events])
 
   return (
     <div className="mb-4 flex flex-wrap items-center gap-4 rounded border-b-2 border-blue-200 bg-sky-50 px-3 py-2 dark:border-blue-900 dark:bg-gray-900">

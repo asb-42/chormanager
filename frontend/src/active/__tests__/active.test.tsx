@@ -2,7 +2,7 @@
 // Aktiver Termin aus state.json + Info-Bar). Web: localStorage, kein
 // Backend (Client-Kontext, Single-User-Semantik wie Desktop).
 import { QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -110,5 +110,56 @@ describe('InfoBar', () => {
     expect(screen.getByText('Keiner')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Aktives Projekt zurücksetzen' }))
     expect(window.localStorage.getItem('chor-active-project')).toBeNull()
+  })
+
+  it('clears stale ids missing from the lists', async () => {
+    window.localStorage.setItem('chor-active-besetzung', 'geloescht')
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <ActiveProvider>
+            <InfoBar />
+          </ActiveProvider>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+    await waitFor(() => {
+      expect(window.localStorage.getItem('chor-active-besetzung')).toBeNull()
+    })
+  })
+
+  it('clears a besetzung of another project', async () => {
+    window.localStorage.setItem('chor-active-project', 'p-1')
+    window.localStorage.setItem('chor-active-besetzung', 'b-fremd')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        const u = String(url)
+        if (u.includes('/api/projects')) {
+          return { ok: true, json: async () => [{ id: 'p-1', name: 'Hoffmann' }] }
+        }
+        if (u.includes('/api/besetzungen')) {
+          return {
+            ok: true,
+            json: async () => [{ id: 'b-fremd', name: 'Fremd', project_id: 'p-2', singer_ids: [] }],
+          }
+        }
+        return { ok: true, json: async () => [] }
+      }),
+    )
+    queryClient.clear()
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>
+          <ActiveProvider>
+            <InfoBar />
+          </ActiveProvider>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    )
+    await waitFor(() => {
+      expect(window.localStorage.getItem('chor-active-besetzung')).toBeNull()
+    })
+    expect(window.localStorage.getItem('chor-active-project')).toBe('p-1')
   })
 })

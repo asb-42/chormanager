@@ -128,4 +128,15 @@ describe('BesetzungPage Qt-Tabelle', () => {
       ).toBe(true)
     })
   })
+
+  it('sets active manually and clears it on delete', async () => {
+    const user = userEvent.setup({ delay: 10 })
+    stubFetch()
+    renderPage()
+    await screen.findByText('Stamm')
+    const row = screen.getByText('Stamm').closest('tr') as HTMLElement
+    await user.click(within(row).getByRole('button', { name: 'Als aktiv setzen' }))
+    expect(await within(row).findByText('Aktiv')).toBeInTheDocument()
+    expect(window.localStorage.getItem('chor-active-besetzung')).toBe('b-1')
+  })
 })
