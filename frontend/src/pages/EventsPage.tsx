@@ -1,8 +1,19 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { fetchEvents, fetchProjects, formatDate } from '../api/client'
-import { Button, PageHeader, Th, Td } from '../components/ui'
+import {
+  createEvent,
+  deleteEvent,
+  fetchEvents,
+  fetchProjects,
+  formatDate,
+  updateEvent,
+} from '../api/client'
+import type { EventInput, EventItem } from '../api/client'
+import { Button, EmptyState, ErrorMessage, IconButton, Loading, PageHeader, Th, Td } from '../components/ui'
+import EventDialog from '../components/EventDialog'
+import { Modal } from '../components/Modal'
+import { DeleteIcon, DuplicateIcon, EditIcon } from '../components/icons'
 import { useActive } from '../active/active'
 
 const EVENT_TYPES = ['GP', 'OP', 'SOFA', 'Probe', 'Konzert', 'Auftritt']
@@ -10,11 +21,20 @@ const EVENT_TYPES = ['GP', 'OP', 'SOFA', 'Probe', 'Konzert', 'Auftritt']
 const inputClass =
   'rounded border border-gray-300 px-2 py-1 dark:border-gray-600 dark:bg-gray-800'
 
+type DialogState =
+  | { mode: 'new' }
+  | { mode: 'edit'; event: EventItem }
+  | null
+
 export default function EventsPage() {
   const [projectId, setProjectId] = useState('')
   const [search, setSearch] = useState('')
   const [eventType, setEventType] = useState('')
+  const [sort, setSort] = useState('date-desc')
+  const [dialog, setDialog] = useState<DialogState>(null)
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
   const active = useActive()
+  const queryClient = useQueryClient()
 
   const { data: projects = [] } = useQuery({
     queryKey: ['projects'],
@@ -25,18 +45,66 @@ export default function EventsPage() {
   )
 
   const { data: events = [], isLoading, isError } = useQuery({
-    queryKey: ['events', projectId, search, eventType],
+    queryKey: ['events', projectId, search, eventType, sort],
     queryFn: () =>
       fetchEvents({
         project_id: projectId || undefined,
         search: search || undefined,
         event_type: eventType || undefined,
+        sort: (sort.split('-')[0] ?? 'date') as 'date' | 'name',
+        direction: (sort.split('-')[1] ?? 'desc') as 'asc' | 'desc',
       }),
   })
 
+  function invalidate() {
+    void queryClient.invalidateQueries({ queryKey: ['events'] })
+  }
+
+  const createMutation = useMutation({
+    mutationFn: (input: EventInput) => createEvent(input),
+    onSuccess: () => {
+      setDialog(null)
+      invalidate()
+    },
+  })
+  const updateMutation = useMutation({
+    mutationFn: ({ id, input }: { id: string; input: Partial<EventInput> }) =>
+      updateEvent(id, input),
+    onSuccess: () => {
+      setDialog(null)
+      invalidate()
+    },
+  })
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteEvent(id),
+    onSuccess: () => {
+      setDeleteConfirmId(null)
+      invalidate()
+    },
+  })
+
+  async function duplicateEvent(event: EventItem) {
+    const created = await createMutation.mutateAsync({
+      name: `${event.name} (Kopie)`,
+      date: event.date,
+      event_type: event.event_type,
+      location: event.location ?? undefined,
+      description: event.description ?? undefined,
+      project_id: event.project_id ?? undefined,
+    })
+    setDialog({ mode: 'edit', event: created })
+  }
+
   return (
     <section>
-      <PageHeader title="Termine" />
+      <PageHeader
+        title="Termine"
+        actions={
+          <Button variant="primary" onClick={() => setDialog({ mode: 'new' })}>
+            Hinzufügen
+          </Button>
+        }
+      />
       <div className="mt-3 flex flex-wrap gap-2">
         <label>
           Projekt{' '}
@@ -73,11 +141,24 @@ export default function EventsPage() {
             </option>
           ))}
         </select>
+        <label>
+          Sortieren{' '}
+          <select
+            value={sort}
+            onChange={(event) => setSort(event.target.value)}
+            className={inputClass}
+          >
+            <option value="date-desc">Datum ↓ (neueste zuerst)</option>
+            <option value="date-asc">Datum ↑ (älteste zuerst)</option>
+            <option value="name-asc">Name ↑</option>
+            <option value="name-desc">Name ↓</option>
+          </select>
+        </label>
       </div>
-      {isLoading && <p className="mt-4">Lädt …</p>}
-      {isError && <p className="mt-4 text-red-600">Fehler beim Laden.</p>}
+      {isLoading && <Loading />}
+      {isError && <ErrorMessage text="Fehler beim Laden." />}
       {!isLoading && !isError && events.length === 0 && (
-        <p className="mt-4">Keine Termine gefunden.</p>
+        <EmptyState text="Keine Termine gefunden." />
       )}
       {events.length > 0 && (
         <table className="mt-4 w-full border-collapse text-left">
@@ -90,6 +171,7 @@ export default function EventsPage() {
               <Th>Zusagen</Th>
               <Th>Vorbehalt</Th>
               <Th>Status</Th>
+              <Th>Aktionen</Th>
             </tr>
           </thead>
           <tbody>
@@ -123,10 +205,81 @@ export default function EventsPage() {
                     </Button>
                   )}
                 </Td>
+                <Td>
+                  <div className="flex gap-1">
+                    <IconButton
+                      label="Bearbeiten"
+                      onClick={() => setDialog({ mode: 'edit', event })}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      label="Duplizieren"
+                      onClick={() => void duplicateEvent(event)}
+                    >
+                      <DuplicateIcon />
+                    </IconButton>
+                    {deleteConfirmId === event.id ? (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => deleteMutation.mutate(event.id)}
+                        >
+                          Wirklich löschen
+                        </Button>
+                        <Button size="sm" onClick={() => setDeleteConfirmId(null)}>
+                          Abbrechen
+                        </Button>
+                      </>
+                    ) : (
+                      <IconButton
+                        label="Löschen"
+                        onClick={() => setDeleteConfirmId(event.id)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    )}
+                  </div>
+                </Td>
               </tr>
             ))}
           </tbody>
         </table>
+      )}
+      {dialog && (
+        <Modal
+          label={dialog.mode === 'new' ? 'Termin anlegen' : 'Termin bearbeiten'}
+          onClose={() => setDialog(null)}
+        >
+          <h2 className="text-lg font-semibold">
+            {dialog.mode === 'new' ? 'Termin anlegen' : 'Termin bearbeiten'}
+          </h2>
+          <EventDialog
+            initial={
+              dialog.mode === 'edit'
+                ? {
+                    name: dialog.event.name,
+                    date: dialog.event.date,
+                    event_type: dialog.event.event_type,
+                    location: dialog.event.location ?? undefined,
+                    description: dialog.event.description ?? undefined,
+                    project_id: dialog.event.project_id ?? undefined,
+                  }
+                : {}
+            }
+            projects={projects}
+            submitLabel={dialog.mode === 'new' ? 'Anlegen' : 'Speichern'}
+            onClose={() => setDialog(null)}
+            onSubmit={(input) => {
+              if (dialog.mode === 'new') {
+                createMutation.mutate(input)
+              } else {
+                updateMutation.mutate({ id: dialog.event.id, input })
+              }
+            }}
+          />
+        </Modal>
       )}
     </section>
   )

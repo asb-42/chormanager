@@ -407,6 +407,21 @@ export function createEvent(input: EventInput): Promise<EventItem> {
   })
 }
 
+export function updateEvent(
+  id: string,
+  input: Partial<EventInput>,
+): Promise<EventItem> {
+  return api<EventItem>(`/api/events/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+}
+
+export function deleteEvent(id: string): Promise<void> {
+  return api<void>(`/api/events/${id}`, { method: 'DELETE' })
+}
+
 export interface FormationDoc {
   id: string
   name?: string | null
@@ -505,6 +520,8 @@ export interface EventFilter {
   project_id?: string
   search?: string
   event_type?: string
+  sort?: 'date' | 'name'
+  direction?: 'asc' | 'desc'
 }
 
 export function fetchEvents(filter: EventFilter): Promise<EventItem[]> {
@@ -512,6 +529,8 @@ export function fetchEvents(filter: EventFilter): Promise<EventItem[]> {
   if (filter.project_id) params.set('project_id', filter.project_id)
   if (filter.search) params.set('search', filter.search)
   if (filter.event_type) params.set('event_type', filter.event_type)
+  if (filter.sort) params.set('sort', filter.sort)
+  if (filter.direction) params.set('direction', filter.direction)
   const query = params.toString() ? `?${params.toString()}` : ''
   return api<EventItem[]>(`/api/events${query}`)
 }

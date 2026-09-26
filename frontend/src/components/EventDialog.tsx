@@ -3,8 +3,10 @@ import type { EventInput, Project } from '../api/client'
 import { Button, Field, inputClassName } from './ui'
 
 interface EventDialogProps {
-  projects: Project[]
+  title?: string
   submitLabel?: string
+  initial?: Partial<EventInput>
+  projects: Project[]
   onSubmit: (input: EventInput) => void
   onClose?: () => void
 }
@@ -12,15 +14,16 @@ interface EventDialogProps {
 const EVENT_TYPES = ['GP', 'OP', 'SOFA', 'Probe', 'Konzert', 'Auftritt']
 
 export default function EventDialog({
+  initial = {},
   projects,
   submitLabel = 'Speichern',
   onSubmit,
   onClose,
 }: EventDialogProps) {
-  const [name, setName] = useState('')
-  const [date, setDate] = useState('')
-  const [eventType, setEventType] = useState('Probe')
-  const [projectId, setProjectId] = useState('')
+  const [name, setName] = useState(initial.name ?? '')
+  const [date, setDate] = useState((initial.date ?? '').slice(0, 10))
+  const [eventType, setEventType] = useState(initial.event_type ?? 'Probe')
+  const [projectId, setProjectId] = useState(initial.project_id ?? '')
 
   const valid = name.trim().length > 0 && date.trim().length > 0
 
