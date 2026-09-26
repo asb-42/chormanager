@@ -1,13 +1,16 @@
-"""``/api/singers`` read endpoints (M1 increment 1)."""
+"""``/api/singers`` read + write endpoints (M1)."""
+import uuid
+from datetime import datetime
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import or_, select
+from fastapi import APIRouter, Depends, HTTPException, Response
+from sqlalchemy import delete, insert, or_, select, update
 from sqlalchemy.engine import Connection
 
+from ..auth import require_chorleiter
 from ..deps import get_db
-from ..schemas import SingerOut
-from ..tables import singers_table
+from ..schemas import SingerCreate, SingerOut, SingerUpdate
+from ..tables import availability_table, singers_table
 
 router = APIRouter(prefix="/api/singers", tags=["singers"])
 
@@ -55,3 +58,73 @@ def get_singer(
     if row is None:
         raise HTTPException(status_code=404, detail="Singer not found")
     return SingerOut(**dict(row))
+
+
+def _read_one(db: Connection, singer_id: str) -> SingerOut:
+    stmt = select(*_READ_COLUMNS).where(singers_table.c.id == singer_id)
+    row = db.execute(stmt).mappings().first()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Singer not found")
+    return SingerOut(**dict(row))
+
+
+@router.post("", response_model=SingerOut, status_code=201)
+def create_singer(
+    payload: SingerCreate,
+    db: Connection = Depends(get_db),
+    _role: str = Depends(require_chorleiter),
+) -> SingerOut:
+    """Create a singer (id/timestamps generated server-side)."""
+    now = datetime.now().isoformat()
+    singer_id = str(uuid.uuid4())
+    db.execute(
+        insert(singers_table).values(
+            id=singer_id,
+            created_at=now,
+            updated_at=now,
+            **payload.model_dump(exclude_unset=True),
+        )
+    )
+    db.commit()
+    return _read_one(db, singer_id)
+
+
+@router.put("/{singer_id}", response_model=SingerOut)
+def update_singer(
+    singer_id: str,
+    payload: SingerUpdate,
+    db: Connection = Depends(get_db),
+    _role: str = Depends(require_chorleiter),
+) -> SingerOut:
+    """Partially update a singer (404 when unknown)."""
+    _read_one(db, singer_id)
+    values = payload.model_dump(exclude_unset=True)
+    if values:
+        db.execute(
+            update(singers_table)
+            .where(singers_table.c.id == singer_id)
+            .values(updated_at=datetime.now().isoformat(), **values)
+        )
+        db.commit()
+    return _read_one(db, singer_id)
+
+
+@router.delete("/{singer_id}", status_code=204)
+def delete_singer(
+    singer_id: str,
+    db: Connection = Depends(get_db),
+    _role: str = Depends(require_chorleiter),
+) -> Response:
+    """Delete a singer incl. availability rows (deterministic
+    cascade on both dialects)."""
+    _read_one(db, singer_id)
+    db.execute(
+        delete(availability_table).where(
+            availability_table.c.singer_id == singer_id
+        )
+    )
+    db.execute(
+        delete(singers_table).where(singers_table.c.id == singer_id)
+    )
+    db.commit()
+    return Response(status_code=204)

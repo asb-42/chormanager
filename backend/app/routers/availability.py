@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import insert, select, update
 from sqlalchemy.engine import Connection
 
+from ..auth import require_chorleiter
 from ..deps import get_db
 from ..schemas import (
     AvailabilityBulk,
@@ -74,6 +75,7 @@ def put_bulk(
     event_id: str,
     payload: AvailabilityBulk,
     db: Connection = Depends(get_db),
+    _role: str = Depends(require_chorleiter),
 ) -> dict:
     """Bulk upsert of statuses (atomic: one commit at the end)."""
     _require_event(db, event_id)

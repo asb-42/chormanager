@@ -16,6 +16,40 @@ class SingerOut(BaseModel):
     affinity_uuid: Optional[str] = None
 
 
+class SingerCreate(BaseModel):
+    """Payload for ``POST /api/singers`` (id/timestamps server-side)."""
+
+    full_name: str
+    short_name: Optional[str] = None
+    birth_date: Optional[str] = None
+    voice_group: Optional[str] = None
+    height: Optional[int] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    street: Optional[str] = None
+    postal_code: Optional[str] = None
+    city: Optional[str] = None
+    gender: Optional[str] = None
+    affinity_uuid: Optional[str] = None
+
+
+class SingerUpdate(BaseModel):
+    """Payload for ``PUT /api/singers/{id}`` (partial)."""
+
+    full_name: Optional[str] = None
+    short_name: Optional[str] = None
+    birth_date: Optional[str] = None
+    voice_group: Optional[str] = None
+    height: Optional[int] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    street: Optional[str] = None
+    postal_code: Optional[str] = None
+    city: Optional[str] = None
+    gender: Optional[str] = None
+    affinity_uuid: Optional[str] = None
+
+
 class EventOut(BaseModel):
     """Public event shape incl. Zusagen counts (Desktop-Parität)."""
 

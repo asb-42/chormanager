@@ -20,7 +20,20 @@ export CHORMANAGER_DATABASE_URL="sqlite:////pfad/chor.db"
 .venv/bin/python -m pytest backend/tests/ -q
 ```
 
-## Stand (M1-Inkrement 1)
+## Auth (Single-User-Stufe)
+
+Reads sind offen. Writes brauchen ohne gesetztes Token nichts
+(Dev-Default); mit gesetztem Token einen Bearer:
+
+```bash
+export CHORMANAGER_API_TOKEN="..."
+# Header: Authorization: Bearer ...
+```
+
+Gültiges Token ⇒ Rolle `chorleiter` (Reserve für Portal-Rollen,
+Analyse §3.4; `users`-Tabelle kommt mit dem Portal-Meilenstein).
+
+## Stand (M1-Inkremente 1–3)
 
 - `GET /api/health`, `GET /api/singers[?search=&voice_group=]`,
   `GET /api/singers/{id}` (lesend, SQLAlchemy Core, portable Typen)
