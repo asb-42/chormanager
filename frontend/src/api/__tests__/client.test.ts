@@ -34,3 +34,18 @@ describe('api error details', () => {
     await expect(fetchBackups()).rejects.toThrow('API 500')
   })
 })
+
+describe('computeAge/joinedDisplay', () => {
+  it('computes full years and handles missing dates', async () => {
+    const { computeAge, joinedDisplay } = await import('../../api/client')
+    expect(computeAge(null)).toBeNull()
+    expect(computeAge('')).toBeNull()
+    const age = computeAge('2012-01-01') as number
+    expect(age).toBeGreaterThanOrEqual(13)
+    expect(age).toBeLessThanOrEqual(15)
+    expect(computeAge('not-a-date')).toBeNull()
+    expect(joinedDisplay(2024, 9)).toBe('09/2024')
+    expect(joinedDisplay(2024, null)).toBe('2024')
+    expect(joinedDisplay(null, null)).toBe('')
+  })
+})

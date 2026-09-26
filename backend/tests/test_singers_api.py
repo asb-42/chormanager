@@ -30,13 +30,14 @@ def _seed_db(path: str) -> None:
     )
     conn.executemany(
         "INSERT INTO singers (id, full_name, short_name, voice_group,"
-        " height, email, affinity_uuid, created_at, updated_at)"
-        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        " height, email, street, city, affinity_uuid,"
+        " created_at, updated_at)"
+        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         [
             ("s-1", "Anna Muster", "Anna", "Sopran 1", 170,
-             "anna@example.org", "", "2026-01-01", "2026-01-01"),
+             "anna@example.org", "Weg 1", "Ort", "", "2026-01-01", "2026-01-01"),
             ("s-2", "Berta Beispiel", "Berta", "Bass 2", 185,
-             None, "", "2026-01-01", "2026-01-01"),
+             None, None, None, "", "2026-01-01", "2026-01-01"),
         ],
     )
     conn.commit()
@@ -77,6 +78,12 @@ def test_list_singers_search_filter(client):
     response = client.get("/api/singers", params={"search": "bert"})
     assert response.status_code == 200
     assert [s["id"] for s in response.json()] == ["s-2"]
+
+
+def test_list_singers_search_address(client):
+    response = client.get("/api/singers", params={"search": "weg"})
+    assert response.status_code == 200
+    assert [s["id"] for s in response.json()] == ["s-1"]
 
 
 def test_list_singers_voice_group_filter(client):

@@ -86,7 +86,7 @@ describe('SingersPage mutations', () => {
     const { calls } = stubFetch()
     renderPage()
     await screen.findByText('Anna Muster')
-    await user.click(screen.getByRole('button', { name: 'Neu' }))
+    await user.click(screen.getByRole('button', { name: 'Hinzufügen' }))
     await user.type(screen.getByLabelText('Name'), 'Clara Neu')
     await user.click(screen.getByRole('button', { name: 'Speichern' }))
     await waitFor(() => {
@@ -107,7 +107,7 @@ describe('SingersPage mutations', () => {
     const { calls } = stubFetch()
     renderPage()
     await screen.findByText('Anna Muster')
-    await user.click(screen.getByRole('button', { name: 'Neu' }))
+    await user.click(screen.getByRole('button', { name: 'Hinzufügen' }))
     expect(screen.getByRole('button', { name: 'Speichern' })).toBeDisabled()
     expect(calls.some((c) => c.method === 'POST')).toBe(false)
   })

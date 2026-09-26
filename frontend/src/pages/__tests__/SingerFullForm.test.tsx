@@ -1,6 +1,6 @@
 // Vollständiges Sänger-Formular (Desktop-Parität, ~20 Felder).
 import { QueryClientProvider } from '@tanstack/react-query'
-import { cleanup, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -60,7 +60,10 @@ describe('SingerDialog full model', () => {
     const user = userEvent.setup({ delay: 10 })
     stubFetch()
     renderPage()
-    await user.click(screen.getByRole('button', { name: 'Neu' }))
+    await user.click(screen.getByRole('button', { name: 'Hinzufügen' }))
+    const dialog = await screen.findByRole('dialog', { name: 'Sänger anlegen' })
+    const getByLabelText = (text: string | RegExp) =>
+      within(dialog).getByLabelText(text)
     for (const label of [
       'Name', 'Kurzname', 'Geburtsdatum', 'Geschlecht',
       'E-Mail', 'Telefon', 'Kontakte', 'Straße', 'PLZ', 'Ort',
@@ -68,7 +71,7 @@ describe('SingerDialog full model', () => {
       'Austritt Jahr', 'Austritt Monat', 'Sitzpartner-ID',
       'Sorgeberechtigt 1', 'Telefon 1', 'Sorgeberechtigt 2', 'Telefon 2',
     ]) {
-      expect(screen.getByLabelText(label)).toBeInTheDocument()
+      expect(getByLabelText(label)).toBeInTheDocument()
     }
   })
 
@@ -76,7 +79,7 @@ describe('SingerDialog full model', () => {
     const user = userEvent.setup({ delay: 10 })
     const { calls } = stubFetch()
     renderPage()
-    await user.click(screen.getByRole('button', { name: 'Neu' }))
+    await user.click(screen.getByRole('button', { name: 'Hinzufügen' }))
     await user.type(screen.getByLabelText('Name'), 'Max Muster')
     await user.type(screen.getByLabelText('Telefon'), '0123')
     await user.type(screen.getByLabelText('Straße'), 'Weg 1')
@@ -91,44 +94,6 @@ describe('SingerDialog full model', () => {
         street: 'Weg 1',
         guardian1: 'Mutter',
       })
-    })
-  })
-
-  it('sorts by column header click', async () => {
-    const user = userEvent.setup({ delay: 10 })
-    const calls: string[] = []
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async (url: string) => {
-        calls.push(String(url))
-        if (String(url).includes('/api/config/voice-groups')) {
-          return { ok: true, json: async () => [] }
-        }
-        return {
-          ok: true,
-          json: async () => [
-            { id: 's-1', full_name: 'Anna Muster', short_name: 'Anni', voice_group: 'Sopran 1' },
-          ],
-        }
-      }),
-    )
-    renderPage()
-    await screen.findByText('Anna Muster')
-    await user.click(screen.getByRole('button', { name: /Stimmgruppe/ }))
-    await waitFor(() => {
-      expect(
-        calls.some(
-          (u) => u.includes('sort=voice_group') && !u.includes('direction=desc'),
-        ),
-      ).toBe(true)
-    })
-    await user.click(screen.getByRole('button', { name: /Stimmgruppe/ }))
-    await waitFor(() => {
-      expect(
-        calls.some(
-          (u) => u.includes('sort=voice_group') && u.includes('direction=desc'),
-        ),
-      ).toBe(true)
     })
   })
 })

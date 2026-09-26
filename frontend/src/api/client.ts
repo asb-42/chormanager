@@ -94,6 +94,28 @@ export function fetchVersion(): Promise<{ version: string }> {
   return api<{ version: string }>('/api/version')
 }
 
+export function computeAge(birthDate: string | null | undefined): number | null {
+  if (!birthDate) return null
+  const birth = new Date(birthDate.slice(0, 10))
+  if (Number.isNaN(birth.getTime())) return null
+  const now = new Date()
+  let age = now.getFullYear() - birth.getFullYear()
+  const monthDiff = now.getMonth() - birth.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) {
+    age -= 1
+  }
+  return age
+}
+
+export function joinedDisplay(
+  year: number | null | undefined,
+  month: number | null | undefined,
+): string {
+  if (!year) return ''
+  if (!month) return String(year)
+  return `${String(month).padStart(2, '0')}/${year}`
+}
+
 export interface MarketingText {
   id: string | null
   content: string

@@ -119,8 +119,12 @@ export function Th({ children }: { children: ReactNode }) {
   )
 }
 
-export function Td({ children }: { children: ReactNode }) {
-  return <td className="py-2 pr-4 tabular-nums">{children}</td>
+export function Td({ children, title }: { children: ReactNode; title?: string }) {
+  return (
+    <td title={title} className="py-2 pr-4 tabular-nums">
+      {children}
+    </td>
+  )
 }
 
 export const dialogClassName =

@@ -71,6 +71,9 @@ def list_singers(
                 singers_table.c.full_name.ilike(like),
                 singers_table.c.short_name.ilike(like),
                 singers_table.c.email.ilike(like),
+                singers_table.c.phone.ilike(like),
+                singers_table.c.street.ilike(like),
+                singers_table.c.city.ilike(like),
             )
         )
     if voice_group:
