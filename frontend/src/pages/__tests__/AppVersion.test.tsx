@@ -30,6 +30,6 @@ describe('App version footer', () => {
         </MemoryRouter>
       </QueryClientProvider>,
     )
-    expect(await screen.findByText('ChorManager Web 9.9-test')).toBeInTheDocument()
+    expect(await screen.findByText(/ChorManager Web.*9\.9-test/)).toBeInTheDocument()
   })
 })

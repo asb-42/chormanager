@@ -239,98 +239,104 @@ export default function SingersPage() {
         <EmptyState text="Keine Sänger gefunden." />
       )}
       {visible.length > 0 && (
-        <table className="mt-4 w-full border-collapse text-left">
-          <thead>
-            <tr className="border-b">
-              <Th>
-                <SortHeader field="full_name" label="Vollständiger Name" />
-              </Th>
-              <Th>
-                <SortHeader field="short_name" label="Kurzname" />
-              </Th>
-              <Th>Geburtsdatum</Th>
-              <Th>
-                <SortHeader field="birth_date" label="Alter" />
-              </Th>
-              <Th>Stimmgruppe</Th>
-              <Th>
-                <SortHeader field="height" label="Größe" />
-              </Th>
-              <Th>E-Mail</Th>
-              <Th>Telefon</Th>
-              <Th>Straße</Th>
-              <Th>PLZ</Th>
-              <Th>Ort</Th>
-              <Th>Beitritt</Th>
-              <Th>Austritt</Th>
-              <Th>UUID</Th>
-              <Th>Aktionen</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {visible.map((singer) => {
-              const age = computeAge(singer.birth_date)
-              return (
-                <tr
-                  key={singer.id}
-                  className="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/50"
-                >
-                  <Td>{singer.full_name}</Td>
-                  <Td>{singer.short_name ?? '–'}</Td>
-                  <Td>{singer.birth_date?.slice(0, 10) ?? '–'}</Td>
-                  <Td>{age ?? '–'}</Td>
-                  <Td>{singer.voice_group ?? '–'}</Td>
-                  <Td>{singer.height ?? '–'}</Td>
-                  <Td>{singer.email ?? '–'}</Td>
-                  <Td>{singer.phone ?? '–'}</Td>
-                  <Td>{singer.street ?? '–'}</Td>
-                  <Td>{singer.postal_code ?? '–'}</Td>
-                  <Td>{singer.city ?? '–'}</Td>
-                  <Td>{joinedDisplay(singer.joined_year, singer.joined_month)}</Td>
-                  <Td>{joinedDisplay(singer.left_year, singer.left_month)}</Td>
-                  <Td title={singer.id}>{singer.id.slice(0, 8)}</Td>
-                  <Td>
-                    <div className="flex gap-1">
-                      <IconButton
-                        label="Bearbeiten"
-                        onClick={() => setDialog({ mode: 'edit', singer })}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        label="Duplizieren"
-                        onClick={() => void duplicateSinger(singer)}
-                      >
-                        <DuplicateIcon />
-                      </IconButton>
-                      {deleteConfirmId === singer.id ? (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="danger"
-                            onClick={() => deleteMutation.mutate(singer.id)}
-                          >
-                            Wirklich löschen
-                          </Button>
-                          <Button size="sm" onClick={() => setDeleteConfirmId(null)}>
-                            Abbrechen
-                          </Button>
-                        </>
-                      ) : (
+        <div className="mt-4 overflow-x-auto rounded-xl border border-warm-200 bg-white shadow-soft dark:border-warm-700 dark:bg-warm-800">
+          <table className="w-full border-collapse text-left">
+            <thead>
+              <tr className="border-b border-warm-200 dark:border-warm-700">
+                <Th>
+                  <SortHeader field="full_name" label="Vollständiger Name" />
+                </Th>
+                <Th>
+                  <SortHeader field="short_name" label="Kurzname" />
+                </Th>
+                <Th>Geburtsdatum</Th>
+                <Th>
+                  <SortHeader field="birth_date" label="Alter" />
+                </Th>
+                <Th>Stimmgruppe</Th>
+                <Th>
+                  <SortHeader field="height" label="Größe" />
+                </Th>
+                <Th>E-Mail</Th>
+                <Th>Telefon</Th>
+                <Th>Straße</Th>
+                <Th>PLZ</Th>
+                <Th>Ort</Th>
+                <Th>Beitritt</Th>
+                <Th>Austritt</Th>
+                <Th>UUID</Th>
+                <Th>Aktionen</Th>
+              </tr>
+            </thead>
+            <tbody>
+              {visible.map((singer, index) => {
+                const age = computeAge(singer.birth_date)
+                return (
+                  <tr
+                    key={singer.id}
+                    className={`border-b border-warm-100 transition-colors hover:bg-primary-50/50 dark:border-warm-800 dark:hover:bg-primary-900/20 ${
+                      index % 2 === 0
+                        ? 'bg-white dark:bg-warm-800'
+                        : 'bg-warm-50/50 dark:bg-warm-800/50'
+                    }`}
+                  >
+                    <Td>{singer.full_name}</Td>
+                    <Td>{singer.short_name ?? '–'}</Td>
+                    <Td>{singer.birth_date?.slice(0, 10) ?? '–'}</Td>
+                    <Td>{age ?? '–'}</Td>
+                    <Td>{singer.voice_group ?? '–'}</Td>
+                    <Td>{singer.height ?? '–'}</Td>
+                    <Td>{singer.email ?? '–'}</Td>
+                    <Td>{singer.phone ?? '–'}</Td>
+                    <Td>{singer.street ?? '–'}</Td>
+                    <Td>{singer.postal_code ?? '–'}</Td>
+                    <Td>{singer.city ?? '–'}</Td>
+                    <Td>{joinedDisplay(singer.joined_year, singer.joined_month)}</Td>
+                    <Td>{joinedDisplay(singer.left_year, singer.left_month)}</Td>
+                    <Td title={singer.id}>{singer.id.slice(0, 8)}</Td>
+                    <Td>
+                      <div className="flex gap-1">
                         <IconButton
-                          label="Löschen"
-                          onClick={() => setDeleteConfirmId(singer.id)}
+                          label="Bearbeiten"
+                          onClick={() => setDialog({ mode: 'edit', singer })}
                         >
-                          <DeleteIcon />
+                          <EditIcon />
                         </IconButton>
-                      )}
-                    </div>
-                  </Td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+                        <IconButton
+                          label="Duplizieren"
+                          onClick={() => void duplicateSinger(singer)}
+                        >
+                          <DuplicateIcon />
+                        </IconButton>
+                        {deleteConfirmId === singer.id ? (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="danger"
+                              onClick={() => deleteMutation.mutate(singer.id)}
+                            >
+                              Wirklich löschen
+                            </Button>
+                            <Button size="sm" onClick={() => setDeleteConfirmId(null)}>
+                              Abbrechen
+                            </Button>
+                          </>
+                        ) : (
+                          <IconButton
+                            label="Löschen"
+                            onClick={() => setDeleteConfirmId(singer.id)}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        )}
+                      </div>
+                    </Td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
       {dialog?.mode === 'new' && (
         <SingerDialog

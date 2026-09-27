@@ -25,13 +25,13 @@ function Badge({
   emptyText: string
 }) {
   return (
-    <span className="flex items-center gap-1 text-sm">
-      <span className="text-gray-500">{label}:</span>
+    <span className="flex items-center gap-1.5 text-sm">
+      <span className="font-medium text-warm-500 dark:text-warm-400">{label}:</span>
       {name ? (
         <>
           <Link
             to={to}
-            className={`rounded px-2 py-0.5 font-semibold text-white ${tone}`}
+            className={`inline-flex items-center rounded-lg px-2.5 py-1 text-sm font-semibold text-white shadow-soft transition-transform hover:scale-[1.02] ${tone}`}
           >
             {name}
           </Link>
@@ -40,13 +40,15 @@ function Badge({
             onClick={onClear}
             aria-label={clearLabel}
             title={clearLabel}
-            className="rounded px-1 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="rounded-lg p-1 text-warm-400 hover:bg-warm-100 hover:text-warm-600 dark:hover:bg-warm-800 dark:hover:text-warm-300"
           >
-            ×
+            <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+            </svg>
           </button>
         </>
       ) : (
-        <span className="text-gray-400">{emptyText}</span>
+        <span className="text-warm-400 dark:text-warm-500">{emptyText}</span>
       )}
     </span>
   )
@@ -104,14 +106,14 @@ export default function InfoBar() {
   }, [projects, besetzungen, events])
 
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-4 rounded border-b-2 border-blue-200 bg-sky-50 px-3 py-2 dark:border-blue-900 dark:bg-gray-900">
+    <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-warm-200 bg-gradient-to-r from-warm-50 to-primary-50/30 px-4 py-3 shadow-soft dark:border-warm-700 dark:from-warm-800 dark:to-primary-900/20">
       <Badge
         label="Aktives Projekt"
         to="/projects"
         name={projectName}
         onClear={active.clearProject}
         clearLabel="Aktives Projekt zurücksetzen"
-        tone="bg-blue-600"
+        tone="bg-primary-600"
         emptyText="Keines"
       />
       <Badge
@@ -120,7 +122,7 @@ export default function InfoBar() {
         name={besetzungName}
         onClear={active.clearBesetzung}
         clearLabel="Aktive Besetzung zurücksetzen"
-        tone="bg-blue-600"
+        tone="bg-primary-600"
         emptyText="Keine"
       />
       <span className="flex-1" />
@@ -130,7 +132,7 @@ export default function InfoBar() {
         name={eventName}
         onClear={active.clearEvent}
         clearLabel="Aktiven Termin zurücksetzen"
-        tone="bg-orange-500"
+        tone="bg-accent-500"
         emptyText="Keiner"
       />
     </div>

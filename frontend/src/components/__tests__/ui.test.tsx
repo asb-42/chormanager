@@ -16,8 +16,8 @@ describe('Button', () => {
         <Button variant="danger">Löschen</Button>
       </>,
     )
-    expect(screen.getByRole('button', { name: 'Speichern' })).toHaveClass('bg-blue-700')
-    expect(screen.getByRole('button', { name: 'Löschen' })).toHaveClass('bg-red-700')
+    expect(screen.getByRole('button', { name: 'Speichern' })).toHaveClass('bg-primary-600')
+    expect(screen.getByRole('button', { name: 'Löschen' })).toHaveClass('bg-danger-600')
   })
 
   it('forwards disabled and click', async () => {
@@ -87,7 +87,7 @@ describe('Th/Td', () => {
     const th = screen.getByText('Name')
     expect(th.tagName).toBe('TH')
     expect(th).toHaveClass('uppercase')
-    expect(th).toHaveClass('text-gray-500')
+    expect(th).toHaveClass('text-warm-500')
     expect(screen.getByText('Anna').tagName).toBe('TD')
   })
 })

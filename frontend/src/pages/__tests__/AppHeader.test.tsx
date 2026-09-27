@@ -26,7 +26,7 @@ describe('App header', () => {
         </MemoryRouter>
       </QueryClientProvider>,
     )
-    expect(screen.getByText('Chormanager')).toBeInTheDocument()
+    expect(screen.getAllByText('ChorManager').length).toBeGreaterThan(0)
     expect(screen.getByRole('button', { name: 'Dunkel' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Datei' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Bearbeiten' })).not.toBeInTheDocument()

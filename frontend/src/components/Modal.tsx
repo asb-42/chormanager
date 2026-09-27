@@ -39,7 +39,7 @@ export function Modal({
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose()
       }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-warm-900/40 p-4 backdrop-blur-sm"
     >
       <div
         ref={boxRef}
